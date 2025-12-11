@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
   experimental: {
     missingSuspenseWithCSRBailout: false,
   },
+  output: 'standalone',
+  trailingSlash: false,
 };
 
 export default nextConfig;
