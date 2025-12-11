@@ -29,7 +29,7 @@ export default function LoginPage() {
         ? { email: formData.email, password: formData.password }
         : formData;
 
-      const response = await fetch(`http://localhost:3001${endpoint}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -59,7 +59,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <Link href="/">
             <img
-              src="http://localhost:3001/uploads/logo.jpg"
+              src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/logo.jpg`}
               alt="Nde Rogara"
               className="h-28 w-28 object-contain mx-auto mb-4 cursor-pointer hover:opacity-80 transition-opacity"
             />
