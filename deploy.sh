@@ -3,8 +3,14 @@
 # Script de deploy para BuildManager
 echo "🚀 Iniciando deploy..."
 
-# Hacer build
-echo "📦 Haciendo build..."
+# Build del backend
+echo "📦 Compilando backend..."
+cd backend
+npm run build
+cd ..
+
+# Build del frontend
+echo "📦 Haciendo build del frontend..."
 cd frontend
 npm run build
 
