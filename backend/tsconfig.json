@@ -15,5 +15,13 @@
     "sourceMap": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules", 
+    "dist",
+    "src/fix-imagenes-proyectos.ts",
+    "src/seed-proveedor.ts",
+    "src/seed-proyectos-completo.ts",
+    "src/seed-proyectos-referencia.ts",
+    "src/update-proyectos-imagenes.ts"
+  ]
 }
