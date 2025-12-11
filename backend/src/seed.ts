@@ -51,14 +51,8 @@ async function main() {
       create: {
         id: 'cement-portland-1',
         nombre: 'Cemento Portland',
+        descripcion: 'Cemento Portland tipo I - Bolsa de 50kg',
         unidad: 'BOLSA',
-        precioUnitario: 450000,
-        tipoCalidad: 'PREMIUM',
-        marca: 'Holcim',
-        proveedor: 'Holcim Colombia',
-        telefonoProveedor: '3001234567',
-        stockMinimo: 10,
-        observaciones: 'Bolsa de 50kg',
         categoriaId: categorias[0].id
       }
     }),
@@ -68,13 +62,8 @@ async function main() {
       create: {
         id: 'ladrillo-comun-1',
         nombre: 'Ladrillo Común',
+        descripcion: 'Ladrillo rojo común 6x12x24cm',
         unidad: 'UNIDAD',
-        precioUnitario: 10000,
-        tipoCalidad: 'COMUN',
-        proveedor: 'Ladrillera Local',
-        telefonoProveedor: '3007654321',
-        stockMinimo: 100,
-        observaciones: 'Ladrillo rojo común 6x12x24cm',
         categoriaId: categorias[1].id
       }
     }),
@@ -84,13 +73,8 @@ async function main() {
       create: {
         id: 'arena-fina-1',
         nombre: 'Arena Fina',
+        descripcion: 'Arena fina para revoque y mortero',
         unidad: 'M3',
-        precioUnitario: 850000,
-        tipoCalidad: 'COMUN',
-        proveedor: 'Arenera El Río',
-        telefonoProveedor: '3009876543',
-        stockMinimo: 2,
-        observaciones: 'Arena fina para revoque',
         categoriaId: categorias[0].id
       }
     }),
@@ -100,14 +84,8 @@ async function main() {
       create: {
         id: 'cal-hidratada-1',
         nombre: 'Cal Hidratada',
+        descripcion: 'Cal hidratada - Bolsa de 25kg',
         unidad: 'BOLSA',
-        precioUnitario: 120000,
-        tipoCalidad: 'COMUN',
-        marca: 'Cales y Derivados',
-        proveedor: 'Distribuidora Central',
-        telefonoProveedor: '3005432109',
-        stockMinimo: 5,
-        observaciones: 'Bolsa de 25kg',
         categoriaId: categorias[1].id
       }
     })
