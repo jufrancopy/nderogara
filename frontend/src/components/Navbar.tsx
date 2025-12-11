@@ -32,7 +32,7 @@ export default function Navbar() {
       <header className="bg-white/80 backdrop-blur-sm shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20 py-4">
-            <div className="flex items-center">
+            <Link href="/" className="flex items-center">
               <img
                 src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/logo.jpg`}
                 alt="Nde Rogara"
@@ -43,7 +43,7 @@ export default function Navbar() {
                 }}
               />
               <h1 className="ml-4 text-xl font-bold bg-gradient-to-r bg-clip-text text-transparent" style={{backgroundImage: 'linear-gradient(to right, #38603B, #B99742)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Nde Rogara</h1>
-            </div>
+            </Link>
             <div className="hidden sm:flex gap-3">
               <Link href="/login" className="text-gray-600 hover:text-gray-900 px-4 py-2">
                 Iniciar Sesión
