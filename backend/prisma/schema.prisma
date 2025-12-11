@@ -1,0 +1,382 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelos de autenticación
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id                    String      @id @default(cuid())
+  name                  String?
+  email                 String      @unique
+  password              String?     // Para auth local
+  emailVerified         DateTime?
+  image                 String?
+  rol                   Rol         @default(CLIENTE)
+  telefono              String?
+  empresa               String?
+  accounts              Account[]
+  sessions              Session[]
+  proyectos             Proyecto[]
+  materialesPersonalizados Material[] // Materiales propios del usuario
+  items                 Item[]      // Items propios del usuario
+  proveedor             Proveedor?  // Si es proveedor
+  inmuebles             Inmueble[]  // Inmuebles publicados
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Enums
+enum Rol {
+  ADMIN
+  CONSTRUCTOR
+  CLIENTE
+  PROVEEDOR_MATERIALES
+  PROVEEDOR_SERVICIOS
+}
+
+enum EstadoProyecto {
+  PLANIFICACION
+  EN_PROGRESO
+  PAUSADO
+  COMPLETADO
+  CANCELADO
+}
+
+enum TipoCalidad {
+  COMUN
+  PREMIUM
+  INDUSTRIAL
+  ARTESANAL
+}
+
+enum UnidadMedida {
+  KG
+  BOLSA
+  M2
+  M3
+  ML
+  UNIDAD
+  LOTE
+  GLOBAL
+}
+
+// Modelos principales del sistema
+model CategoriaMaterial {
+  id          String     @id @default(cuid())
+  nombre      String     @unique
+  descripcion String?
+  materiales  Material[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+// Material Base
+model Material {
+  id                  String              @id @default(cuid())
+  nombre              String
+  descripcion         String?
+  unidad              UnidadMedida
+  categoriaId         String
+  imagenUrl           String?
+  esActivo            Boolean             @default(true)
+  precio              Decimal?            @db.Decimal(10, 2) // Precio del material
+  marca               String?             // Marca del material
+  // usuarioId null = catálogo admin (referencia), con id = material de proveedor o personalizado
+  usuarioId           String?
+  categoria           CategoriaMaterial   @relation(fields: [categoriaId], references: [id])
+  usuario             User?               @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ofertas             OfertaProveedor[]   // Ofertas de proveedores
+  materialesPorItem   MaterialPorItem[]
+  materialesExtra     MaterialExtraEtapa[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([nombre])
+  @@index([usuarioId])
+}
+
+// Proveedores registrados
+model Proveedor {
+  id                String            @id @default(cuid())
+  nombre            String
+  email             String            @unique
+  telefono          String?
+  direccion         String?
+  sitioWeb          String?
+  logo              String?
+  esActivo          Boolean           @default(true)
+  usuarioId         String            @unique // Relación con User
+  usuario           User              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ofertas           OfertaProveedor[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([nombre])
+}
+
+// Ofertas de proveedores para materiales
+model OfertaProveedor {
+  id                String      @id @default(cuid())
+  materialId        String
+  proveedorId       String
+  precio            Decimal     @db.Decimal(10, 2)
+  tipoCalidad       TipoCalidad @default(COMUN)
+  marca             String?
+  comisionPorcentaje Decimal    @db.Decimal(5, 2) // % comisión para la plataforma
+  stock             Boolean     @default(true)
+  vigenciaHasta     DateTime?   // Hasta cuándo es válida la oferta
+  observaciones     String?
+  material          Material    @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  proveedor         Proveedor   @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
+  historialPrecios  HistorialPrecioOferta[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@unique([materialId, proveedorId])
+  @@index([materialId])
+  @@index([proveedorId])
+  @@index([precio])
+}
+
+// Historial de cambios de precio de ofertas
+model HistorialPrecioOferta {
+  id              String          @id @default(cuid())
+  ofertaId        String
+  precioAnterior  Decimal         @db.Decimal(10, 2)
+  precioNuevo     Decimal         @db.Decimal(10, 2)
+  fechaCambio     DateTime        @default(now())
+  motivo          String?
+  oferta          OfertaProveedor @relation(fields: [ofertaId], references: [id], onDelete: Cascade)
+}
+
+
+
+model Item {
+  id                  String              @id @default(cuid())
+  nombre              String
+  descripcion         String?
+  unidadMedida        UnidadMedida
+  manoObraUnitaria    Decimal?            @db.Decimal(10, 2)
+  notasGenerales      String?
+  esActivo            Boolean             @default(true)
+  usuarioId           String?             // Cada item pertenece a un usuario (nullable para datos existentes)
+  usuario             User?               @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  materialesPorItem   MaterialPorItem[]
+  presupuestoItems    PresupuestoItem[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([nombre])
+  @@index([usuarioId])
+}
+
+model MaterialPorItem {
+  id                String      @id @default(cuid())
+  itemId            String
+  materialId        String
+  cantidadPorUnidad Decimal     @db.Decimal(10, 4)
+  observaciones     String?
+  item              Item        @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  material          Material    @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@unique([itemId, materialId])
+}
+
+model Proyecto {
+  id                  String            @id @default(cuid())
+  nombre              String
+  descripcion         String?
+  superficieTotal     Decimal?          @db.Decimal(10, 2)
+  direccion           String?
+  fechaInicio         DateTime?
+  fechaFinEstimada    DateTime?
+  estado              EstadoProyecto    @default(PLANIFICACION)
+  margenGanancia      Decimal?          @db.Decimal(5, 2)
+  moneda              String            @default("COP")
+  clienteNombre       String?
+  clienteTelefono     String?
+  clienteEmail        String?
+  encargadoNombre     String?
+  encargadoTelefono   String?
+  esReferencia        Boolean           @default(false) // Proyecto de referencia público
+  imagenUrl           String?           // Imagen del plano o fachada
+  usuarioId           String
+  usuario             User              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  presupuestoItems    PresupuestoItem[]
+  cotizaciones        Cotizacion[]
+  etapasObra          EtapaObra[]
+  inmuebles           Inmueble[]        // Inmuebles basados en este proyecto
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([usuarioId])
+  @@index([estado])
+  @@index([esReferencia])
+}
+
+model PresupuestoItem {
+  id              String   @id @default(cuid())
+  proyectoId      String
+  itemId          String
+  cantidadMedida  Decimal  @db.Decimal(10, 4)
+  costoMateriales Decimal  @db.Decimal(12, 2)
+  costoManoObra   Decimal  @db.Decimal(12, 2)
+  costoTotal      Decimal  @db.Decimal(12, 2)
+  fechaCalculo    DateTime @default(now())
+  proyecto        Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  item            Item     @relation(fields: [itemId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([proyectoId, itemId])
+}
+
+model Cotizacion {
+  id            String   @id @default(cuid())
+  proyectoId    String
+  version       Int      @default(1)
+  nombre        String
+  descripcion   String?
+  costoTotal    Decimal  @db.Decimal(12, 2)
+  esActiva      Boolean  @default(true)
+  fechaVigencia DateTime?
+  proyecto      Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([proyectoId])
+}
+
+model EtapaObra {
+  id                String              @id @default(cuid())
+  proyectoId        String
+  nombre            String
+  descripcion       String?
+  orden             Int
+  fechaInicioPlaneada DateTime?
+  fechaFinPlaneada    DateTime?
+  fechaInicioReal     DateTime?
+  fechaFinReal        DateTime?
+  estado            EstadoEtapa         @default(PENDIENTE)
+  observaciones     String?
+  proyecto          Proyecto            @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  materialesExtra   MaterialExtraEtapa[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([proyectoId])
+  @@index([orden])
+}
+
+model MaterialExtraEtapa {
+  id              String    @id @default(cuid())
+  etapaId         String
+  materialId      String
+  cantidad        Decimal   @db.Decimal(10, 4)
+  costoUnitario   Decimal   @db.Decimal(10, 2)
+  costoTotal      Decimal   @db.Decimal(12, 2)
+  motivo          String?
+  etapa           EtapaObra @relation(fields: [etapaId], references: [id], onDelete: Cascade)
+  material        Material  @relation(fields: [materialId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([etapaId])
+}
+
+enum EstadoEtapa {
+  PENDIENTE
+  EN_PROGRESO
+  COMPLETADA
+  ATRASADA
+  CANCELADA
+}
+
+enum TipoInmueble {
+  VENTA
+  ALQUILER
+}
+
+enum EstadoInmueble {
+  DISPONIBLE
+  VENDIDO
+  ALQUILADO
+  RETIRADO
+}
+
+model Inmueble {
+  id              String          @id @default(cuid())
+  titulo          String
+  descripcion     String?
+  tipo            TipoInmueble
+  precio          Decimal         @db.Decimal(12, 2)
+  direccion       String
+  ciudad          String
+  departamento    String?
+  superficie      Decimal?        @db.Decimal(10, 2)
+  habitaciones    Int?
+  banos           Int?
+  garaje          Boolean         @default(false)
+  piscina         Boolean         @default(false)
+  jardin          Boolean         @default(false)
+  estado          EstadoInmueble  @default(DISPONIBLE)
+  imagenes        String?         // JSON array de URLs
+  contactoNombre  String
+  contactoTelefono String
+  contactoEmail   String?
+  proyectoId      String?         // Relación opcional con proyecto
+  usuarioId       String          // Quien publica
+  proyecto        Proyecto?       @relation(fields: [proyectoId], references: [id])
+  usuario         User            @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([tipo])
+  @@index([estado])
+  @@index([ciudad])
+  @@index([precio])
+}
