@@ -9,7 +9,7 @@ export default function Home() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    fetch('http://localhost:3001/proyectos/referencia')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/proyectos/referencia`)
       .then(res => res.json())
       .then(data => {
         if (data.success && data.data.length > 0) {
@@ -47,7 +47,7 @@ export default function Home() {
           <div className="flex justify-between items-center h-20 py-4">
             <div className="flex items-center">
               <img
-                src="http://localhost:3001/uploads/logo.jpg"
+                src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/logo.jpg`}
                 alt="Nde Rogara"
                 className="h-16 w-16 object-contain"
                 onError={(e) => {
@@ -100,7 +100,7 @@ export default function Home() {
             {proyectos[currentIndex]?.imagenUrl && (
               <div className="aspect-[16/9] bg-gray-200 overflow-hidden">
                 <img 
-                  src={`http://localhost:3001${proyectos[currentIndex].imagenUrl}`}
+                  src={`${process.env.NEXT_PUBLIC_API_URL}${proyectos[currentIndex].imagenUrl}`}
                   alt={proyectos[currentIndex].nombre}
                   className="w-full h-full object-cover object-center"
                   onError={(e) => {
