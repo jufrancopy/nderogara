@@ -1,11 +1,11 @@
 import { FastifyInstance } from 'fastify';
 import { getUsers, createUser, updateUser, deleteUser, updateUserImage } from '../controllers/adminUsersController';
-import { authenticateToken, requireAdmin } from '../middleware/auth';
+import { authenticate, isAdmin } from '../middleware/auth';
 
 export default async function adminUsersRoutes(fastify: FastifyInstance) {
   // Aplicar middleware de autenticación y admin a todas las rutas
-  fastify.addHook('preHandler', authenticateToken);
-  fastify.addHook('preHandler', requireAdmin);
+  fastify.addHook('preHandler', authenticate);
+  fastify.addHook('preHandler', isAdmin);
 
   // Obtener todos los usuarios
   fastify.get('/', getUsers);
