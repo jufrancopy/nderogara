@@ -63,7 +63,7 @@ export default function MaterialesPage() {
 
   const filteredMateriales = materiales.filter(material =>
     material.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    material.proveedor.toLowerCase().includes(searchTerm.toLowerCase())
+    material.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const totalPages = Math.ceil(filteredMateriales.length / itemsPerPage)
