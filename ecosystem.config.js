@@ -20,7 +20,7 @@ module.exports = {
     {
       name: 'nderogara-frontend',
       cwd: './frontend',
-      script: '.next/standalone/server.js',
+      script: 'server.js',
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
