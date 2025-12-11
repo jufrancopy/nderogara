@@ -37,7 +37,8 @@ export default function Navbar() {
                 alt="Nde Rogara"
                 className="h-16 w-16 object-contain"
                 onError={(e) => {
-                  e.currentTarget.style.display = 'none';
+                  console.log('Error loading logo in login navbar:', e);
+                  // e.currentTarget.style.display = 'none';
                 }}
               />
               <h1 className="ml-4 text-xl font-bold bg-gradient-to-r bg-clip-text text-transparent" style={{backgroundImage: 'linear-gradient(to right, #38603B, #B99742)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Nde Rogara</h1>
