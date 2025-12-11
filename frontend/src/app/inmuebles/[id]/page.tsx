@@ -189,7 +189,7 @@ export default function InmuebleDetallePage() {
             </button>
             
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
-              {imagenes.map((_, idx) => (
+              {imagenes.map((_: string, idx: number) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentImageIndex(idx)}
