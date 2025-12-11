@@ -117,9 +117,14 @@ export default function Navbar() {
                     Inmuebles
                   </Link>
                   {user?.rol === 'ADMIN' && (
-                    <Link href="/admin/materiales" className={`px-3 py-2 rounded ${pathname.startsWith('/admin') ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:text-gray-900'}`}>
-                      Catálogo
-                    </Link>
+                    <>
+                      <Link href="/admin/materiales" className={`px-3 py-2 rounded ${pathname.startsWith('/admin/materiales') ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:text-gray-900'}`}>
+                        Catálogo
+                      </Link>
+                      <Link href="/admin/usuarios" className={`px-3 py-2 rounded ${pathname.startsWith('/admin/usuarios') ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:text-gray-900'}`}>
+                        Usuarios
+                      </Link>
+                    </>
                   )}
                 </>
               )}
@@ -177,9 +182,14 @@ export default function Navbar() {
                     Inmuebles
                   </Link>
                   {user?.rol === 'ADMIN' && (
-                    <Link href="/admin/materiales" className="block py-2 text-gray-600">
-                      Catálogo
-                    </Link>
+                    <>
+                      <Link href="/admin/materiales" className="block py-2 text-gray-600">
+                        Catálogo
+                      </Link>
+                      <Link href="/admin/usuarios" className="block py-2 text-gray-600">
+                        Usuarios
+                      </Link>
+                    </>
                   )}
                 </>
               )}
