@@ -67,7 +67,7 @@ export default function InmuebleDetallePage() {
 
   const fetchInmueble = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/inmuebles/${params.id}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/inmuebles/${params.id}`);
       const data = await response.json();
       
       if (data.success) {
@@ -166,10 +166,10 @@ export default function InmuebleDetallePage() {
       <div className="relative">
         <div className="aspect-[16/9] bg-gray-200 overflow-hidden rounded-lg">
           <img 
-            src={`http://localhost:3001${imagenes[currentImageIndex]}`}
+            src={`${process.env.NEXT_PUBLIC_API_URL}${imagenes[currentImageIndex]}`}
             alt={`${inmueble.titulo} - Imagen ${currentImageIndex + 1}`}
             className="w-full h-full object-cover cursor-pointer"
-            onClick={() => setModalImage(`http://localhost:3001${imagenes[currentImageIndex]}`)}
+            onClick={() => setModalImage(`${process.env.NEXT_PUBLIC_API_URL}${imagenes[currentImageIndex]}`)}
           />
         </div>
         

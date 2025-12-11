@@ -50,7 +50,7 @@ export default function InmueblesPage() {
       if (filtros.precioMin) params.append('precioMin', filtros.precioMin);
       if (filtros.precioMax) params.append('precioMax', filtros.precioMax);
 
-      const response = await fetch(`http://localhost:3001/inmuebles?${params}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/inmuebles?${params}`);
       const data = await response.json();
       
       if (data.success) {
@@ -209,7 +209,7 @@ export default function InmueblesPage() {
                     <div className="h-48 bg-gray-200 overflow-hidden">
                       {imagenes.length > 0 ? (
                         <img
-                          src={`http://localhost:3001${imagenes[0]}`}
+                          src={`${process.env.NEXT_PUBLIC_API_URL}${imagenes[0]}`}
                           alt={inmueble.titulo}
                           className="w-full h-full object-cover"
                         />
