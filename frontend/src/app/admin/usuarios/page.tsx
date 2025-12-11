@@ -20,6 +20,8 @@ export default function AdminUsuariosPage() {
     telefono: '',
     empresa: ''
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -71,6 +73,10 @@ export default function AdminUsuariosPage() {
 
       const data = await response.json();
       if (data.success) {
+        // Si hay imagen seleccionada, subirla
+        if (selectedImage) {
+          await uploadImage(data.data.id);
+        }
         fetchUsuarios();
         closeModal();
       } else {
@@ -106,6 +112,32 @@ export default function AdminUsuariosPage() {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (userId: string) => {
+    if (!selectedImage) return;
+    
+    const formData = new FormData();
+    formData.append('file', selectedImage);
+    
+    const token = localStorage.getItem('token');
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}/image`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    });
+  };
+
   const openModal = (user?: any) => {
     if (user) {
       setEditingUser(user);
@@ -117,6 +149,7 @@ export default function AdminUsuariosPage() {
         telefono: user.telefono || '',
         empresa: user.empresa || ''
       });
+      setImagePreview(user.image ? `${process.env.NEXT_PUBLIC_API_URL}${user.image}` : '');
     } else {
       setEditingUser(null);
       setFormData({
@@ -127,7 +160,9 @@ export default function AdminUsuariosPage() {
         telefono: '',
         empresa: ''
       });
+      setImagePreview('');
     }
+    setSelectedImage(null);
     setShowModal(true);
   };
 
@@ -311,6 +346,27 @@ export default function AdminUsuariosPage() {
                   onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
                 />
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Foto de perfil
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    {imagePreview && (
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="h-16 w-16 rounded-full object-cover"
+                      />
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+                </div>
                 
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
