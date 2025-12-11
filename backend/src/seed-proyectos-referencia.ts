@@ -41,82 +41,50 @@ async function seedProyectosReferencia() {
     {
       nombre: 'Cemento Portland 50kg',
       unidad: UnidadMedida.BOLSA,
-      precioUnitario: 45000,
-      proveedor: 'INC',
-      tipoCalidad: TipoCalidad.PREMIUM,
-      comisionPorcentaje: 8,
       categoriaId: categoria.id,
-      esCatalogo: true
+      usuarioId: null // null = catálogo admin
     },
     {
       nombre: 'Ladrillo Común 6 huecos',
       unidad: UnidadMedida.UNIDAD,
-      precioUnitario: 850,
-      proveedor: 'Ladrillera Ita',
-      tipoCalidad: TipoCalidad.COMUN,
-      comisionPorcentaje: 5,
       categoriaId: categoria.id,
-      esCatalogo: true
+      usuarioId: null
     },
     {
       nombre: 'Arena Fina',
       unidad: UnidadMedida.M3,
-      precioUnitario: 180000,
-      proveedor: 'Arenera Central',
-      tipoCalidad: TipoCalidad.COMUN,
-      comisionPorcentaje: 10,
       categoriaId: categoria.id,
-      esCatalogo: true
+      usuarioId: null
     },
     {
       nombre: 'Piedra Partida',
       unidad: UnidadMedida.M3,
-      precioUnitario: 220000,
-      proveedor: 'Arenera Central',
-      tipoCalidad: TipoCalidad.COMUN,
-      comisionPorcentaje: 10,
       categoriaId: categoria.id,
-      esCatalogo: true
+      usuarioId: null
     },
     {
       nombre: 'Hierro 8mm',
       unidad: UnidadMedida.KG,
-      precioUnitario: 7500,
-      proveedor: 'Aceros del Paraguay',
-      tipoCalidad: TipoCalidad.INDUSTRIAL,
-      comisionPorcentaje: 12,
       categoriaId: categoria.id,
-      esCatalogo: true
+      usuarioId: null
     },
     {
       nombre: 'Cal Hidratada 20kg',
       unidad: UnidadMedida.BOLSA,
-      precioUnitario: 28000,
-      proveedor: 'Calera Vallemí',
-      tipoCalidad: TipoCalidad.COMUN,
-      comisionPorcentaje: 6,
       categoriaId: categoria.id,
-      esCatalogo: true
+      usuarioId: null
     },
     {
       nombre: 'Cerámica Piso 45x45cm',
       unidad: UnidadMedida.M2,
-      precioUnitario: 65000,
-      proveedor: 'Cerámicas Itá',
-      tipoCalidad: TipoCalidad.PREMIUM,
-      comisionPorcentaje: 15,
       categoriaId: categoria.id,
-      esCatalogo: true
+      usuarioId: null
     },
     {
       nombre: 'Pintura Látex Interior 20L',
       unidad: UnidadMedida.UNIDAD,
-      precioUnitario: 280000,
-      proveedor: 'Pinturas Unidas',
-      tipoCalidad: TipoCalidad.PREMIUM,
-      comisionPorcentaje: 18,
       categoriaId: categoria.id,
-      esCatalogo: true
+      usuarioId: null
     }
   ];
 
@@ -124,7 +92,7 @@ async function seedProyectosReferencia() {
   const materialesCreados = [];
   for (const mat of materiales) {
     const existing = await prisma.material.findFirst({
-      where: { nombre: mat.nombre, esCatalogo: true }
+      where: { nombre: mat.nombre, usuarioId: null }
     });
     
     if (!existing) {
