@@ -242,7 +242,6 @@ model Proyecto {
   encargadoNombre     String?
   encargadoTelefono   String?
   esReferencia        Boolean           @default(false) // Proyecto de referencia público
-  imagenUrl           String?           // Imagen del plano o fachada
   usuarioId           String
   usuario             User              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   presupuestoItems    PresupuestoItem[]
