@@ -34,8 +34,7 @@ export const crearMaterial = async (request: FastifyRequest, reply: FastifyReply
         unidad,
         categoriaId,
         imagenUrl,
-        precio,
-        marca,
+        precioPersonalizado: precio,
         usuarioId: userId,
         esActivo: true
       },
@@ -73,8 +72,7 @@ export const actualizarMaterial = async (request: FastifyRequest, reply: Fastify
         unidad,
         categoriaId,
         imagenUrl,
-        precio,
-        marca,
+        precioPersonalizado: precio,
         esActivo
       },
       include: { categoria: true }

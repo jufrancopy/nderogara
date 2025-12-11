@@ -60,7 +60,7 @@ export const presupuestoController = {
       console.log('📦 Materiales encontrados:', item.materialesPorItem.length)
       
       const costoMateriales = item.materialesPorItem.reduce((total, materialItem) => {
-        const precioUnitario = Number(materialItem.material.precioUnitario)
+        const precioUnitario = Number(materialItem.material.precioPersonalizado || 0)
         const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad)
         const costoMaterial = precioUnitario * cantidadPorUnidad
         

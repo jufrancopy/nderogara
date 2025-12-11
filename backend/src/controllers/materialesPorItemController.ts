@@ -47,7 +47,7 @@ export const materialesPorItemController = {
             select: {
               nombre: true,
               unidad: true,
-              precioUnitario: true
+              precioPersonalizado: true
             }
           }
         }
@@ -100,7 +100,7 @@ export const materialesPorItemController = {
             select: {
               nombre: true,
               unidad: true,
-              precioUnitario: true
+              precioPersonalizado: true
             }
           }
         }

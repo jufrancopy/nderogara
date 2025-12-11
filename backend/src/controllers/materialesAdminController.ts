@@ -18,7 +18,7 @@ export const createMaterialCatalogo = async (
   try {
     const material = await prisma.material.create({
       data: {
-        ...request.body,
+        ...(request.body as any),
         usuarioId: null, // null = catálogo público
       },
       include: { 
@@ -52,7 +52,7 @@ export const updateMaterialCatalogo = async (
 
     const updated = await prisma.material.update({
       where: { id },
-      data: request.body,
+      data: request.body as any,
       include: { 
         categoria: true,
         ofertas: {
