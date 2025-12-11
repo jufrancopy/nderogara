@@ -121,8 +121,7 @@ model Material {
   categoriaId         String
   imagenUrl           String?
   esActivo            Boolean             @default(true)
-  precio              Decimal?            @db.Decimal(10, 2) // Precio del material
-  marca               String?             // Marca del material
+  precioPersonalizado Decimal?            @db.Decimal(10, 2) // Precio personalizado del material
   // usuarioId null = catálogo admin (referencia), con id = material de proveedor o personalizado
   usuarioId           String?
   categoria           CategoriaMaterial   @relation(fields: [categoriaId], references: [id])
