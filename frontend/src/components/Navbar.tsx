@@ -33,7 +33,7 @@ export default function Navbar() {
           <div className="flex justify-between items-center h-20 py-4">
             <div className="flex items-center">
               <img
-                src="http://localhost:3001/uploads/logo.jpg"
+                src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/logo.jpg`}
                 alt="Nde Rogara"
                 className="h-16 w-16 object-contain"
                 onError={(e) => {
@@ -66,7 +66,7 @@ export default function Navbar() {
           <div className="flex items-center gap-8">
             <Link href="/proyectos" className="flex items-center">
               <img
-                src="http://localhost:3001/uploads/logo.jpg"
+                src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/logo.jpg`}
                 alt="Nde Rogara"
                 className="h-16 w-16 object-contain"
                 onError={(e) => {
