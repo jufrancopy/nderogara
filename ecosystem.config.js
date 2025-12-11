@@ -20,11 +20,11 @@ module.exports = {
     {
       name: 'nderogara-frontend',
       cwd: './frontend',
-      script: 'npm',
-      args: 'start',
+      script: '.next/standalone/server.js',
       env: {
         NODE_ENV: 'production',
-        PORT: 3000
+        PORT: 3000,
+        HOSTNAME: '0.0.0.0'
       },
       instances: 1,
       exec_mode: 'cluster',
