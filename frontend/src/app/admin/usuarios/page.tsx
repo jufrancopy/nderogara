@@ -141,15 +141,29 @@ export default function AdminUsuariosPage() {
   const uploadImage = async (userId: string) => {
     if (!selectedImage) return;
     
-    const formData = new FormData();
-    formData.append('file', selectedImage);
-    
-    const token = localStorage.getItem('token');
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}/image`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData
-    });
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedImage);
+      
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}/image`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error uploading image:', response.status, errorText);
+        throw new Error(`Error ${response.status}: ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log('Image uploaded successfully:', result);
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('Error al subir la imagen. Intenta con una imagen más pequeña.');
+    }
   };
 
   const openModal = (user?: any) => {
