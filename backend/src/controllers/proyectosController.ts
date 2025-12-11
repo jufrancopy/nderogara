@@ -33,7 +33,7 @@ export const proyectosController = {
       }
 
       const proyectos = await prisma.proyecto.findMany({
-        where: { usuarioId: request.user.id },
+        where: { usuarioId: (request.user as any).id },
         include: {
           usuario: {
             select: { id: true, name: true, email: true }
@@ -73,7 +73,7 @@ export const proyectosController = {
       const proyecto = await prisma.proyecto.findFirst({
         where: { 
           id,
-          usuarioId: request.user.id
+          usuarioId: (request.user as any).id
         },
         include: {
           usuario: {
@@ -119,7 +119,7 @@ export const proyectosController = {
           error: 'No autenticado',
         })
       }
-      const usuarioId = request.user.id
+      const usuarioId = (request.user as any).id
 
       console.log('📝 Creating proyecto with data:', request.body)
       const validatedData = createProyectoSchema.parse(request.body)
@@ -234,7 +234,7 @@ export const proyectosController = {
       const { id } = request.params
 
       const existing = await prisma.proyecto.findFirst({
-        where: { id, usuarioId: request.user.id }
+        where: { id, usuarioId: (request.user as any).id }
       })
 
       if (!existing) {
@@ -278,7 +278,7 @@ export const proyectosController = {
       const { estado } = request.body
 
       const existing = await prisma.proyecto.findFirst({
-        where: { id, usuarioId: request.user.id }
+        where: { id, usuarioId: (request.user as any).id }
       })
 
       if (!existing) {

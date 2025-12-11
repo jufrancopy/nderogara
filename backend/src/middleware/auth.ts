@@ -9,7 +9,7 @@ export const authenticate = async (request: FastifyRequest, reply: FastifyReply)
 };
 
 export const isAdmin = async (request: FastifyRequest, reply: FastifyReply) => {
-  if (request.user.rol !== 'ADMIN') {
+  if ((request.user as any).rol !== 'ADMIN') {
     reply.status(403).send({ success: false, error: 'Acceso denegado. Se requiere rol de administrador' });
   }
 };

@@ -16,7 +16,7 @@ export async function itemsRoutes(fastify: FastifyInstance) {
   // POST /items - Solo administradores
   fastify.post('/', { 
     preHandler: [async (request, reply) => {
-      await fastify.jwtVerify(request, reply)
+      await request.jwtVerify()
       await hasRole(['ADMIN'])(request, reply)
     }] 
   }, itemsController.createItem)
@@ -24,7 +24,7 @@ export async function itemsRoutes(fastify: FastifyInstance) {
   // PUT /items/:id - Solo administradores
   fastify.put('/:id', { 
     preHandler: [async (request, reply) => {
-      await fastify.jwtVerify(request, reply)
+      await request.jwtVerify()
       await hasRole(['ADMIN'])(request, reply)
     }] 
   }, itemsController.updateItem)
@@ -32,7 +32,7 @@ export async function itemsRoutes(fastify: FastifyInstance) {
   // DELETE /items/:id - Solo administradores
   fastify.delete('/:id', { 
     preHandler: [async (request, reply) => {
-      await fastify.jwtVerify(request, reply)
+      await request.jwtVerify()
       await hasRole(['ADMIN'])(request, reply)
     }] 
   }, itemsController.deleteItem)
@@ -41,7 +41,7 @@ export async function itemsRoutes(fastify: FastifyInstance) {
   // POST /items/:id/materiales
   fastify.post('/:id/materiales', { 
     preHandler: [async (request, reply) => {
-      await fastify.jwtVerify(request, reply)
+      await request.jwtVerify()
       await hasRole(['ADMIN'])(request, reply)
     }] 
   }, materialesPorItemController.addMaterialToItem)
@@ -49,7 +49,7 @@ export async function itemsRoutes(fastify: FastifyInstance) {
   // PUT /items/:itemId/materiales/:materialId - Solo administradores
   fastify.put('/:itemId/materiales/:materialId', { 
     preHandler: [async (request, reply) => {
-      await fastify.jwtVerify(request, reply)
+      await request.jwtVerify()
       await hasRole(['ADMIN'])(request, reply)
     }] 
   }, materialesPorItemController.updateMaterialInItem)
@@ -57,7 +57,7 @@ export async function itemsRoutes(fastify: FastifyInstance) {
   // DELETE /items/:itemId/materiales/:materialId - Solo administradores
   fastify.delete('/:itemId/materiales/:materialId', { 
     preHandler: [async (request, reply) => {
-      await fastify.jwtVerify(request, reply)
+      await request.jwtVerify()
       await hasRole(['ADMIN'])(request, reply)
     }] 
   }, materialesPorItemController.removeMaterialFromItem)

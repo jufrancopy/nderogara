@@ -86,7 +86,7 @@ export const login = async (request: FastifyRequest<{ Body: LoginBody }>, reply:
 
 export const getProfile = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = request.user.id;
+    const userId = (request.user as any).id;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
