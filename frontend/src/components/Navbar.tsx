@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Building2, LogOut } from 'lucide-react';
+import { Building2, LogOut, Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -43,7 +44,7 @@ export default function Navbar() {
               />
               <h1 className="ml-4 text-xl font-bold bg-gradient-to-r bg-clip-text text-transparent" style={{backgroundImage: 'linear-gradient(to right, #38603B, #B99742)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Nde Rogara</h1>
             </div>
-            <div className="flex gap-3">
+            <div className="hidden sm:flex gap-3">
               <Link href="/login" className="text-gray-600 hover:text-gray-900 px-4 py-2">
                 Iniciar Sesión
               </Link>
@@ -51,7 +52,24 @@ export default function Navbar() {
                 Registrarse
               </Link>
             </div>
+            <div className="sm:hidden">
+              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2">
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
           </div>
+          {mobileMenuOpen && (
+            <div className="sm:hidden border-t bg-white">
+              <div className="px-4 py-2 space-y-2">
+                <Link href="/login" className="block text-gray-600 hover:text-gray-900 py-2">
+                  Iniciar Sesión
+                </Link>
+                <Link href="/login" className="block text-white text-center py-2 rounded-lg" style={{backgroundColor: '#38603B'}}>
+                  Registrarse
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </header>
     );
@@ -76,7 +94,7 @@ export default function Navbar() {
               />
               <span className="ml-2 text-xl font-bold text-gray-900">Nde Rogara</span>
             </Link>
-            <nav className="flex gap-4">
+            <nav className="hidden lg:flex gap-4">
               {user?.rol === 'PROVEEDOR_MATERIALES' ? (
                 <Link href="/proveedor/materiales" className={`px-3 py-2 rounded ${pathname.startsWith('/proveedor') ? 'bg-purple-50 text-purple-600' : 'text-gray-600 hover:text-gray-900'}`}>
                   Mis Materiales
@@ -108,7 +126,7 @@ export default function Navbar() {
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-right">
+            <div className="hidden sm:block text-right">
               <div className="text-sm font-medium text-gray-900">{user?.name || user?.email}</div>
               {user?.rol === 'ADMIN' && (
                 <div className="text-xs text-orange-600 font-semibold">★ Admin</div>
@@ -125,10 +143,55 @@ export default function Navbar() {
               className="flex items-center gap-2 text-gray-600 hover:text-red-600 px-3 py-2 rounded hover:bg-red-50 transition-colors"
             >
               <LogOut className="h-4 w-4" />
-              Salir
+              <span className="hidden sm:inline">Salir</span>
             </button>
+            <div className="lg:hidden">
+              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2">
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
           </div>
         </div>
+        {mobileMenuOpen && (
+          <div className="lg:hidden border-t bg-white">
+            <div className="px-4 py-2 space-y-2">
+              {user?.rol === 'PROVEEDOR_MATERIALES' ? (
+                <Link href="/proveedor/materiales" className="block py-2 text-gray-600">
+                  Mis Materiales
+                </Link>
+              ) : (
+                <>
+                  <Link href="/proyectos" className="block py-2 text-gray-600">
+                    Proyectos
+                  </Link>
+                  <Link href="/referencia" className="block py-2 text-gray-600">
+                    Referencia
+                  </Link>
+                  <Link href="/materiales" className="block py-2 text-gray-600">
+                    Materiales
+                  </Link>
+                  <Link href="/items" className="block py-2 text-gray-600">
+                    Items
+                  </Link>
+                  <Link href="/inmuebles" className="block py-2 text-gray-600">
+                    Inmuebles
+                  </Link>
+                  {user?.rol === 'ADMIN' && (
+                    <Link href="/admin/materiales" className="block py-2 text-gray-600">
+                      Catálogo
+                    </Link>
+                  )}
+                </>
+              )}
+              <div className="border-t pt-2 mt-2">
+                <div className="text-sm font-medium text-gray-900">{user?.name || user?.email}</div>
+                {user?.rol === 'ADMIN' && (
+                  <div className="text-xs text-orange-600 font-semibold">★ Admin</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );
