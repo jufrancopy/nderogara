@@ -55,9 +55,9 @@ export default function Home() {
                   e.currentTarget.nextElementSibling?.classList.remove('ml-2');
                 }}
               />
-              <h1 className="ml-4 text-xl font-bold bg-gradient-to-r bg-clip-text text-transparent" style={{backgroundImage: 'linear-gradient(to right, #38603B, #B99742)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Nde Rogara</h1>
+              <h1 className="ml-2 sm:ml-4 text-lg sm:text-xl font-bold bg-gradient-to-r bg-clip-text text-transparent" style={{backgroundImage: 'linear-gradient(to right, #38603B, #B99742)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Nde Rogara</h1>
             </div>
-            <div className="flex gap-3">
+            <div className="hidden sm:flex gap-3">
               <Link href="/inmuebles" className="text-gray-600 hover:text-gray-900 px-4 py-2">
                 Inmuebles
               </Link>
@@ -68,6 +68,11 @@ export default function Home() {
                 Comenzar Gratis
               </Link>
             </div>
+            <div className="sm:hidden">
+              <Link href="/login" className="text-white px-4 py-2 rounded-lg" style={{backgroundColor: '#38603B'}}>
+                Login
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -75,10 +80,10 @@ export default function Home() {
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
         <div className="text-center">
-          <h2 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
             Planifica tu <span className="bg-gradient-to-r bg-clip-text text-transparent" style={{backgroundImage: 'linear-gradient(to right, #38603B, #B99742)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Vivienda Ideal</span>
           </h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+          <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-3xl mx-auto px-4">
             Controla cada detalle de tu proyecto de construcción. Presupuestos precisos, materiales optimizados y seguimiento en tiempo real.
           </p>
           <Link 
