@@ -32,7 +32,8 @@ fastify.register(cors, {
     'https://nderogara.thepydeveloper.dev',
     process.env.FRONTEND_URL
   ].filter((url): url is string => Boolean(url)),
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 })
 
 fastify.register(jwt, {
