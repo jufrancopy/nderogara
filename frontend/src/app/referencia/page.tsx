@@ -15,7 +15,7 @@ export default function ProyectosReferenciaPage() {
 
   const fetchProyectos = async () => {
     try {
-      const response = await fetch('http://localhost:3001/proyectos/referencia');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/proyectos/referencia`);
       const data = await response.json();
       if (data.success) {
         setProyectos(data.data);
