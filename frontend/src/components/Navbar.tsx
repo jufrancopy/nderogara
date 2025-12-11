@@ -26,8 +26,8 @@ export default function Navbar() {
 
   if (pathname === '/') return null;
 
-  // Si no hay usuario, mostrar navbar básico en inmuebles y login
-  if (!user && (pathname.startsWith('/inmuebles') || pathname === '/login')) {
+  // Si no hay usuario, mostrar navbar básico en inmuebles, login y referencia
+  if (!user && (pathname.startsWith('/inmuebles') || pathname === '/login' || pathname.startsWith('/referencia'))) {
     return (
       <header className="bg-white/80 backdrop-blur-sm shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -75,7 +75,7 @@ export default function Navbar() {
     );
   }
 
-  // Si no hay usuario en otras páginas, redirigir a login
+  // Si no hay usuario en otras páginas, no mostrar navbar
   if (!user) return null;
 
   return (

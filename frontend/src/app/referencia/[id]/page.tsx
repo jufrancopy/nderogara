@@ -10,10 +10,19 @@ export default function DetalleReferenciaPage() {
   const params = useParams();
   const [proyecto, setProyecto] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    // Verificar si hay usuario logueado
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+  }, []);
 
   useEffect(() => {
     if (params.id) {
-      fetch(`http://localhost:3001/proyectos/referencia/${params.id}`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/proyectos/referencia/${params.id}`)
         .then(res => res.json())
         .then(data => {
           if (data.success) setProyecto(data.data);
@@ -34,9 +43,13 @@ export default function DetalleReferenciaPage() {
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <Link href="/referencia" className="inline-flex items-center gap-2 mb-6" style={{color: '#38603B'}}>
+          <Link 
+            href={user ? "/referencia" : "/"} 
+            className="inline-flex items-center gap-2 mb-6" 
+            style={{color: '#38603B'}}
+          >
             <ArrowLeft className="h-4 w-4" />
-            Volver a Proyectos de Referencia
+            {user ? "Volver a Proyectos de Referencia" : "Volver al Inicio"}
           </Link>
 
           <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
