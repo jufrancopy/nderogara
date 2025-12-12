@@ -13,7 +13,7 @@ import api from '@/lib/api'
 const itemSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
   descripcion: z.string().optional(),
-  unidadMedida: z.enum(['KG; 'BOLSA; 'M2; 'M3; 'ML; 'UNIDAD; 'LOTE; 'GLOBAL']),
+  unidadMedida: z.enum(['KG', 'BOLSA', 'M2', 'M3', 'ML', 'UNIDAD', 'LOTE', 'GLOBAL']),
   manoObraUnitaria: z.number().min(0, 'La mano de obra debe ser mayor o igual a 0').optional(),
   notasGenerales: z.string().optional()
 })
@@ -44,11 +44,11 @@ export default function NuevoItemPage() {
         manoObraUnitaria: data.manoObraUnitaria || undefined
       }
 
-      await api.post('/items; cleanData)
+      await api.post('/items', cleanData)
       toast.success('Item creado exitosamente')
       router.push('/items')
     } catch (error: any) {
-      console.error('Error creating item:; error)
+      console.error('Error creating item:', error)
       const errorMessage = error.response?.data?.error || 'Error al crear el item'
       toast.error(errorMessage)
     } finally {
@@ -133,7 +133,7 @@ export default function NuevoItemPage() {
                       type="number"
                       step="1"
                       min="0"
-                      {...register('manoObraUnitaria; { valueAsNumber: true })}
+                      {...register('manoObraUnitaria', { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       placeholder="25000"
                     />
