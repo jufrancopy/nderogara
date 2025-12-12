@@ -108,7 +108,7 @@ export default function DetalleReferenciaPage() {
                 </div>
               )}
 
-              <div className="p-4 mb-6" style={{backgroundColor: '#f0f9f0; borderLeft: '4px solid #38603B'}}>
+              <div className="p-4 mb-6" style={{backgroundColor: '#f0f9f0', borderLeft: '4px solid #38603B'}}>
                 <p className="text-sm text-gray-700">
                   <strong>Nota:</strong> Este es un proyecto de referencia con precios estimados para Paraguay. 
                   Los costos pueden variar según tu ubicación y proveedores.
