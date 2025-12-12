@@ -44,7 +44,7 @@ export default function MisMaterialesPage() {
         setMateriales(data);
       }
     } catch (error) {
-      console.error('Error al cargar materiales:error);
+      console.error('Error al cargar materiales:', error);
     } finally {
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export default function MisMaterialesPage() {
 
       fetchMateriales();
     } catch (error) {
-      console.error('Error al actualizar material:error);
+      console.error('Error al actualizar material:', error);
     }
   };
 
@@ -83,7 +83,7 @@ export default function MisMaterialesPage() {
 
       fetchMateriales();
     } catch (error) {
-      console.error('Error al eliminar material:error);
+      console.error('Error al eliminar material:', error);
     }
   };
 
@@ -144,7 +144,7 @@ export default function MisMaterialesPage() {
       setPriceUpdateMaterial(null);
       setNewPrice('');
     } catch (error) {
-      console.error('Error updating price:error);
+      console.error('Error updating price:', error);
       toast.error('Error al actualizar el precio');
     }
   };

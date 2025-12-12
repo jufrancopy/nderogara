@@ -12,7 +12,7 @@ import toast from 'react-hot-toast'
 const materialSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
   descripcion: z.string().optional(),
-  unidad: z.enum(['KG; 'BOLSA; 'M2; 'M3; 'ML; 'UNIDAD; 'LOTE; 'GLOBAL']),
+  unidad: z.enum(['KG', 'BOLSA', 'M2', 'M3', 'ML', 'UNIDAD', 'LOTE', 'GLOBAL']),
   precio: z.number().positive('El precio debe ser mayor a 0'),
   marca: z.string().optional(),
   categoriaId: z.string().min(1, 'La categoría es requerida'),
