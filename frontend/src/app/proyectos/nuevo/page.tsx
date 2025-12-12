@@ -59,7 +59,9 @@ export default function NuevoProyectoPage() {
       setValue('usuarioId', user.id)
     } catch (error) {
       console.error('Error fetching user:', error)
-      toast.error('Error al obtener información del usuario')
+      // Si no puede obtener el usuario, redirigir al login
+      toast.error('Sesión expirada. Redirigiendo al login...')
+      router.push('/login')
     }
   }
 
