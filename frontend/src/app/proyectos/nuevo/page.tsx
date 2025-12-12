@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
-import api from '@/lib/api'
+import api, { API_BASE_URL } from '@/lib/api'
 
 const proyectoSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
@@ -76,7 +76,7 @@ export default function NuevoProyectoPage() {
         formData.append('file', file);
         
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:3001/upload/imagen', {
+        const response = await fetch('${API_BASE_URL}/upload/imagen', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: formData
@@ -238,7 +238,7 @@ export default function NuevoProyectoPage() {
                       <div className="mt-3 grid grid-cols-3 gap-2">
                         {imagenes.map((url, index) => (
                           <div key={index} className="relative">
-                            <img src={`http://localhost:3001${url}`} alt={`Plano ${index + 1}`} className="w-full h-20 object-cover rounded" />
+                            <img src={`${API_BASE_URL}${url}`} alt={`Plano ${index + 1}`} className="w-full h-20 object-cover rounded" />
                             <button
                               type="button"
                               onClick={() => setImagenes(prev => prev.filter((_, i) => i !== index))}

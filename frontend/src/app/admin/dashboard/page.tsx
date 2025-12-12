@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import PageLoader from '@/components/PageLoader';
+import { API_BASE_URL } from '@/lib/api';
 import {
   Building2,
   Users,
@@ -69,7 +70,7 @@ export default function AdminDashboardPage() {
   const fetchDashboard = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/admin/dashboard', {
+      const response = await fetch(`${API_BASE_URL}/admin/dashboard`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const result = await response.json();

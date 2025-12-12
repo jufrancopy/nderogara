@@ -35,7 +35,7 @@ export default function MisMaterialesPage() {
   const fetchMateriales = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:3001/proveedor/mis-materiales', {
+      const res = await fetch('${API_BASE_URL}/proveedor/mis-materiales', {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -56,7 +56,7 @@ export default function MisMaterialesPage() {
       const material = materiales.find(m => m.id === id);
       if (!material) return;
 
-      await fetch(`http://localhost:3001/proveedor/materiales/${id}`, {
+      await fetch(`${API_BASE_URL}/proveedor/materiales/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ export default function MisMaterialesPage() {
 
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:3001/proveedor/materiales/${id}`, {
+      await fetch(`${API_BASE_URL}/proveedor/materiales/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -127,7 +127,7 @@ export default function MisMaterialesPage() {
 
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:3001/proveedor/materiales/${priceUpdateMaterial.id}`, {
+      await fetch(`${API_BASE_URL}/proveedor/materiales/${priceUpdateMaterial.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -192,7 +192,7 @@ export default function MisMaterialesPage() {
               <div key={material.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
                 {material.imagenUrl && (
                   <img
-                    src={`http://localhost:3001${material.imagenUrl}`}
+                    src={`${API_BASE_URL}${material.imagenUrl}`}
                     alt={material.nombre}
                     className="w-full h-48 object-cover"
                   />

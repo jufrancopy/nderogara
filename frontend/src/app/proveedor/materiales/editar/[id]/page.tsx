@@ -92,7 +92,7 @@ export default function EditarMaterialProveedorPage() {
   const fetchCategorias = async () => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('http://localhost:3001/categorias', {
+      const response = await fetch('${API_BASE_URL}/categorias', {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (response.ok) {
@@ -113,7 +113,7 @@ export default function EditarMaterialProveedorPage() {
   const fetchMaterial = async () => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('http://localhost:3001/proveedor/mis-materiales', {
+      const response = await fetch('${API_BASE_URL}/proveedor/mis-materiales', {
         headers: { Authorization: `Bearer ${token}` }
       })
 
@@ -178,7 +178,7 @@ export default function EditarMaterialProveedorPage() {
 
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('http://localhost:3001/upload', {
+      const response = await fetch('${API_BASE_URL}/upload', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -207,7 +207,7 @@ export default function EditarMaterialProveedorPage() {
 
       // Get the current material data first
       const token = localStorage.getItem('token')
-      const listResponse = await fetch('http://localhost:3001/proveedor/mis-materiales', {
+      const listResponse = await fetch('${API_BASE_URL}/proveedor/mis-materiales', {
         headers: { Authorization: `Bearer ${token}` }
       })
 
@@ -235,7 +235,7 @@ export default function EditarMaterialProveedorPage() {
         esActivo: data.esActivo ?? true
       }
 
-      const updateResponse = await fetch(`http://localhost:3001/proveedor/materiales/${materialId}`, {
+      const updateResponse = await fetch(`${API_BASE_URL}/proveedor/materiales/${materialId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -404,7 +404,7 @@ export default function EditarMaterialProveedorPage() {
                   <div className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden">
                     {previewUrl || currentImageUrl ? (
                       <img
-                        src={previewUrl || `http://localhost:3001${currentImageUrl}`}
+                        src={previewUrl || `${API_BASE_URL}${currentImageUrl}`}
                         alt="Preview"
                         className="w-full h-full object-cover"
                       />

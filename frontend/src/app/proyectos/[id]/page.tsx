@@ -9,7 +9,7 @@ import {
   Calculator, Plus
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import api from '@/lib/api'
+import api, { API_BASE_URL } from '@/lib/api'
 import { formatPrice } from '@/lib/formatters'
 import jsPDF from 'jspdf'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
@@ -405,10 +405,10 @@ export default function ProyectoDetallePage() {
       <div className="relative">
         <div className="aspect-[16/9] bg-gray-200 overflow-hidden rounded-lg">
           <img 
-            src={`http://localhost:3001${imagenes[currentIndex]}`}
+            src={`${API_BASE_URL}${imagenes[currentIndex]}`}
             alt={`Plano ${currentIndex + 1}`}
             className="w-full h-full object-cover cursor-pointer"
-            onClick={() => setModalImage(`http://localhost:3001${imagenes[currentIndex]}`)}
+            onClick={() => setModalImage(`${API_BASE_URL}${imagenes[currentIndex]}`)}
           />
         </div>
         
@@ -536,10 +536,10 @@ export default function ProyectoDetallePage() {
                     <div className="bg-white shadow rounded-lg p-6">
                       <h3 className="text-lg font-medium text-gray-900 mb-4">Imagen del Proyecto</h3>
                       <img 
-                        src={`http://localhost:3001${proyecto.imagenUrl}`} 
+                        src={`${API_BASE_URL}${proyecto.imagenUrl}`} 
                         alt={proyecto.nombre}
                         className="w-full h-64 object-cover rounded-lg cursor-pointer"
-                        onClick={() => setModalImage(`http://localhost:3001${proyecto.imagenUrl}`)}
+                        onClick={() => setModalImage(`${API_BASE_URL}${proyecto.imagenUrl}`)}
                       />
                     </div>
                   );
@@ -1099,7 +1099,7 @@ export default function ProyectoDetallePage() {
                                               <div className="flex items-center space-x-1 text-xs text-red-600">
                                                 <span>📄</span>
                                                 <a
-                                                  href={`http://localhost:3001${pago.comprobanteUrl}`}
+                                                  href={`${API_BASE_URL}${pago.comprobanteUrl}`}
                                                   target="_blank"
                                                   rel="noopener noreferrer"
                                                   className="text-blue-600 hover:text-blue-800 underline"
@@ -1110,10 +1110,10 @@ export default function ProyectoDetallePage() {
                                             ) : (
                                               <div className="flex items-center space-x-2">
                                                 <img
-                                                  src={`http://localhost:3001${pago.comprobanteUrl}`}
+                                                  src={`${API_BASE_URL}${pago.comprobanteUrl}`}
                                                   alt="Comprobante"
                                                   className="w-8 h-8 object-cover rounded border cursor-pointer"
-                                                  onClick={() => window.open(`http://localhost:3001${pago.comprobanteUrl}`, '_blank')}
+                                                  onClick={() => window.open(`${API_BASE_URL}${pago.comprobanteUrl}`, '_blank')}
                                                   onError={(e) => {
                                                     (e.target as HTMLImageElement).style.display = 'none';
                                                   }}

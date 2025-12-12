@@ -23,7 +23,7 @@ export default function AdminMaterialesPage() {
   const fetchMateriales = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/admin/materiales', {
+      const response = await fetch('${API_BASE_URL}/admin/materiales', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -120,7 +120,7 @@ export default function AdminMaterialesPage() {
               {selectedMaterial.imagenUrl && (
                 <div className="mb-6">
                   <img 
-                    src={`http://localhost:3001${selectedMaterial.imagenUrl}`}
+                    src={`${API_BASE_URL}${selectedMaterial.imagenUrl}`}
                     alt={selectedMaterial.nombre}
                     className="w-full h-48 object-cover rounded-lg"
                   />

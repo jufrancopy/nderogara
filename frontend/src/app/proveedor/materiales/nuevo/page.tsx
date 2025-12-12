@@ -28,7 +28,7 @@ export default function NuevoMaterialProveedorPage() {
   const fetchGaleria = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/upload/galeria', {
+      const response = await fetch('${API_BASE_URL}/upload/galeria', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
@@ -49,7 +49,7 @@ export default function NuevoMaterialProveedorPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/upload/imagen', {
+      const response = await fetch('${API_BASE_URL}/upload/imagen', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formDataUpload
@@ -68,7 +68,7 @@ export default function NuevoMaterialProveedorPage() {
   const fetchCategorias = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/categorias', {
+      const response = await fetch('${API_BASE_URL}/categorias', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
@@ -89,7 +89,7 @@ export default function NuevoMaterialProveedorPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/proveedor/materiales', {
+      const response = await fetch('${API_BASE_URL}/proveedor/materiales', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -191,7 +191,7 @@ export default function NuevoMaterialProveedorPage() {
                   </button>
                 </div>
                 {formData.imagenUrl && (
-                  <img src={`http://localhost:3001${formData.imagenUrl}`} alt="Preview" className="w-32 h-32 object-cover rounded-md" />
+                  <img src={`${API_BASE_URL}${formData.imagenUrl}`} alt="Preview" className="w-32 h-32 object-cover rounded-md" />
                 )}
               </div>
             </div>
@@ -209,7 +209,7 @@ export default function NuevoMaterialProveedorPage() {
                       }}
                       className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden"
                     >
-                      <img src={`http://localhost:3001${img.url}`} alt={img.filename} className="w-full h-24 object-cover" />
+                      <img src={`${API_BASE_URL}${img.url}`} alt={img.filename} className="w-full h-24 object-cover" />
                     </div>
                   ))}
                 </div>

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
-import { formatPrice } from '@/lib/formatters'
+import { API_BASE_URL } from '@/lib/api';import { formatPrice } from '@/lib/formatters'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
@@ -529,7 +529,7 @@ export default function MonitoreoObraPage() {
         const formData = new FormData()
         formData.append('file', comprobanteFile)
 
-        const uploadResponse = await fetch('http://localhost:3001/upload/comprobante', {
+        const uploadResponse = await fetch('${API_BASE_URL}/upload/comprobante', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -1017,7 +1017,7 @@ export default function MonitoreoObraPage() {
                                       {pago.comprobanteUrl.toLowerCase().endsWith('.pdf') ? (
                                         <div className="flex items-center justify-center p-4 bg-red-50 rounded">
                                           <a
-                                            href={`http://localhost:3001${pago.comprobanteUrl}`}
+                                            href={`${API_BASE_URL}${pago.comprobanteUrl}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-blue-600 hover:text-blue-800 text-sm underline"
@@ -1028,22 +1028,22 @@ export default function MonitoreoObraPage() {
                                       ) : (
                                         <div className="space-y-2">
                                           <img
-                                            src={`http://localhost:3001${pago.comprobanteUrl}`}
+                                            src={`${API_BASE_URL}${pago.comprobanteUrl}`}
                                             alt="Comprobante de pago"
                                             className="w-full max-w-md h-auto rounded border shadow-sm"
                                             onError={(e) => {
-                                              console.error('Error loading image:', `http://localhost:3001${pago.comprobanteUrl}`);
+                                              console.error('Error loading image:', `${API_BASE_URL}${pago.comprobanteUrl}`);
                                               console.log('Pago data:', pago);
                                               (e.target as HTMLImageElement).style.display = 'none';
                                             }}
                                             onLoad={() => {
-                                              console.log('Image loaded successfully:', `http://localhost:3001${pago.comprobanteUrl}`);
+                                              console.log('Image loaded successfully:', `${API_BASE_URL}${pago.comprobanteUrl}`);
                                             }}
                                           />
                                           <div className="flex items-center space-x-2">
                                             <span className="text-green-600 text-sm">🖼️</span>
                                             <a
-                                              href={`http://localhost:3001${pago.comprobanteUrl}`}
+                                              href={`${API_BASE_URL}${pago.comprobanteUrl}`}
                                               target="_blank"
                                               rel="noopener noreferrer"
                                               className="text-blue-600 hover:text-blue-800 text-sm underline"
