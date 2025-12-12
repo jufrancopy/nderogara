@@ -37,7 +37,7 @@ export default function NuevoMaterialProveedorPage() {
         setGaleria(data.data);
       }
     } catch (error) {
-      console.error('Error al crear material:', error);
+      console.error('Error al cargar galería:', error);
     }
   };
 
@@ -106,7 +106,7 @@ export default function NuevoMaterialProveedorPage() {
         router.push('/proveedor/materiales');
       }
     } catch (error) {
-      console.error('Error al crear material:error);', error);
+      console.error('Error al crear material:', error);
     } finally {
       setLoading(false);
     }
