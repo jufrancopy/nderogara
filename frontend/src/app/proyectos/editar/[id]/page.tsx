@@ -17,7 +17,7 @@ const proyectoSchema = z.object({
   direccion: z.string().optional(),
   fechaInicio: z.string().optional(),
   fechaFinEstimada: z.string().optional(),
-  estado: z.enum(['PLANIFICACION; 'EN_PROGRESO; 'PAUSADO; 'COMPLETADO; 'CANCELADO']),
+  estado: z.enum(['PLANIFICACION', 'EN_PROGRESO', 'PAUSADO', 'COMPLETADO', 'CANCELADO']),
   margenGanancia: z.number().min(0).max(100).optional(),
   clienteNombre: z.string().optional(),
   clienteTelefono: z.string().optional(),
@@ -76,7 +76,7 @@ export default function EditarProyectoPage() {
         encargadoTelefono: proyecto.encargadoTelefono || ''
       })
     } catch (error) {
-      console.error('Error fetching proyecto:; error)
+      console.error('Error fetching proyecto:', error)
       toast.error('Error al cargar el proyecto')
       router.push('/proyectos')
     } finally {
@@ -100,7 +100,7 @@ export default function EditarProyectoPage() {
       toast.success('Proyecto actualizado exitosamente')
       router.push('/proyectos')
     } catch (error: any) {
-      console.error('Error updating proyecto:; error)
+      console.error('Error updating proyecto:', error)
       const errorMessage = error.response?.data?.error || 'Error al actualizar el proyecto'
       toast.error(errorMessage)
     } finally {
@@ -121,20 +121,6 @@ export default function EditarProyectoPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center">
-                <Building2 className="h-8 w-8 text-blue-600" />
-                <h1 className="ml-2 text-xl font-bold text-gray-900">Build Manager</h1>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
@@ -204,7 +190,7 @@ export default function EditarProyectoPage() {
                     <input
                       type="number"
                       step="0.01"
-                      {...register('superficieTotal; { valueAsNumber: true })}
+                      {...register('superficieTotal', { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -218,7 +204,7 @@ export default function EditarProyectoPage() {
                       step="0.1"
                       min="0"
                       max="100"
-                      {...register('margenGanancia; { valueAsNumber: true })}
+                      {...register('margenGanancia', { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -339,7 +325,7 @@ export default function EditarProyectoPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center disabled:opacity-50"
+                  className="px-4 py-2 bg-[#38603B] text-white rounded-md hover:bg-[#2d4a2f] transition-colors flex items-center disabled:opacity-50"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {loading ? 'Guardando...' : 'Actualizar Proyecto'}
