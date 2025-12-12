@@ -9,7 +9,8 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
-import { API_BASE_URL } from '@/lib/api';import { formatPrice } from '@/lib/formatters'
+import { API_BASE_URL } from '@/lib/api'
+import { formatPrice } from '@/lib/formatters'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
@@ -73,7 +74,7 @@ export default function MonitoreoObraPage() {
     etapaId: string
     etapaNombre: string
     presupuestoItems: any[]
-  }>({ isOpen: false, etapaId: '; etapaNombre: '; presupuestoItems: [] })
+  }>({ isOpen: false, etapaId: '', etapaNombre: '', presupuestoItems: [] })
 
   const [detallesPagoModal, setDetallesPagoModal] = useState<{
     isOpen: boolean
@@ -81,7 +82,7 @@ export default function MonitoreoObraPage() {
     etapaNombre: string
     pagos: Pago[]
     presupuestoItems?: any[]
-  }>({ isOpen: false, etapaId: '; etapaNombre: '; pagos: [] })
+  }>({ isOpen: false, etapaId: '', etapaNombre: '', pagos: [] })
 
   const [etapaToDelete, setEtapaToDelete] = useState<string | null>(null)
 
@@ -95,74 +96,74 @@ export default function MonitoreoObraPage() {
       const response = await api.get(`/proyectos/${proyectoId}`)
       setProyecto(response.data.data)
     } catch (error) {
-      console.error('Error fetching proyecto:; error)
+      console.error('Error fetching proyecto:', error)
       toast.error('Error al cargar el proyecto')
     }
   }
 
   const fetchEtapas = async () => {
-  try {
-    const response = await api.get(`/proyectos/${proyectoId}/etapas`)
-    const etapasData = response.data.data || []
-    setEtapas(etapasData)
+    try {
+      const response = await api.get(`/proyectos/${proyectoId}/etapas`)
+      const etapasData = response.data.data || []
+      setEtapas(etapasData)
 
-    // Obtener el proyecto completo con items del presupuesto
-    const proyectoResponse = await api.get(`/proyectos/${proyectoId}`)
-    const proyectoCompleto = proyectoResponse.data.data
-    const presupuestoItems = proyectoCompleto.presupuestoItems || []
+      // Obtener el proyecto completo con items del presupuesto
+      const proyectoResponse = await api.get(`/proyectos/${proyectoId}`)
+      const proyectoCompleto = proyectoResponse.data.data
+      const presupuestoItems = proyectoCompleto.presupuestoItems || []
 
-    console.log('Presupuesto items:; presupuestoItems)
+      console.log('Presupuesto items:', presupuestoItems)
 
-    // Calcular costo total por etapa
-    const costosPorEtapaTemp: { [etapaId: string]: number } = {}
-    
-    for (const etapa of etapasData) {
-      // Buscar items que coincidan con el nombre de la etapa
-      const itemsCoincidentes = presupuestoItems.filter((item: any) => {
-        const nombreEtapa = etapa.nombre.toLowerCase().trim()
-        const nombreItem = item.item.nombre.toLowerCase().trim()
-        
-        // Coincidencia exacta o parcial
-        return nombreEtapa.includes(nombreItem) || nombreItem.includes(nombreEtapa)
-      })
+      // Calcular costo total por etapa
+      const costosPorEtapaTemp: { [etapaId: string]: number } = {}
 
-      console.log(`Etapa "${etapa.nombre}":`, itemsCoincidentes.length, 'items encontrados')
+      for (const etapa of etapasData) {
+        // Buscar items que coincidan con el nombre de la etapa
+        const itemsCoincidentes = presupuestoItems.filter((item: any) => {
+          const nombreEtapa = etapa.nombre.toLowerCase().trim()
+          const nombreItem = item.item.nombre.toLowerCase().trim()
 
-      // Sumar el costo total de todos los items coincidentes
-      const costoTotal = itemsCoincidentes.reduce((sum: number, item: any) => {
-        const costo = Number(item.costoTotal) || 0
-        console.log(`  - ${item.item.nombre}: ${costo}`)
-        return sum + costo
-      }, 0)
+          // Coincidencia exacta o parcial
+          return nombreEtapa.includes(nombreItem) || nombreItem.includes(nombreEtapa)
+        })
 
-      // Si no se encontraron coincidencias, el costo es 0
-      costosPorEtapaTemp[etapa.id] = costoTotal
-      
-      console.log(`Costo total para "${etapa.nombre}": ${costoTotal}`)
-    }
+        console.log(`Etapa "${etapa.nombre}":`, itemsCoincidentes.length, 'items encontrados')
 
-    setCostosPorEtapa(costosPorEtapaTemp)
+        // Sumar el costo total de todos los items coincidentes
+        const costoTotal = itemsCoincidentes.reduce((sum: number, item: any) => {
+          const costo = Number(item.costoTotal) || 0
+          console.log(`  - ${item.item.nombre}: ${costo}`)
+          return sum + costo
+        }, 0)
 
-    // Cargar pagos para todas las etapas
-    const pagosPorEtapaTemp: { [etapaId: string]: number } = {}
-    for (const etapa of etapasData) {
-      try {
-        const pagosResponse = await api.get(`/proyectos/${proyectoId}/etapas/${etapa.id}/pagos`)
-        const pagos = pagosResponse.data.data || []
-        const totalPagado = pagos.reduce((sum: number, pago: any) => sum + Number(pago.monto), 0)
-        pagosPorEtapaTemp[etapa.id] = totalPagado
-      } catch (error) {
-        console.error(`Error loading pagos for etapa ${etapa.id}:`, error)
-        pagosPorEtapaTemp[etapa.id] = 0
+        // Si no se encontraron coincidencias, el costo es 0
+        costosPorEtapaTemp[etapa.id] = costoTotal
+
+        console.log(`Costo total para "${etapa.nombre}": ${costoTotal}`)
       }
+
+      setCostosPorEtapa(costosPorEtapaTemp)
+
+      // Cargar pagos para todas las etapas
+      const pagosPorEtapaTemp: { [etapaId: string]: number } = {}
+      for (const etapa of etapasData) {
+        try {
+          const pagosResponse = await api.get(`/proyectos/${proyectoId}/etapas/${etapa.id}/pagos`)
+          const pagos = pagosResponse.data.data || []
+          const totalPagado = pagos.reduce((sum: number, pago: any) => sum + Number(pago.monto), 0)
+          pagosPorEtapaTemp[etapa.id] = totalPagado
+        } catch (error) {
+          console.error(`Error loading pagos for etapa ${etapa.id}:`, error)
+          pagosPorEtapaTemp[etapa.id] = 0
+        }
+      }
+      setPagosPorEtapa(pagosPorEtapaTemp)
+    } catch (error) {
+      console.error('Error fetching etapas:', error)
+    } finally {
+      setLoading(false)
     }
-    setPagosPorEtapa(pagosPorEtapaTemp)
-  } catch (error) {
-    console.error('Error fetching etapas:; error)
-  } finally {
-    setLoading(false)
   }
-}
 
   const calcularProgreso = () => {
     if (etapas.length === 0) return 0
@@ -198,96 +199,96 @@ export default function MonitoreoObraPage() {
       // Obtener datos completos del proyecto con materiales
       const response = await api.get(`/proyectos/${proyectoId}`)
       const proyectoCompleto = response.data.data
-      
+
       const doc = new jsPDF()
       const fechaActual = new Date().toLocaleDateString('es-PY')
-      
+
       // Título
       doc.setFontSize(20)
-      doc.text('INFORME DE COSTOS DE OBRA; 20, 30)
-      
+      doc.text('INFORME DE COSTOS DE OBRA', 20, 30)
+
       // Información del proyecto
       doc.setFontSize(12)
       doc.text(`Proyecto: ${proyecto?.nombre || 'N/A'}`, 20, 50)
       doc.text(`Fecha del informe: ${fechaActual}`, 20, 60)
-      
+
       let yPos = 80
       let costoTotalProyecto = 0
-      
+
       // Obtener materiales para cada item
       for (const presupuestoItem of proyectoCompleto.presupuestoItems || []) {
         if (yPos > 250) {
           doc.addPage()
           yPos = 30
         }
-        
+
         // Título del item
         doc.setFontSize(14)
         doc.text(`ITEM: ${presupuestoItem.item.nombre}`, 20, yPos)
         yPos += 10
-        
+
         doc.setFontSize(10)
         doc.text(`Cantidad: ${presupuestoItem.cantidadMedida} ${presupuestoItem.item.unidadMedida}`, 25, yPos)
         yPos += 10
-        
+
         // Obtener materiales del item
         try {
           const itemResponse = await api.get(`/items/${presupuestoItem.item.id}`)
           const itemCompleto = itemResponse.data.data
-          
+
           if (itemCompleto.materialesPorItem?.length > 0) {
-            doc.text('Materiales:; 25, yPos)
+            doc.text('Materiales:', 25, yPos)
             yPos += 8
-            
+
             let costoMaterialesItem = 0
-            
+
             itemCompleto.materialesPorItem.forEach((materialItem: any) => {
               const costoUnitario = Number(materialItem.material.precioUnitario)
               const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad)
               const costoTotalMaterial = costoUnitario * cantidadPorUnidad * Number(presupuestoItem.cantidadMedida)
-              
+
               costoMaterialesItem += costoTotalMaterial
-              
+
               doc.text(`• ${materialItem.material.nombre}`, 30, yPos)
               doc.text(`${cantidadPorUnidad} ${materialItem.material.unidad} x ${formatPrice(costoUnitario)} = ${formatPrice(costoTotalMaterial)}`, 35, yPos + 6)
               yPos += 15
             })
-            
+
             doc.text(`Subtotal Materiales: ${formatPrice(costoMaterialesItem)}`, 25, yPos)
             yPos += 8
           }
         } catch (error) {
-          console.error('Error fetching item materials:; error)
+          console.error('Error fetching item materials:', error)
         }
-        
+
         // Costos del item
         const costoManoObra = Number(presupuestoItem.costoManoObra)
         const costoTotal = Number(presupuestoItem.costoTotal)
-        
+
         doc.text(`Mano de Obra: ${formatPrice(costoManoObra)}`, 25, yPos)
         yPos += 8
         doc.setFontSize(12)
         doc.text(`TOTAL ITEM: ${formatPrice(costoTotal)}`, 25, yPos)
         yPos += 20
-        
+
         costoTotalProyecto += costoTotal
         doc.setFontSize(10)
       }
-      
+
       // Total general
       if (yPos > 250) {
         doc.addPage()
         yPos = 30
       }
-      
+
       doc.setFontSize(16)
       doc.text(`COSTO TOTAL DEL PROYECTO: ${formatPrice(costoTotalProyecto)}`, 20, yPos)
-      
+
       // Margen de ganancia si existe
       if (proyectoCompleto.margenGanancia) {
         const margen = costoTotalProyecto * (Number(proyectoCompleto.margenGanancia) / 100)
         const precioFinal = costoTotalProyecto + margen
-        
+
         yPos += 15
         doc.setFontSize(12)
         doc.text(`Margen de ganancia (${proyectoCompleto.margenGanancia}%): ${formatPrice(margen)}`, 20, yPos)
@@ -295,13 +296,13 @@ export default function MonitoreoObraPage() {
         doc.setFontSize(16)
         doc.text(`PRECIO FINAL: ${formatPrice(precioFinal)}`, 20, yPos)
       }
-      
+
       // Descargar
       doc.save(`Costos_Obra_${proyecto?.nombre?.replace(/\s+/g, '_')}_${fechaActual.replace(/\//g, '-')}.pdf`)
       toast.success('Informe de costos PDF descargado')
-      
+
     } catch (error) {
-      console.error('Error generating PDF:; error)
+      console.error('Error generating PDF:', error)
       toast.error('Error al generar el informe de costos')
     }
   }
@@ -312,7 +313,7 @@ export default function MonitoreoObraPage() {
 
     // Título
     doc.setFontSize(18)
-    doc.text('INFORME DE ESTADO DE OBRA; 105, 25, { align: 'center' })
+    doc.text('INFORME DE ESTADO DE OBRA', 105, 25, { align: 'center' })
 
     // Información del proyecto
     doc.setFontSize(11)
@@ -327,15 +328,15 @@ export default function MonitoreoObraPage() {
     const atrasadas = etapas.filter(e => e.estado === 'ATRASADA').length
 
     doc.setFontSize(14)
-    doc.text('RESUMEN DE ETAPAS; 20, 75)
+    doc.text('RESUMEN DE ETAPAS', 20, 75)
 
     const resumenData = [
-      ['Estado; 'Cantidad'],
-      ['Completadas; completadas.toString()],
-      ['En Progreso; enProgreso.toString()],
-      ['Pendientes; pendientes.toString()],
-      ['Atrasadas; atrasadas.toString()],
-      ['Total; etapas.length.toString()]
+      ['Estado', 'Cantidad'],
+      ['Completadas', completadas.toString()],
+      ['En Progreso', enProgreso.toString()],
+      ['Pendientes', pendientes.toString()],
+      ['Atrasadas', atrasadas.toString()],
+      ['Total', etapas.length.toString()]
     ]
 
     autoTable(doc, {
@@ -361,7 +362,7 @@ export default function MonitoreoObraPage() {
     }
 
     doc.setFontSize(14)
-    doc.text('DETALLE DE ETAPAS; 20, finalY)
+    doc.text('DETALLE DE ETAPAS', 20, finalY)
 
     const etapasData = etapas.map(etapa => {
       const totalPagado = pagosPorEtapa[etapa.id] || 0
@@ -373,14 +374,14 @@ export default function MonitoreoObraPage() {
 
       return [
         etapa.nombre,
-        etapa.estado.replace('_; ' '),
+        etapa.estado.replace('_', ' '),
         costoTotalFinal > 0 ? formatPrice(costoTotalFinal) : '₲0',
         totalPagado > 0 ? formatPrice(totalPagado) : '₲0',
         pendiente !== 0 ? formatPrice(Math.abs(pendiente)) : '₲0'
       ]
     })
 
-    const etapasHeaders = ['Etapa; 'Estado; 'Total; 'Pagado; 'Pendiente']
+    const etapasHeaders = ['Etapa', 'Estado', 'Total', 'Pagado', 'Pendiente']
 
     autoTable(doc, {
       startY: finalY + 5,
@@ -390,11 +391,11 @@ export default function MonitoreoObraPage() {
       styles: { fontSize: 7, cellPadding: 2 },
       headStyles: { fillColor: [34, 197, 94], textColor: 255 },
       columnStyles: {
-        0: { cellWidth: 50, halign: 'left' }, // Etapa
-        1: { cellWidth: 30, halign: 'center' }, // Estado
-        2: { cellWidth: 25, halign: 'right' }, // Total
-        3: { cellWidth: 25, halign: 'right' }, // Pagado
-        4: { cellWidth: 25, halign: 'right' } // Pendiente
+        0: { cellWidth: 50, halign: 'left' },
+        1: { cellWidth: 30, halign: 'center' },
+        2: { cellWidth: 25, halign: 'right' },
+        3: { cellWidth: 25, halign: 'right' },
+        4: { cellWidth: 25, halign: 'right' }
       },
       margin: { left: 15, right: 15 },
       alternateRowStyles: { fillColor: [245, 245, 245] }
@@ -407,14 +408,14 @@ export default function MonitoreoObraPage() {
 
   const confirmarEliminar = async () => {
     if (!etapaToDelete) return
-    
+
     try {
       await api.delete(`/proyectos/${proyectoId}/etapas/${etapaToDelete}`)
       toast.success('Etapa eliminada')
       fetchEtapas()
       setEtapaToDelete(null)
     } catch (error) {
-      console.error('Error deleting etapa:; error)
+      console.error('Error deleting etapa:', error)
       toast.error('Error al eliminar etapa')
     }
   }
@@ -435,7 +436,7 @@ export default function MonitoreoObraPage() {
       toast.success('Estado actualizado')
       fetchEtapas()
     } catch (error) {
-      console.error('Error updating etapa:; error)
+      console.error('Error updating etapa:', error)
       toast.error('Error al actualizar estado')
     }
   }
@@ -458,16 +459,16 @@ export default function MonitoreoObraPage() {
 
       // Agregar información de pagos a cada presupuestoItem
       const itemsConPagos = itemsEtapa.map((presupuestoItem: any) => {
-        console.log('Procesando presupuestoItem:; presupuestoItem)
-        console.log('presupuestoItem.item.id:; presupuestoItem.item?.id)
+        console.log('Procesando presupuestoItem:', presupuestoItem)
+        console.log('presupuestoItem.item.id:', presupuestoItem.item?.id)
 
         // Filtrar pagos que corresponden a este item
         const pagosDelItem = pagosExistentes.filter((pago: any) => {
-          console.log('Comparando pago.itemId:; pago.itemId, 'con presupuestoItem.item.id:; presupuestoItem.item?.id)
+          console.log('Comparando pago.itemId:', pago.itemId, 'con presupuestoItem.item.id:', presupuestoItem.item?.id)
           return pago.itemId === presupuestoItem.item?.id
         })
 
-        console.log('Pagos encontrados para este item:; pagosDelItem.length, pagosDelItem)
+        console.log('Pagos encontrados para este item:', pagosDelItem.length, pagosDelItem)
 
         return {
           ...presupuestoItem,
@@ -482,13 +483,13 @@ export default function MonitoreoObraPage() {
         presupuestoItems: itemsConPagos
       })
     } catch (error) {
-      console.error('Error fetching presupuesto items:; error)
+      console.error('Error fetching presupuesto items:', error)
       toast.error('Error al cargar items para pago')
     }
   }
 
   const cerrarModalPago = () => {
-    setPagoModal({ isOpen: false, etapaId: '; etapaNombre: '; presupuestoItems: [] })
+    setPagoModal({ isOpen: false, etapaId: '', etapaNombre: '', presupuestoItems: [] })
   }
 
   const abrirModalDetallesPago = async (etapaId: string, etapaNombre: string) => {
@@ -509,13 +510,13 @@ export default function MonitoreoObraPage() {
         presupuestoItems
       })
     } catch (error) {
-      console.error('Error fetching pagos:; error)
+      console.error('Error fetching pagos:', error)
       toast.error('Error al cargar pagos')
     }
   }
 
   const cerrarModalDetallesPago = () => {
-    setDetallesPagoModal({ isOpen: false, etapaId: '; etapaNombre: '; pagos: [] })
+    setDetallesPagoModal({ isOpen: false, etapaId: '', etapaNombre: '', pagos: [] })
   }
 
   const handlePago = async (itemId: string, monto: number, comprobanteFile?: File) => {
@@ -524,12 +525,12 @@ export default function MonitoreoObraPage() {
 
       // Subir comprobante si existe
       if (comprobanteFile) {
-        console.log('Subiendo comprobante:; comprobanteFile.name, 'tipo:; comprobanteFile.type)
+        console.log('Subiendo comprobante:', comprobanteFile.name, 'tipo:', comprobanteFile.type)
 
         const formData = new FormData()
-        formData.append('file; comprobanteFile)
+        formData.append('file', comprobanteFile)
 
-        const uploadResponse = await fetch(`${API_BASE_URL}/${1}`, {
+        const uploadResponse = await fetch(`${API_BASE_URL}/upload/comprobante`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -537,24 +538,24 @@ export default function MonitoreoObraPage() {
           body: formData
         })
 
-        console.log('Upload response status:; uploadResponse.status)
+        console.log('Upload response status:', uploadResponse.status)
 
         if (uploadResponse.ok) {
           const uploadData = await uploadResponse.json()
-          console.log('Upload response data:; uploadData)
-          console.log('uploadData.data:; uploadData.data)
-          console.log('uploadData.data.url:; uploadData.data?.url)
+          console.log('Upload response data:', uploadData)
+          console.log('uploadData.data:', uploadData.data)
+          console.log('uploadData.data.url:', uploadData.data?.url)
 
           if (uploadData.data && uploadData.data.url) {
             comprobanteUrl = uploadData.data.url
-            console.log('Comprobante URL asignada correctamente:; comprobanteUrl)
+            console.log('Comprobante URL asignada correctamente:', comprobanteUrl)
           } else {
             console.error('No se encontró URL en respuesta del servidor')
             throw new Error('Respuesta del servidor inválida')
           }
         } else {
           const errorText = await uploadResponse.text()
-          console.error('Upload error response:; errorText)
+          console.error('Upload error response:', errorText)
           throw new Error('Error al subir comprobante')
         }
       }
@@ -568,21 +569,21 @@ export default function MonitoreoObraPage() {
         notas: 'Pago registrado desde monitoreo de obra'
       }
 
-      console.log('Creando pago con datos:; pagoData)
-      console.log('comprobanteUrl value:; comprobanteUrl)
-      console.log('comprobanteUrl type:; typeof comprobanteUrl)
-      console.log('comprobanteUrl length:; comprobanteUrl ? comprobanteUrl.length : 0)
+      console.log('Creando pago con datos:', pagoData)
+      console.log('comprobanteUrl value:', comprobanteUrl)
+      console.log('comprobanteUrl type:', typeof comprobanteUrl)
+      console.log('comprobanteUrl length:', comprobanteUrl ? comprobanteUrl.length : 0)
 
       const pagoResponse = await api.post(`/proyectos/${proyectoId}/etapas/${pagoModal.etapaId}/pagos`, pagoData)
 
-      console.log('Pago creado exitosamente:; pagoResponse.data)
+      console.log('Pago creado exitosamente:', pagoResponse.data)
 
       toast.success('Pago registrado exitosamente')
       cerrarModalPago()
       // Recargar etapas para mostrar el botón "Ver Pagos" actualizado
       fetchEtapas()
     } catch (error: any) {
-      console.error('Error creating pago:; error)
+      console.error('Error creating pago:', error)
       toast.error(error.response?.data?.error || 'Error al registrar pago')
     }
   }
@@ -602,20 +603,6 @@ export default function MonitoreoObraPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center">
-                <Building2 className="h-8 w-8 text-blue-600" />
-                <h1 className="ml-2 text-xl font-bold text-gray-900">Build Manager</h1>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
@@ -649,7 +636,7 @@ export default function MonitoreoObraPage() {
               <span className="text-2xl font-bold text-blue-600">{progreso}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-4">
-              <div 
+              <div
                 className="bg-blue-600 h-4 rounded-full transition-all duration-300"
                 style={{ width: `${progreso}%` }}
               ></div>
@@ -711,7 +698,7 @@ export default function MonitoreoObraPage() {
                       </div>
                       <div className="flex items-center space-x-3">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${getEstadoColor(etapa)}`}>
-                          {etapa.estado.replace('_; ' ')}
+                          {etapa.estado.replace('_', ' ')}
                         </span>
                         {getEstadoIcon(etapa)}
                         {etapa.estado === 'COMPLETADA' && (
@@ -790,7 +777,7 @@ export default function MonitoreoObraPage() {
                           Eliminar
                         </button>
                       </div>
-                      
+
                       {etapa.materialesExtra.length > 0 && (
                         <div className="text-sm text-gray-500">
                           <span className="font-medium">Materiales extra:</span> {formatPrice(
@@ -814,13 +801,13 @@ export default function MonitoreoObraPage() {
             <h3 className="text-lg font-bold text-gray-900 mb-4">Confirmar eliminación</h3>
             <p className="text-gray-600 mb-6">¿Estás seguro de eliminar esta etapa? Esta acción no se puede deshacer.</p>
             <div className="flex justify-end space-x-3">
-              <button 
+              <button
                 className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
                 onClick={() => setEtapaToDelete(null)}
               >
                 Cancelar
               </button>
-              <button 
+              <button
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
                 onClick={confirmarEliminar}
               >
@@ -1002,8 +989,8 @@ export default function MonitoreoObraPage() {
                                 </div>
 
                                 {(() => {
-                                  console.log('Checking pago:; pago);
-                                  console.log('comprobanteUrl:; pago.comprobanteUrl);
+                                  console.log('Checking pago:', pago)
+                                  console.log('comprobanteUrl:', pago.comprobanteUrl)
                                   return pago.comprobanteUrl && (
                                     <div className="mt-3 p-3 bg-white rounded border">
                                       <div className="flex items-center space-x-2 mb-2">
@@ -1032,12 +1019,12 @@ export default function MonitoreoObraPage() {
                                             alt="Comprobante de pago"
                                             className="w-full max-w-md h-auto rounded border shadow-sm"
                                             onError={(e) => {
-                                              console.error('Error loading image:; `${API_BASE_URL}${pago.comprobanteUrl}`);
-                                              console.log('Pago data:; pago);
-                                              (e.target as HTMLImageElement).style.display = 'none';
+                                              console.error('Error loading image:', `${API_BASE_URL}${pago.comprobanteUrl}`)
+                                              console.log('Pago data:', pago)
+                                              ;(e.target as HTMLImageElement).style.display = 'none'
                                             }}
                                             onLoad={() => {
-                                              console.log('Image loaded successfully:; `${API_BASE_URL}${pago.comprobanteUrl}`);
+                                              console.log('Image loaded successfully:', `${API_BASE_URL}${pago.comprobanteUrl}`)
                                             }}
                                           />
                                           <div className="flex items-center space-x-2">
@@ -1054,7 +1041,7 @@ export default function MonitoreoObraPage() {
                                         </div>
                                       )}
                                     </div>
-                                  );
+                                  )
                                 })()}
                               </div>
                             ))}
@@ -1099,37 +1086,37 @@ function PagoItemCard({ presupuestoItem, onPago }: {
   const pendientePago = totalAdeudado - totalPagado
 
   const handleMontoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    let value = event.target.value;
+    let value = event.target.value
 
     // Si el campo está vacío, mostrar 0
     if (!value) {
-      setMontoDisplay('0');
-      setMontoPago('0');
-      return;
+      setMontoDisplay('0')
+      setMontoPago('0')
+      return
     }
 
     // Permitir solo números
-    value = value.replace(/[^\d]/g, '');
+    value = value.replace(/[^\d]/g, '')
 
     // Si después de limpiar no hay valor, mostrar 0
     if (!value) {
-      setMontoDisplay('0');
-      setMontoPago('0');
-      return;
+      setMontoDisplay('0')
+      setMontoPago('0')
+      return
     }
 
     // Validar que no exceda el pendiente
-    const numericValue = parseInt(value, 10);
+    const numericValue = parseInt(value, 10)
     if (numericValue > pendientePago) {
       toast.error(`El monto no puede exceder ${formatPrice(pendientePago)}`)
-      return;
+      return
     }
 
     // Convertir a número y formatear
-    const formattedValue = numericValue.toLocaleString('es-PY');
-    setMontoDisplay(formattedValue);
-    setMontoPago(value);
-  };
+    const formattedValue = numericValue.toLocaleString('es-PY')
+    setMontoDisplay(formattedValue)
+    setMontoPago(value)
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

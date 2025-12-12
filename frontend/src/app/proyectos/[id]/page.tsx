@@ -144,7 +144,7 @@ export default function ProyectoDetallePage() {
         setMaterialesPorItem(materialesMap)
       }
     } catch (error) {
-      console.error('Error fetching proyecto:; error)
+      console.error('Error fetching proyecto:', error)
       toast.error('Error al cargar el proyecto')
     } finally {
       setLoading(false)
@@ -156,7 +156,7 @@ export default function ProyectoDetallePage() {
       const response = await api.get('/items')
       setItems(response.data.data || [])
     } catch (error) {
-      console.error('Error fetching items:; error)
+      console.error('Error fetching items:', error)
     }
   }
 
@@ -176,7 +176,7 @@ export default function ProyectoDetallePage() {
       setCantidad('')
       fetchProyecto() // Recargar proyecto
     } catch (error: any) {
-      console.error('Error adding item:; error)
+      console.error('Error adding item:', error)
       const errorMessage = error.response?.data?.error || 'Error al agregar item'
       toast.error(errorMessage)
     }
@@ -197,7 +197,7 @@ export default function ProyectoDetallePage() {
       
       // Título
       doc.setFontSize(20)
-      doc.text('INFORME DE COSTOS DE OBRA; 20, 30)
+      doc.text('INFORME DE COSTOS DE OBRA', 20, 30)
       
       // Información del proyecto
       doc.setFontSize(12)
@@ -226,7 +226,7 @@ export default function ProyectoDetallePage() {
         
         // Mostrar materiales si están disponibles
         if (materialesPorItem[presupuestoItem.item.id]?.length > 0) {
-          doc.text('Materiales:; 25, yPos)
+          doc.text('Materiales:', 25, yPos)
           yPos += 8
           
           let costoMaterialesItem = 0
@@ -288,7 +288,7 @@ export default function ProyectoDetallePage() {
       toast.success('Informe de costos PDF descargado')
       
     } catch (error) {
-      console.error('Error generating PDF:; error)
+      console.error('Error generating PDF:', error)
       toast.error('Error al generar el informe de costos')
     }
   }
@@ -302,7 +302,7 @@ export default function ProyectoDetallePage() {
       fetchProyecto()
       setItemToDelete(null)
     } catch (error: any) {
-      console.error('Error removing item:; error)
+      console.error('Error removing item:', error)
       const errorMessage = error.response?.data?.error || 'Error al eliminar item'
       toast.error(errorMessage)
     }
@@ -315,8 +315,8 @@ export default function ProyectoDetallePage() {
 
   const getUnidadLabel = (unidad: string) => {
     const labels: { [key: string]: string } = {
-      'M2': 'm²; 'M3': 'm³; 'ML': 'ml; 'KG': 'kg',
-      'BOLSA': 'bolsa; 'UNIDAD': 'unidad; 'LOTE': 'lote; 'GLOBAL': 'global'
+      'M2': 'm²', 'M3': 'm³', 'ML': 'ml', 'KG': 'kg',
+      'BOLSA': 'bolsa', 'UNIDAD': 'unidad', 'LOTE': 'lote', 'GLOBAL': 'global'
     }
     return labels[unidad] || unidad
   }
@@ -356,7 +356,7 @@ export default function ProyectoDetallePage() {
         etapas: etapasConPagos
       })
     } catch (error) {
-      console.error('Error fetching etapas y pagos:; error)
+      console.error('Error fetching etapas y pagos:', error)
       toast.error('Error al cargar el histórico de pagos')
     }
   }
@@ -1015,7 +1015,7 @@ export default function ProyectoDetallePage() {
                             etapa.estado === 'EN_PROGRESO' ? 'bg-blue-100 text-blue-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
-                            {etapa.estado.replace('_; ' ')}
+                            {etapa.estado.replace('_', ' ')}
                           </span>
                         </div>
                       </div>

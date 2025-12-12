@@ -50,7 +50,7 @@ export default function MaterialesItemPage() {
     isOpen: boolean
     materialId: string
     materialNombre: string
-  }>({ isOpen: false, materialId: '; materialNombre: '' })
+  }>({ isOpen: false, materialId: '', materialNombre: '' })
   const [editingMaterial, setEditingMaterial] = useState<{
     id: string
     cantidadPorUnidad: number
@@ -67,7 +67,7 @@ export default function MaterialesItemPage() {
       const response = await api.get(`/items/${itemId}`)
       setItem(response.data.data)
     } catch (error) {
-      console.error('Error fetching item:; error)
+      console.error('Error fetching item:', error)
       toast.error('Error al cargar el item')
     } finally {
       setLoading(false)
@@ -79,7 +79,7 @@ export default function MaterialesItemPage() {
       const response = await api.get('/materiales')
       setMateriales(response.data.data || [])
     } catch (error) {
-      console.error('Error fetching materiales:; error)
+      console.error('Error fetching materiales:', error)
     }
   }
 
@@ -101,7 +101,7 @@ export default function MaterialesItemPage() {
       setObservaciones('')
       fetchItem() // Recargar item
     } catch (error: any) {
-      console.error('Error adding material:; error)
+      console.error('Error adding material:', error)
       const errorMessage = error.response?.data?.error || 'Error al agregar material'
       toast.error(errorMessage)
     }
@@ -121,14 +121,14 @@ export default function MaterialesItemPage() {
       toast.success('Material removido exitosamente')
       fetchItem()
     } catch (error: any) {
-      console.error('Error removing material:; error)
+      console.error('Error removing material:', error)
       const errorMessage = error.response?.data?.error || 'Error al remover material'
       toast.error(errorMessage)
     }
   }
 
   const closeDeleteDialog = () => {
-    setDeleteDialog({ isOpen: false, materialId: '; materialNombre: '' })
+    setDeleteDialog({ isOpen: false, materialId: '', materialNombre: '' })
   }
 
   const handleEditClick = (materialItem: MaterialPorItem) => {
@@ -153,7 +153,7 @@ export default function MaterialesItemPage() {
       setEditingMaterial(null)
       fetchItem()
     } catch (error: any) {
-      console.error('Error updating material:; error)
+      console.error('Error updating material:', error)
       const errorMessage = error.response?.data?.error || 'Error al actualizar material'
       toast.error(errorMessage)
     }
@@ -163,8 +163,14 @@ export default function MaterialesItemPage() {
 
   const getUnidadLabel = (unidad: string) => {
     const labels: { [key: string]: string } = {
-      'M2': 'm²; 'M3': 'm³; 'ML': 'ml; 'KG': 'kg',
-      'BOLSA': 'bolsa; 'UNIDAD': 'unidad; 'LOTE': 'lote; 'GLOBAL': 'global'
+      'M2': 'm²',
+      'M3': 'm³',
+      'ML': 'ml',
+      'KG': 'kg',
+      'BOLSA': 'bolsa',
+      'UNIDAD': 'unidad',
+      'LOTE': 'lote',
+      'GLOBAL': 'global'
     }
     return labels[unidad] || unidad
   }
