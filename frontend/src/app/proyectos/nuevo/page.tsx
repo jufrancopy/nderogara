@@ -365,7 +365,10 @@ export default function NuevoProyectoPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center disabled:opacity-50"
+                  className="px-4 py-2 text-white rounded-md transition-colors flex items-center disabled:opacity-50"
+                  style={{backgroundColor: '#38603B'}}
+                  onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#633722')}
+                  onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#38603B')}
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {loading ? 'Guardando...' : 'Crear Proyecto'}
