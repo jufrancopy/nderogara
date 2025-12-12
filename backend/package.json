@@ -11,7 +11,13 @@
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "db:seed": "tsx src/seed.ts",
-    "seed": "tsx src/seed.ts"
+    "seed": "tsx src/seed.ts",
+    "seed:admin": "tsx src/seed-admin.ts",
+    "seed:materiales": "tsx src/seed-materiales-basicos.ts",
+    "seed:proveedor": "tsx src/seed-proveedor.ts",
+    "seed:proyectos-completo": "tsx src/seed-proyectos-completo.ts",
+    "seed:proyectos-referencia": "tsx src/seed-proyectos-referencia.ts",
+    "seed:inmuebles": "tsx src/seed-inmuebles.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",
