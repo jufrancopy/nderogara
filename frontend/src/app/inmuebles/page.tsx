@@ -45,10 +45,10 @@ export default function InmueblesPage() {
   const fetchInmuebles = async () => {
     try {
       const params = new URLSearchParams();
-      if (filtros.tipo) params.append('tipo', filtros.tipo);
-      if (filtros.ciudad) params.append('ciudad', filtros.ciudad);
-      if (filtros.precioMin) params.append('precioMin', filtros.precioMin);
-      if (filtros.precioMax) params.append('precioMax', filtros.precioMax);
+      if (filtros.tipo) params.append('tipo; filtros.tipo);
+      if (filtros.ciudad) params.append('ciudad; filtros.ciudad);
+      if (filtros.precioMin) params.append('precioMin; filtros.precioMin);
+      if (filtros.precioMax) params.append('precioMax; filtros.precioMax);
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/inmuebles?${params}`);
       const data = await response.json();
@@ -57,7 +57,7 @@ export default function InmueblesPage() {
         setInmuebles(data.data);
       }
     } catch (error) {
-      console.error('Error al cargar inmuebles:', error);
+      console.error('Error al cargar inmuebles:error);
     } finally {
       setLoading(false);
     }

@@ -53,7 +53,7 @@ export default function ProyectosPage() {
     isOpen: boolean
     proyectoId: string
     proyectoNombre: string
-  }>({ isOpen: false, proyectoId: '', proyectoNombre: '' })
+  }>({ isOpen: false, proyectoId: '; proyectoNombre: '' })
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -77,7 +77,7 @@ export default function ProyectosPage() {
       const response = await api.get('/proyectos')
       setProyectos(response.data.data || [])
     } catch (error) {
-      console.error('Error fetching proyectos:', error)
+      console.error('Error fetching proyectos:; error)
       toast.error('Error al cargar los proyectos')
       // Mock data como fallback
       setProyectos([
@@ -122,14 +122,14 @@ export default function ProyectosPage() {
       toast.success('Proyecto eliminado exitosamente')
       fetchProyectos()
     } catch (error: any) {
-      console.error('Error deleting proyecto:', error)
+      console.error('Error deleting proyecto:; error)
       const errorMessage = error.response?.data?.error || 'Error al eliminar el proyecto'
       toast.error(errorMessage)
     }
   }
 
   const closeDeleteDialog = () => {
-    setDeleteDialog({ isOpen: false, proyectoId: '', proyectoNombre: '' })
+    setDeleteDialog({ isOpen: false, proyectoId: '; proyectoNombre: '' })
   }
 
   const formatDate = (dateString?: string) => {

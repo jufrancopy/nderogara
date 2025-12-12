@@ -73,7 +73,7 @@ export default function MonitoreoObraPage() {
     etapaId: string
     etapaNombre: string
     presupuestoItems: any[]
-  }>({ isOpen: false, etapaId: '', etapaNombre: '', presupuestoItems: [] })
+  }>({ isOpen: false, etapaId: '; etapaNombre: '; presupuestoItems: [] })
 
   const [detallesPagoModal, setDetallesPagoModal] = useState<{
     isOpen: boolean
@@ -81,7 +81,7 @@ export default function MonitoreoObraPage() {
     etapaNombre: string
     pagos: Pago[]
     presupuestoItems?: any[]
-  }>({ isOpen: false, etapaId: '', etapaNombre: '', pagos: [] })
+  }>({ isOpen: false, etapaId: '; etapaNombre: '; pagos: [] })
 
   const [etapaToDelete, setEtapaToDelete] = useState<string | null>(null)
 
@@ -95,7 +95,7 @@ export default function MonitoreoObraPage() {
       const response = await api.get(`/proyectos/${proyectoId}`)
       setProyecto(response.data.data)
     } catch (error) {
-      console.error('Error fetching proyecto:', error)
+      console.error('Error fetching proyecto:; error)
       toast.error('Error al cargar el proyecto')
     }
   }
@@ -111,7 +111,7 @@ export default function MonitoreoObraPage() {
     const proyectoCompleto = proyectoResponse.data.data
     const presupuestoItems = proyectoCompleto.presupuestoItems || []
 
-    console.log('Presupuesto items:', presupuestoItems)
+    console.log('Presupuesto items:; presupuestoItems)
 
     // Calcular costo total por etapa
     const costosPorEtapaTemp: { [etapaId: string]: number } = {}
@@ -158,7 +158,7 @@ export default function MonitoreoObraPage() {
     }
     setPagosPorEtapa(pagosPorEtapaTemp)
   } catch (error) {
-    console.error('Error fetching etapas:', error)
+    console.error('Error fetching etapas:; error)
   } finally {
     setLoading(false)
   }
@@ -204,7 +204,7 @@ export default function MonitoreoObraPage() {
       
       // Título
       doc.setFontSize(20)
-      doc.text('INFORME DE COSTOS DE OBRA', 20, 30)
+      doc.text('INFORME DE COSTOS DE OBRA; 20, 30)
       
       // Información del proyecto
       doc.setFontSize(12)
@@ -236,7 +236,7 @@ export default function MonitoreoObraPage() {
           const itemCompleto = itemResponse.data.data
           
           if (itemCompleto.materialesPorItem?.length > 0) {
-            doc.text('Materiales:', 25, yPos)
+            doc.text('Materiales:; 25, yPos)
             yPos += 8
             
             let costoMaterialesItem = 0
@@ -257,7 +257,7 @@ export default function MonitoreoObraPage() {
             yPos += 8
           }
         } catch (error) {
-          console.error('Error fetching item materials:', error)
+          console.error('Error fetching item materials:; error)
         }
         
         // Costos del item
@@ -301,7 +301,7 @@ export default function MonitoreoObraPage() {
       toast.success('Informe de costos PDF descargado')
       
     } catch (error) {
-      console.error('Error generating PDF:', error)
+      console.error('Error generating PDF:; error)
       toast.error('Error al generar el informe de costos')
     }
   }
@@ -312,7 +312,7 @@ export default function MonitoreoObraPage() {
 
     // Título
     doc.setFontSize(18)
-    doc.text('INFORME DE ESTADO DE OBRA', 105, 25, { align: 'center' })
+    doc.text('INFORME DE ESTADO DE OBRA; 105, 25, { align: 'center' })
 
     // Información del proyecto
     doc.setFontSize(11)
@@ -327,15 +327,15 @@ export default function MonitoreoObraPage() {
     const atrasadas = etapas.filter(e => e.estado === 'ATRASADA').length
 
     doc.setFontSize(14)
-    doc.text('RESUMEN DE ETAPAS', 20, 75)
+    doc.text('RESUMEN DE ETAPAS; 20, 75)
 
     const resumenData = [
-      ['Estado', 'Cantidad'],
-      ['Completadas', completadas.toString()],
-      ['En Progreso', enProgreso.toString()],
-      ['Pendientes', pendientes.toString()],
-      ['Atrasadas', atrasadas.toString()],
-      ['Total', etapas.length.toString()]
+      ['Estado; 'Cantidad'],
+      ['Completadas; completadas.toString()],
+      ['En Progreso; enProgreso.toString()],
+      ['Pendientes; pendientes.toString()],
+      ['Atrasadas; atrasadas.toString()],
+      ['Total; etapas.length.toString()]
     ]
 
     autoTable(doc, {
@@ -361,7 +361,7 @@ export default function MonitoreoObraPage() {
     }
 
     doc.setFontSize(14)
-    doc.text('DETALLE DE ETAPAS', 20, finalY)
+    doc.text('DETALLE DE ETAPAS; 20, finalY)
 
     const etapasData = etapas.map(etapa => {
       const totalPagado = pagosPorEtapa[etapa.id] || 0
@@ -373,14 +373,14 @@ export default function MonitoreoObraPage() {
 
       return [
         etapa.nombre,
-        etapa.estado.replace('_', ' '),
+        etapa.estado.replace('_; ' '),
         costoTotalFinal > 0 ? formatPrice(costoTotalFinal) : '₲0',
         totalPagado > 0 ? formatPrice(totalPagado) : '₲0',
         pendiente !== 0 ? formatPrice(Math.abs(pendiente)) : '₲0'
       ]
     })
 
-    const etapasHeaders = ['Etapa', 'Estado', 'Total', 'Pagado', 'Pendiente']
+    const etapasHeaders = ['Etapa; 'Estado; 'Total; 'Pagado; 'Pendiente']
 
     autoTable(doc, {
       startY: finalY + 5,
@@ -414,7 +414,7 @@ export default function MonitoreoObraPage() {
       fetchEtapas()
       setEtapaToDelete(null)
     } catch (error) {
-      console.error('Error deleting etapa:', error)
+      console.error('Error deleting etapa:; error)
       toast.error('Error al eliminar etapa')
     }
   }
@@ -435,7 +435,7 @@ export default function MonitoreoObraPage() {
       toast.success('Estado actualizado')
       fetchEtapas()
     } catch (error) {
-      console.error('Error updating etapa:', error)
+      console.error('Error updating etapa:; error)
       toast.error('Error al actualizar estado')
     }
   }
@@ -458,16 +458,16 @@ export default function MonitoreoObraPage() {
 
       // Agregar información de pagos a cada presupuestoItem
       const itemsConPagos = itemsEtapa.map((presupuestoItem: any) => {
-        console.log('Procesando presupuestoItem:', presupuestoItem)
-        console.log('presupuestoItem.item.id:', presupuestoItem.item?.id)
+        console.log('Procesando presupuestoItem:; presupuestoItem)
+        console.log('presupuestoItem.item.id:; presupuestoItem.item?.id)
 
         // Filtrar pagos que corresponden a este item
         const pagosDelItem = pagosExistentes.filter((pago: any) => {
-          console.log('Comparando pago.itemId:', pago.itemId, 'con presupuestoItem.item.id:', presupuestoItem.item?.id)
+          console.log('Comparando pago.itemId:; pago.itemId, 'con presupuestoItem.item.id:; presupuestoItem.item?.id)
           return pago.itemId === presupuestoItem.item?.id
         })
 
-        console.log('Pagos encontrados para este item:', pagosDelItem.length, pagosDelItem)
+        console.log('Pagos encontrados para este item:; pagosDelItem.length, pagosDelItem)
 
         return {
           ...presupuestoItem,
@@ -482,13 +482,13 @@ export default function MonitoreoObraPage() {
         presupuestoItems: itemsConPagos
       })
     } catch (error) {
-      console.error('Error fetching presupuesto items:', error)
+      console.error('Error fetching presupuesto items:; error)
       toast.error('Error al cargar items para pago')
     }
   }
 
   const cerrarModalPago = () => {
-    setPagoModal({ isOpen: false, etapaId: '', etapaNombre: '', presupuestoItems: [] })
+    setPagoModal({ isOpen: false, etapaId: '; etapaNombre: '; presupuestoItems: [] })
   }
 
   const abrirModalDetallesPago = async (etapaId: string, etapaNombre: string) => {
@@ -509,13 +509,13 @@ export default function MonitoreoObraPage() {
         presupuestoItems
       })
     } catch (error) {
-      console.error('Error fetching pagos:', error)
+      console.error('Error fetching pagos:; error)
       toast.error('Error al cargar pagos')
     }
   }
 
   const cerrarModalDetallesPago = () => {
-    setDetallesPagoModal({ isOpen: false, etapaId: '', etapaNombre: '', pagos: [] })
+    setDetallesPagoModal({ isOpen: false, etapaId: '; etapaNombre: '; pagos: [] })
   }
 
   const handlePago = async (itemId: string, monto: number, comprobanteFile?: File) => {
@@ -524,12 +524,12 @@ export default function MonitoreoObraPage() {
 
       // Subir comprobante si existe
       if (comprobanteFile) {
-        console.log('Subiendo comprobante:', comprobanteFile.name, 'tipo:', comprobanteFile.type)
+        console.log('Subiendo comprobante:; comprobanteFile.name, 'tipo:; comprobanteFile.type)
 
         const formData = new FormData()
-        formData.append('file', comprobanteFile)
+        formData.append('file; comprobanteFile)
 
-        const uploadResponse = await fetch('${API_BASE_URL}/upload/comprobante', {
+        const uploadResponse = await fetch(`${API_BASE_URL}/${1}`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -537,24 +537,24 @@ export default function MonitoreoObraPage() {
           body: formData
         })
 
-        console.log('Upload response status:', uploadResponse.status)
+        console.log('Upload response status:; uploadResponse.status)
 
         if (uploadResponse.ok) {
           const uploadData = await uploadResponse.json()
-          console.log('Upload response data:', uploadData)
-          console.log('uploadData.data:', uploadData.data)
-          console.log('uploadData.data.url:', uploadData.data?.url)
+          console.log('Upload response data:; uploadData)
+          console.log('uploadData.data:; uploadData.data)
+          console.log('uploadData.data.url:; uploadData.data?.url)
 
           if (uploadData.data && uploadData.data.url) {
             comprobanteUrl = uploadData.data.url
-            console.log('Comprobante URL asignada correctamente:', comprobanteUrl)
+            console.log('Comprobante URL asignada correctamente:; comprobanteUrl)
           } else {
             console.error('No se encontró URL en respuesta del servidor')
             throw new Error('Respuesta del servidor inválida')
           }
         } else {
           const errorText = await uploadResponse.text()
-          console.error('Upload error response:', errorText)
+          console.error('Upload error response:; errorText)
           throw new Error('Error al subir comprobante')
         }
       }
@@ -568,21 +568,21 @@ export default function MonitoreoObraPage() {
         notas: 'Pago registrado desde monitoreo de obra'
       }
 
-      console.log('Creando pago con datos:', pagoData)
-      console.log('comprobanteUrl value:', comprobanteUrl)
-      console.log('comprobanteUrl type:', typeof comprobanteUrl)
-      console.log('comprobanteUrl length:', comprobanteUrl ? comprobanteUrl.length : 0)
+      console.log('Creando pago con datos:; pagoData)
+      console.log('comprobanteUrl value:; comprobanteUrl)
+      console.log('comprobanteUrl type:; typeof comprobanteUrl)
+      console.log('comprobanteUrl length:; comprobanteUrl ? comprobanteUrl.length : 0)
 
       const pagoResponse = await api.post(`/proyectos/${proyectoId}/etapas/${pagoModal.etapaId}/pagos`, pagoData)
 
-      console.log('Pago creado exitosamente:', pagoResponse.data)
+      console.log('Pago creado exitosamente:; pagoResponse.data)
 
       toast.success('Pago registrado exitosamente')
       cerrarModalPago()
       // Recargar etapas para mostrar el botón "Ver Pagos" actualizado
       fetchEtapas()
     } catch (error: any) {
-      console.error('Error creating pago:', error)
+      console.error('Error creating pago:; error)
       toast.error(error.response?.data?.error || 'Error al registrar pago')
     }
   }
@@ -711,7 +711,7 @@ export default function MonitoreoObraPage() {
                       </div>
                       <div className="flex items-center space-x-3">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${getEstadoColor(etapa)}`}>
-                          {etapa.estado.replace('_', ' ')}
+                          {etapa.estado.replace('_; ' ')}
                         </span>
                         {getEstadoIcon(etapa)}
                         {etapa.estado === 'COMPLETADA' && (
@@ -1002,8 +1002,8 @@ export default function MonitoreoObraPage() {
                                 </div>
 
                                 {(() => {
-                                  console.log('Checking pago:', pago);
-                                  console.log('comprobanteUrl:', pago.comprobanteUrl);
+                                  console.log('Checking pago:; pago);
+                                  console.log('comprobanteUrl:; pago.comprobanteUrl);
                                   return pago.comprobanteUrl && (
                                     <div className="mt-3 p-3 bg-white rounded border">
                                       <div className="flex items-center space-x-2 mb-2">
@@ -1032,12 +1032,12 @@ export default function MonitoreoObraPage() {
                                             alt="Comprobante de pago"
                                             className="w-full max-w-md h-auto rounded border shadow-sm"
                                             onError={(e) => {
-                                              console.error('Error loading image:', `${API_BASE_URL}${pago.comprobanteUrl}`);
-                                              console.log('Pago data:', pago);
+                                              console.error('Error loading image:; `${API_BASE_URL}${pago.comprobanteUrl}`);
+                                              console.log('Pago data:; pago);
                                               (e.target as HTMLImageElement).style.display = 'none';
                                             }}
                                             onLoad={() => {
-                                              console.log('Image loaded successfully:', `${API_BASE_URL}${pago.comprobanteUrl}`);
+                                              console.log('Image loaded successfully:; `${API_BASE_URL}${pago.comprobanteUrl}`);
                                             }}
                                           />
                                           <div className="flex items-center space-x-2">

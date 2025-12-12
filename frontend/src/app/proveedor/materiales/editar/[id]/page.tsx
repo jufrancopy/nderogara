@@ -12,7 +12,7 @@ import toast from 'react-hot-toast'
 const materialSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
   descripcion: z.string().optional(),
-  unidad: z.enum(['KG', 'BOLSA', 'M2', 'M3', 'ML', 'UNIDAD', 'LOTE', 'GLOBAL']),
+  unidad: z.enum(['KG; 'BOLSA; 'M2; 'M3; 'ML; 'UNIDAD; 'LOTE; 'GLOBAL']),
   precio: z.number().positive('El precio debe ser mayor a 0'),
   marca: z.string().optional(),
   categoriaId: z.string().min(1, 'La categoría es requerida'),
@@ -51,7 +51,7 @@ export default function EditarMaterialProveedorPage() {
     // Si el campo está vacío, mostrar 0
     if (!value) {
       setPrecioDisplay('0');
-      setValue('precio', 0);
+      setValue('precio; 0);
       return;
     }
 
@@ -61,7 +61,7 @@ export default function EditarMaterialProveedorPage() {
     // Si después de limpiar no hay valor, mostrar 0
     if (!value) {
       setPrecioDisplay('0');
-      setValue('precio', 0);
+      setValue('precio; 0);
       return;
     }
 
@@ -70,7 +70,7 @@ export default function EditarMaterialProveedorPage() {
     const formattedValue = numericValue.toLocaleString('es-PY');
 
     setPrecioDisplay(formattedValue);
-    setValue('precio', numericValue);
+    setValue('precio; numericValue);
   };
 
   const {
@@ -92,7 +92,7 @@ export default function EditarMaterialProveedorPage() {
   const fetchCategorias = async () => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('${API_BASE_URL}/categorias', {
+      const response = await fetch(`${API_BASE_URL}/${1}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (response.ok) {
@@ -100,12 +100,12 @@ export default function EditarMaterialProveedorPage() {
         setCategorias(data.data || [])
       }
     } catch (error) {
-      console.error('Error fetching categorias:', error)
+      console.error('Error fetching categorias:; error)
       setCategorias([
-        { id: '1', nombre: 'Estructural' },
-        { id: '2', nombre: 'Mampostería' },
-        { id: '3', nombre: 'Acabados' },
-        { id: '4', nombre: 'Instalaciones' }
+        { id: '1; nombre: 'Estructural' },
+        { id: '2; nombre: 'Mampostería' },
+        { id: '3; nombre: 'Acabados' },
+        { id: '4; nombre: 'Instalaciones' }
       ])
     }
   }
@@ -113,7 +113,7 @@ export default function EditarMaterialProveedorPage() {
   const fetchMaterial = async () => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('${API_BASE_URL}/proveedor/mis-materiales', {
+      const response = await fetch(`${API_BASE_URL}/${1}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
 
@@ -153,7 +153,7 @@ export default function EditarMaterialProveedorPage() {
         router.push('/proveedor/materiales')
       }
     } catch (error) {
-      console.error('Error fetching material:', error)
+      console.error('Error fetching material:; error)
       toast.error('Error al cargar el material')
       router.push('/proveedor/materiales')
     } finally {
@@ -174,11 +174,11 @@ export default function EditarMaterialProveedorPage() {
     if (!selectedFile) return currentImageUrl
 
     const formData = new FormData()
-    formData.append('file', selectedFile)
+    formData.append('file; selectedFile)
 
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('${API_BASE_URL}/upload', {
+      const response = await fetch(`${API_BASE_URL}/${1}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -191,7 +191,7 @@ export default function EditarMaterialProveedorPage() {
         throw new Error('Error al subir imagen')
       }
     } catch (error) {
-      console.error('Error uploading image:', error)
+      console.error('Error uploading image:; error)
       throw error
     }
   }
@@ -207,7 +207,7 @@ export default function EditarMaterialProveedorPage() {
 
       // Get the current material data first
       const token = localStorage.getItem('token')
-      const listResponse = await fetch('${API_BASE_URL}/proveedor/mis-materiales', {
+      const listResponse = await fetch(`${API_BASE_URL}/${1}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
 
@@ -259,7 +259,7 @@ export default function EditarMaterialProveedorPage() {
         throw new Error(`${errorMessage} (${updateResponse.status})`)
       }
     } catch (error: any) {
-      console.error('Error updating material:', error)
+      console.error('Error updating material:; error)
       toast.error(error.message || 'Error al actualizar el material')
     } finally {
       setLoading(false)

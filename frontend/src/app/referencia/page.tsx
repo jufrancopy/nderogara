@@ -21,7 +21,7 @@ export default function ProyectosReferenciaPage() {
         setProyectos(data.data);
       }
     } catch (error) {
-      console.error('Error al cargar proyectos:', error);
+      console.error('Error al cargar proyectos:error);
     } finally {
       setLoading(false);
     }

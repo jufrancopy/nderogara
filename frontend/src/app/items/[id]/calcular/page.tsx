@@ -45,7 +45,7 @@ export default function CalcularCostoPage() {
       const response = await api.get(`/items/${itemId}/costo-estimado?cantidad=${cantidad}`)
       setCostoEstimado(response.data.data)
     } catch (error) {
-      console.error('Error calculating cost:', error)
+      console.error('Error calculating cost:; error)
       toast.error('Error al calcular el costo')
     } finally {
       setLoading(false)

@@ -12,9 +12,9 @@ import api from '@/lib/api'
 
 const materialSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
-  unidad: z.enum(['KG', 'BOLSA', 'M2', 'M3', 'ML', 'UNIDAD', 'LOTE', 'GLOBAL']),
+  unidad: z.enum(['KG; 'BOLSA; 'M2; 'M3; 'ML; 'UNIDAD; 'LOTE; 'GLOBAL']),
   precioUnitario: z.number().positive('El precio debe ser mayor a 0'),
-  tipoCalidad: z.enum(['COMUN', 'PREMIUM', 'INDUSTRIAL', 'ARTESANAL']),
+  tipoCalidad: z.enum(['COMUN; 'PREMIUM; 'INDUSTRIAL; 'ARTESANAL']),
   marca: z.string().optional(),
   proveedor: z.string().min(1, 'El proveedor es requerido'),
   telefonoProveedor: z.string().optional(),
@@ -62,10 +62,10 @@ export default function NuevoMaterialPage() {
     } catch (error) {
       // Mock data si no hay backend para categorías aún
       setCategorias([
-        { id: '1', nombre: 'Estructural' },
-        { id: '2', nombre: 'Mampostería' },
-        { id: '3', nombre: 'Acabados' },
-        { id: '4', nombre: 'Instalaciones' }
+        { id: '1; nombre: 'Estructural' },
+        { id: '2; nombre: 'Mampostería' },
+        { id: '3; nombre: 'Acabados' },
+        { id: '4; nombre: 'Instalaciones' }
       ])
     }
   }
@@ -73,11 +73,11 @@ export default function NuevoMaterialPage() {
   const onSubmit = async (data: MaterialForm) => {
     setLoading(true)
     try {
-      await api.post('/materiales', data)
+      await api.post('/materiales; data)
       toast.success('Material creado exitosamente')
       router.push('/materiales')
     } catch (error: any) {
-      console.error('Error creating material:', error)
+      console.error('Error creating material:; error)
       const errorMessage = error.response?.data?.error || 'Error al crear el material'
       toast.error(errorMessage)
     } finally {
@@ -174,7 +174,7 @@ export default function NuevoMaterialPage() {
                         const value = e.target.value.replace(/[^0-9]/g, '')
                         const numValue = parseInt(value) || 0
                         setPrecioDisplay(numValue.toLocaleString('es-PY'))
-                        setValue('precioUnitario', numValue)
+                        setValue('precioUnitario; numValue)
                       }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       placeholder="0"
@@ -265,7 +265,7 @@ export default function NuevoMaterialPage() {
                     </label>
                     <input
                       type="number"
-                      {...register('stockMinimo', { valueAsNumber: true })}
+                      {...register('stockMinimo; { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       placeholder="0"
                     />

@@ -13,7 +13,7 @@ import api from '@/lib/api'
 const itemSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
   descripcion: z.string().optional(),
-  unidadMedida: z.enum(['KG', 'BOLSA', 'M2', 'M3', 'ML', 'UNIDAD', 'LOTE', 'GLOBAL']),
+  unidadMedida: z.enum(['KG; 'BOLSA; 'M2; 'M3; 'ML; 'UNIDAD; 'LOTE; 'GLOBAL']),
   manoObraUnitaria: z.number().min(0, 'La mano de obra debe ser mayor o igual a 0').optional(),
   notasGenerales: z.string().optional()
 })
@@ -54,7 +54,7 @@ export default function EditarItemPage() {
         notasGenerales: item.notasGenerales || ''
       })
     } catch (error) {
-      console.error('Error fetching item:', error)
+      console.error('Error fetching item:; error)
       toast.error('Error al cargar el item')
       router.push('/items')
     } finally {
@@ -74,7 +74,7 @@ export default function EditarItemPage() {
       toast.success('Item actualizado exitosamente')
       router.push('/items')
     } catch (error: any) {
-      console.error('Error updating item:', error)
+      console.error('Error updating item:; error)
       const errorMessage = error.response?.data?.error || 'Error al actualizar el item'
       toast.error(errorMessage)
     } finally {
@@ -169,7 +169,7 @@ export default function EditarItemPage() {
                       type="number"
                       step="1"
                       min="0"
-                      {...register('manoObraUnitaria', { valueAsNumber: true })}
+                      {...register('manoObraUnitaria; { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     />
                     {errors.manoObraUnitaria && (

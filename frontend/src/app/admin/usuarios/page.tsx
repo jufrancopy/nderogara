@@ -44,7 +44,7 @@ export default function AdminUsuariosPage() {
         setUsuarios(data.data);
       }
     } catch (error) {
-      console.error('Error al cargar usuarios:', error);
+      console.error('Error al cargar usuarios:error);
     } finally {
       setLoading(false);
     }
@@ -83,7 +83,7 @@ export default function AdminUsuariosPage() {
         alert(data.error || 'Error al guardar usuario');
       }
     } catch (error) {
-      console.error('Error al guardar usuario:', error);
+      console.error('Error al guardar usuario:error);
       alert('Error de conexión');
     } finally {
       setSubmitting(false);
@@ -107,7 +107,7 @@ export default function AdminUsuariosPage() {
         alert(data.error || 'Error al eliminar usuario');
       }
     } catch (error) {
-      console.error('Error al eliminar usuario:', error);
+      console.error('Error al eliminar usuario:error);
       alert('Error de conexión');
     }
   };
@@ -143,7 +143,7 @@ export default function AdminUsuariosPage() {
     
     try {
       const formData = new FormData();
-      formData.append('file', selectedImage);
+      formData.append('file; selectedImage);
       
       const token = localStorage.getItem('token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}/image`, {
@@ -154,14 +154,14 @@ export default function AdminUsuariosPage() {
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Error uploading image:', response.status, errorText);
+        console.error('Error uploading image:; response.status, errorText);
         throw new Error(`Error ${response.status}: ${errorText}`);
       }
       
       const result = await response.json();
-      console.log('Image uploaded successfully:', result);
+      console.log('Image uploaded successfully:; result);
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error('Upload failed:error);
       alert('Error al subir la imagen. Intenta con una imagen más pequeña.');
     }
   };

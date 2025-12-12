@@ -55,7 +55,7 @@ export default function Home() {
                   e.currentTarget.nextElementSibling?.classList.remove('ml-2');
                 }}
               />
-              <h1 className="ml-2 sm:ml-4 text-lg sm:text-xl font-bold bg-gradient-to-r bg-clip-text text-transparent" style={{backgroundImage: 'linear-gradient(to right, #38603B, #B99742)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Nde Rogara</h1>
+              <h1 className="ml-2 sm:ml-4 text-lg sm:text-xl font-bold bg-gradient-to-r bg-clip-text text-transparent" style={{backgroundImage: 'linear-gradient(to right, #38603B, #B99742); WebkitBackgroundClip: 'text; WebkitTextFillColor: 'transparent'}}>Nde Rogara</h1>
             </div>
             <div className="hidden sm:flex gap-3">
               <Link href="/inmuebles" className="text-gray-600 hover:text-gray-900 px-4 py-2">
@@ -81,7 +81,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
         <div className="text-center">
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-            Planifica tu <span className="bg-gradient-to-r bg-clip-text text-transparent" style={{backgroundImage: 'linear-gradient(to right, #38603B, #B99742)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Vivienda Ideal</span>
+            Planifica tu <span className="bg-gradient-to-r bg-clip-text text-transparent" style={{backgroundImage: 'linear-gradient(to right, #38603B, #B99742); WebkitBackgroundClip: 'text; WebkitTextFillColor: 'transparent'}}>Vivienda Ideal</span>
           </h2>
           <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-3xl mx-auto px-4">
             Controla cada detalle de tu proyecto de construcción. Presupuestos precisos, materiales optimizados y seguimiento en tiempo real.
@@ -117,7 +117,7 @@ export default function Home() {
             <div className="p-8 md:p-12">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-2xl font-bold text-gray-900">{proyectos[currentIndex]?.nombre}</h4>
-                <span className="px-4 py-2 rounded-full font-semibold" style={{backgroundColor: '#D1B48C', color: '#38603B'}}>
+                <span className="px-4 py-2 rounded-full font-semibold" style={{backgroundColor: '#D1B48C; color: '#38603B'}}>
                   {proyectos[currentIndex]?.superficieTotal}m²
                 </span>
               </div>

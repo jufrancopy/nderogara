@@ -12,9 +12,9 @@ import api from '@/lib/api'
 
 const materialSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
-  unidad: z.enum(['KG', 'BOLSA', 'M2', 'M3', 'ML', 'UNIDAD', 'LOTE', 'GLOBAL']),
+  unidad: z.enum(['KG; 'BOLSA; 'M2; 'M3; 'ML; 'UNIDAD; 'LOTE; 'GLOBAL']),
   precioUnitario: z.number().positive('El precio debe ser mayor a 0'),
-  tipoCalidad: z.enum(['COMUN', 'PREMIUM', 'INDUSTRIAL', 'ARTESANAL']),
+  tipoCalidad: z.enum(['COMUN; 'PREMIUM; 'INDUSTRIAL; 'ARTESANAL']),
   marca: z.string().optional(),
   proveedor: z.string().min(1, 'El proveedor es requerido'),
   telefonoProveedor: z.string().optional(),
@@ -61,10 +61,10 @@ export default function EditarMaterialPage() {
       setCategorias(response.data.data || [])
     } catch (error) {
       setCategorias([
-        { id: '1', nombre: 'Estructural' },
-        { id: '2', nombre: 'Mampostería' },
-        { id: '3', nombre: 'Acabados' },
-        { id: '4', nombre: 'Instalaciones' }
+        { id: '1; nombre: 'Estructural' },
+        { id: '2; nombre: 'Mampostería' },
+        { id: '3; nombre: 'Acabados' },
+        { id: '4; nombre: 'Instalaciones' }
       ])
     }
   }
@@ -89,7 +89,7 @@ export default function EditarMaterialPage() {
         categoriaId: material.categoriaId
       })
     } catch (error) {
-      console.error('Error fetching material:', error)
+      console.error('Error fetching material:; error)
       toast.error('Error al cargar el material')
       router.push('/materiales')
     } finally {
@@ -104,7 +104,7 @@ export default function EditarMaterialPage() {
       toast.success('Material actualizado exitosamente')
       router.push('/materiales')
     } catch (error: any) {
-      console.error('Error updating material:', error)
+      console.error('Error updating material:; error)
       const errorMessage = error.response?.data?.error || 'Error al actualizar el material'
       toast.error(errorMessage)
     } finally {
@@ -220,7 +220,7 @@ export default function EditarMaterialPage() {
                     <input
                       type="number"
                       step="1"
-                      {...register('precioUnitario', { valueAsNumber: true })}
+                      {...register('precioUnitario; { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     />
                     {errors.precioUnitario && (
@@ -306,7 +306,7 @@ export default function EditarMaterialPage() {
                     </label>
                     <input
                       type="number"
-                      {...register('stockMinimo', { valueAsNumber: true })}
+                      {...register('stockMinimo; { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>

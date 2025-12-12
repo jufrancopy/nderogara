@@ -7,7 +7,7 @@ interface ButtonLoadingProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
 }
 
-export default function ButtonLoading({ loading, children, className = '', disabled, ...props }: ButtonLoadingProps) {
+export default function ButtonLoading({ loading, children, className = '; disabled, ...props }: ButtonLoadingProps) {
   return (
     <button
       {...props}

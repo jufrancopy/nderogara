@@ -13,7 +13,7 @@ import api from '@/lib/api';
 const inmuebleSchema = z.object({
   titulo: z.string().min(1, 'El título es requerido'),
   descripcion: z.string().optional(),
-  tipo: z.enum(['VENTA', 'ALQUILER']),
+  tipo: z.enum(['VENTA; 'ALQUILER']),
   precio: z.number().min(1, 'El precio debe ser mayor a 0'),
   direccion: z.string().min(1, 'La dirección es requerida'),
   ciudad: z.string().min(1, 'La ciudad es requerida'),
@@ -64,7 +64,7 @@ export default function NuevoInmueblePage() {
       const response = await api.get('/proyectos');
       setProyectos(response.data.data || []);
     } catch (error) {
-      console.error('Error al cargar proyectos:', error);
+      console.error('Error al cargar proyectos:error);
     }
   };
 
@@ -93,10 +93,10 @@ export default function NuevoInmueblePage() {
 
       // Agregar imágenes
       imagenes.forEach((imagen) => {
-        formData.append('imagenes', imagen);
+        formData.append('imagenes; imagen);
       });
 
-      await api.post('/inmuebles', formData, {
+      await api.post('/inmuebles; formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -105,7 +105,7 @@ export default function NuevoInmueblePage() {
       toast.success('Inmueble publicado exitosamente');
       router.push('/inmuebles');
     } catch (error: any) {
-      console.error('Error:', error);
+      console.error('Error:error);
       const errorMessage = error.response?.data?.error || 'Error al publicar el inmueble';
       toast.error(errorMessage);
     } finally {
@@ -169,7 +169,7 @@ export default function NuevoInmueblePage() {
                     </label>
                     <input
                       type="number"
-                      {...register('precio', { valueAsNumber: true })}
+                      {...register('precio; { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
                       placeholder="150000000"
                     />
@@ -232,7 +232,7 @@ export default function NuevoInmueblePage() {
                     </label>
                     <input
                       type="number"
-                      {...register('superficie', { valueAsNumber: true })}
+                      {...register('superficie; { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
                       placeholder="120"
                     />
@@ -244,7 +244,7 @@ export default function NuevoInmueblePage() {
                     </label>
                     <input
                       type="number"
-                      {...register('habitaciones', { valueAsNumber: true })}
+                      {...register('habitaciones; { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
                       placeholder="3"
                     />
@@ -256,7 +256,7 @@ export default function NuevoInmueblePage() {
                     </label>
                     <input
                       type="number"
-                      {...register('banos', { valueAsNumber: true })}
+                      {...register('banos; { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
                       placeholder="2"
                     />

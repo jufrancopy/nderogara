@@ -17,7 +17,7 @@ const proyectoSchema = z.object({
   direccion: z.string().optional(),
   fechaInicio: z.string().optional(),
   fechaFinEstimada: z.string().optional(),
-  estado: z.enum(['PLANIFICACION', 'EN_PROGRESO', 'PAUSADO', 'COMPLETADO', 'CANCELADO']),
+  estado: z.enum(['PLANIFICACION; 'EN_PROGRESO; 'PAUSADO; 'COMPLETADO; 'CANCELADO']),
   margenGanancia: z.number().min(0).max(100).optional(),
   clienteNombre: z.string().optional(),
   clienteTelefono: z.string().optional(),
@@ -76,7 +76,7 @@ export default function EditarProyectoPage() {
         encargadoTelefono: proyecto.encargadoTelefono || ''
       })
     } catch (error) {
-      console.error('Error fetching proyecto:', error)
+      console.error('Error fetching proyecto:; error)
       toast.error('Error al cargar el proyecto')
       router.push('/proyectos')
     } finally {
@@ -100,7 +100,7 @@ export default function EditarProyectoPage() {
       toast.success('Proyecto actualizado exitosamente')
       router.push('/proyectos')
     } catch (error: any) {
-      console.error('Error updating proyecto:', error)
+      console.error('Error updating proyecto:; error)
       const errorMessage = error.response?.data?.error || 'Error al actualizar el proyecto'
       toast.error(errorMessage)
     } finally {
@@ -204,7 +204,7 @@ export default function EditarProyectoPage() {
                     <input
                       type="number"
                       step="0.01"
-                      {...register('superficieTotal', { valueAsNumber: true })}
+                      {...register('superficieTotal; { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -218,7 +218,7 @@ export default function EditarProyectoPage() {
                       step="0.1"
                       min="0"
                       max="100"
-                      {...register('margenGanancia', { valueAsNumber: true })}
+                      {...register('margenGanancia; { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>

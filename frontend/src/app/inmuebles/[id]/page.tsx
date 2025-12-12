@@ -80,12 +80,12 @@ export default function InmuebleDetallePage() {
             const payload = JSON.parse(atob(token.split('.')[1]));
             setIsOwner(payload.id === data.data.usuarioId);
           } catch (error) {
-            console.error('Error al verificar propietario:', error);
+            console.error('Error al verificar propietario:error);
           }
         }
       }
     } catch (error) {
-      console.error('Error al cargar inmueble:', error);
+      console.error('Error al cargar inmueble:error);
     } finally {
       setLoading(false);
     }
@@ -117,7 +117,7 @@ export default function InmuebleDetallePage() {
       toast.success('Inmueble eliminado exitosamente');
       router.push('/inmuebles');
     } catch (error: any) {
-      console.error('Error al eliminar inmueble:', error);
+      console.error('Error al eliminar inmueble:error);
       const errorMessage = error.response?.data?.error || 'Error al eliminar el inmueble';
       toast.error(errorMessage);
     } finally {

@@ -56,9 +56,9 @@ export default function NuevoProyectoPage() {
       const response = await api.get('/auth/me')
       const user = response.data.data
       setCurrentUser(user)
-      setValue('usuarioId', user.id)
+      setValue('usuarioId; user.id)
     } catch (error) {
-      console.error('Error fetching user:', error)
+      console.error('Error fetching user:; error)
       // Si no puede obtener el usuario, redirigir al login
       toast.error('Sesión expirada. Redirigiendo al login...')
       router.push('/login')
@@ -73,10 +73,10 @@ export default function NuevoProyectoPage() {
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file; file);
         
         const token = localStorage.getItem('token');
-        const response = await fetch('${API_BASE_URL}/upload/imagen', {
+        const response = await fetch(`${API_BASE_URL}/${1}`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: formData
@@ -113,11 +113,11 @@ export default function NuevoProyectoPage() {
         imagenUrl: imagenes.length > 0 ? JSON.stringify(imagenes) : undefined
       }
 
-      await api.post('/proyectos', cleanData)
+      await api.post('/proyectos; cleanData)
       toast.success('Proyecto creado exitosamente')
       router.push('/proyectos')
     } catch (error: any) {
-      console.error('Error creating proyecto:', error)
+      console.error('Error creating proyecto:; error)
       const errorMessage = error.response?.data?.error || 'Error al crear el proyecto'
       toast.error(errorMessage)
     } finally {
@@ -183,7 +183,7 @@ export default function NuevoProyectoPage() {
                     <input
                       type="number"
                       step="0.01"
-                      {...register('superficieTotal', { valueAsNumber: true })}
+                      {...register('superficieTotal; { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       placeholder="120.50"
                     />
@@ -201,7 +201,7 @@ export default function NuevoProyectoPage() {
                       step="0.1"
                       min="0"
                       max="100"
-                      {...register('margenGanancia', { valueAsNumber: true })}
+                      {...register('margenGanancia; { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       placeholder="20"
                     />

@@ -43,7 +43,7 @@ export default function ConfigurarEtapasPage() {
       const response = await api.get(`/proyectos/${proyectoId}`)
       setProyecto(response.data.data)
     } catch (error) {
-      console.error('Error fetching proyecto:', error)
+      console.error('Error fetching proyecto:; error)
       toast.error('Error al cargar el proyecto')
     }
   }
@@ -61,7 +61,7 @@ export default function ConfigurarEtapasPage() {
         fechaFinPlaneada: e.fechaFinPlaneada ? e.fechaFinPlaneada.split('T')[0] : ''
       })))
     } catch (error) {
-      console.error('Error fetching etapas:', error)
+      console.error('Error fetching etapas:; error)
     } finally {
       setLoading(false)
     }
@@ -73,7 +73,7 @@ export default function ConfigurarEtapasPage() {
       const proyecto = response.data.data
       setItemsDisponibles(proyecto.presupuestoItems || [])
     } catch (error) {
-      console.error('Error fetching items:', error)
+      console.error('Error fetching items:; error)
     }
   }
 
@@ -152,7 +152,7 @@ export default function ConfigurarEtapasPage() {
       toast.success('Etapas guardadas exitosamente')
       router.push(`/proyectos/${proyectoId}/obra`)
     } catch (error) {
-      console.error('Error saving etapas:', error)
+      console.error('Error saving etapas:; error)
       toast.error('Error al guardar las etapas')
     } finally {
       setSaving(false)
@@ -240,7 +240,7 @@ export default function ConfigurarEtapasPage() {
                     </label>
                     <select
                       value={etapa.nombre}
-                      onChange={(e) => actualizarEtapa(index, 'nombre', e.target.value)}
+                      onChange={(e) => actualizarEtapa(index, 'nombre; e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Seleccionar item</option>
@@ -260,7 +260,7 @@ export default function ConfigurarEtapasPage() {
                     </label>
                     <textarea
                       value={etapa.descripcion}
-                      onChange={(e) => actualizarEtapa(index, 'descripcion', e.target.value)}
+                      onChange={(e) => actualizarEtapa(index, 'descripcion; e.target.value)}
                       rows={2}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Descripción de las actividades de esta etapa..."
@@ -274,7 +274,7 @@ export default function ConfigurarEtapasPage() {
                     <input
                       type="date"
                       value={etapa.fechaInicioPlaneada}
-                      onChange={(e) => actualizarEtapa(index, 'fechaInicioPlaneada', e.target.value)}
+                      onChange={(e) => actualizarEtapa(index, 'fechaInicioPlaneada; e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -286,7 +286,7 @@ export default function ConfigurarEtapasPage() {
                     <input
                       type="date"
                       value={etapa.fechaFinPlaneada}
-                      onChange={(e) => actualizarEtapa(index, 'fechaFinPlaneada', e.target.value)}
+                      onChange={(e) => actualizarEtapa(index, 'fechaFinPlaneada; e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>

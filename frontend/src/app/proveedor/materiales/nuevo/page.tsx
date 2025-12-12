@@ -28,7 +28,7 @@ export default function NuevoMaterialProveedorPage() {
   const fetchGaleria = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('${API_BASE_URL}/upload/galeria', {
+      const response = await fetch(`${API_BASE_URL}/${1}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
@@ -36,7 +36,7 @@ export default function NuevoMaterialProveedorPage() {
         setGaleria(data.data);
       }
     } catch (error) {
-      console.error('Error al cargar galería:', error);
+      console.error('Error al cargar galería:error);
     }
   };
 
@@ -45,11 +45,11 @@ export default function NuevoMaterialProveedorPage() {
     if (!file) return;
 
     const formDataUpload = new FormData();
-    formDataUpload.append('file', file);
+    formDataUpload.append('file; file);
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('${API_BASE_URL}/upload/imagen', {
+      const response = await fetch(`${API_BASE_URL}/${1}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formDataUpload
@@ -61,14 +61,14 @@ export default function NuevoMaterialProveedorPage() {
         fetchGaleria();
       }
     } catch (error) {
-      console.error('Error al subir imagen:', error);
+      console.error('Error al subir imagen:error);
     }
   };
 
   const fetchCategorias = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('${API_BASE_URL}/categorias', {
+      const response = await fetch(`${API_BASE_URL}/${1}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
@@ -79,7 +79,7 @@ export default function NuevoMaterialProveedorPage() {
         }
       }
     } catch (error) {
-      console.error('Error al cargar categorías:', error);
+      console.error('Error al cargar categorías:error);
     }
   };
 
@@ -89,7 +89,7 @@ export default function NuevoMaterialProveedorPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('${API_BASE_URL}/proveedor/materiales', {
+      const response = await fetch(`${API_BASE_URL}/${1}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,7 +105,7 @@ export default function NuevoMaterialProveedorPage() {
         router.push('/proveedor/materiales');
       }
     } catch (error) {
-      console.error('Error al crear material:', error);
+      console.error('Error al crear material:error);
     } finally {
       setLoading(false);
     }
