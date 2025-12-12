@@ -9,20 +9,28 @@ export async function pagosRoutes(fastify: FastifyInstance) {
   })
 
   // GET /proyectos/:proyectoId/etapas/:etapaId/pagos - Obtener pagos de una etapa
-  fastify.get('/proyectos/:proyectoId/etapas/:etapaId/pagos', pagosController.getPagosEtapa)
+  fastify.get<{
+    Params: { proyectoId: string; etapaId: string }
+  }>('/proyectos/:proyectoId/etapas/:etapaId/pagos', pagosController.getPagosEtapa)
 
   // POST /proyectos/:proyectoId/etapas/:etapaId/pagos - Crear pago
-  fastify.post('/proyectos/:proyectoId/etapas/:etapaId/pagos', {
+  fastify.post<{
+    Params: { proyectoId: string; etapaId: string }
+  }>('/proyectos/:proyectoId/etapas/:etapaId/pagos', {
     preHandler: hasRole(['ADMIN', 'CLIENTE'])
   }, pagosController.createPago)
 
   // PUT /proyectos/:proyectoId/etapas/:etapaId/pagos/:pagoId - Actualizar pago
-  fastify.put('/proyectos/:proyectoId/etapas/:etapaId/pagos/:pagoId', {
+  fastify.put<{
+    Params: { proyectoId: string; etapaId: string; pagoId: string }
+  }>('/proyectos/:proyectoId/etapas/:etapaId/pagos/:pagoId', {
     preHandler: hasRole(['ADMIN', 'CLIENTE'])
   }, pagosController.updatePago)
 
   // DELETE /proyectos/:proyectoId/etapas/:etapaId/pagos/:pagoId - Eliminar pago
-  fastify.delete('/proyectos/:proyectoId/etapas/:etapaId/pagos/:pagoId', {
+  fastify.delete<{
+    Params: { proyectoId: string; etapaId: string; pagoId: string }
+  }>('/proyectos/:proyectoId/etapas/:etapaId/pagos/:pagoId', {
     preHandler: hasRole(['ADMIN', 'CLIENTE'])
   }, pagosController.deletePago)
 }
