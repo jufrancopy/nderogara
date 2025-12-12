@@ -17,7 +17,7 @@ function LoadingBarInner() {
     const handleComplete = () => setLoading(false);
 
     window.addEventListener('beforeunload', handleStart);
-    
+
     return () => {
       window.removeEventListener('beforeunload', handleStart);
     };
