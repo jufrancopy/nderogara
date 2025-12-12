@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 // Obtener materiales del proveedor autenticado
 export const getMisMateriales = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = (request.user as any).userId;
+    const userId = (request.user as any).id;
 
     const materiales = await prisma.material.findMany({
       where: { usuarioId: userId },
@@ -14,7 +14,13 @@ export const getMisMateriales = async (request: FastifyRequest, reply: FastifyRe
       orderBy: { createdAt: 'desc' }
     });
 
-    reply.send(materiales);
+    // Map precio to precio for frontend compatibility
+    const materialesMapped = materiales.map(material => ({
+      ...material,
+      precio: material.precio
+    }));
+
+    reply.send(materialesMapped);
   } catch (error) {
     console.error('Error al obtener materiales del proveedor:', error);
     reply.status(500).send({ error: 'Error al obtener materiales' });
@@ -24,7 +30,7 @@ export const getMisMateriales = async (request: FastifyRequest, reply: FastifyRe
 // Crear material del proveedor
 export const crearMaterial = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = (request.user as any).userId;
+    const userId = (request.user as any).id;
     const { nombre, descripcion, unidad, categoriaId, imagenUrl, precio, marca } = request.body as any;
 
     const material = await prisma.material.create({
@@ -34,7 +40,7 @@ export const crearMaterial = async (request: FastifyRequest, reply: FastifyReply
         unidad,
         categoriaId,
         imagenUrl,
-        precioPersonalizado: precio,
+        precio: precio,
         usuarioId: userId,
         esActivo: true
       },
@@ -51,7 +57,7 @@ export const crearMaterial = async (request: FastifyRequest, reply: FastifyReply
 // Actualizar material del proveedor
 export const actualizarMaterial = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = (request.user as any).userId;
+    const userId = (request.user as any).id;
     const { id } = request.params as any;
     const { nombre, descripcion, unidad, categoriaId, imagenUrl, precio, marca, esActivo } = request.body as any;
 
@@ -70,9 +76,9 @@ export const actualizarMaterial = async (request: FastifyRequest, reply: Fastify
         nombre,
         descripcion,
         unidad,
-        categoriaId,
+        categoria: { connect: { id: categoriaId } },
         imagenUrl,
-        precioPersonalizado: precio,
+        precio: precio,
         esActivo
       },
       include: { categoria: true }
@@ -88,7 +94,7 @@ export const actualizarMaterial = async (request: FastifyRequest, reply: Fastify
 // Eliminar material del proveedor
 export const eliminarMaterial = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = (request.user as any).userId;
+    const userId = (request.user as any).id;
     const { id } = request.params as any;
 
     // Verificar que el material pertenece al proveedor

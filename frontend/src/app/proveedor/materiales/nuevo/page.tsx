@@ -167,6 +167,9 @@ export default function NuevoMaterialProveedorPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 placeholder="45000"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Vista previa: ₲{formData.precio ? parseFloat(formData.precio).toLocaleString('es-PY') : '0'}
+              </p>
             </div>
 
             <div>

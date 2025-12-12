@@ -56,11 +56,60 @@ export async function uploadRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // POST /upload/comprobante - Subir comprobante de pago
+  fastify.post('/comprobante', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const data = await request.file();
+
+      if (!data) {
+        return reply.status(400).send({ success: false, error: 'No se envió ningún archivo' });
+      }
+
+      // Validar tipo de archivo (imágenes y PDFs)
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+      if (!allowedTypes.includes(data.mimetype)) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Tipo de archivo no permitido. Solo JPG, PNG, WEBP y PDF'
+        });
+      }
+
+      // Generar nombre único
+      const timestamp = Date.now();
+      const ext = path.extname(data.filename);
+      const filename = `comprobante_${timestamp}${ext}`;
+      const filepath = path.join(process.cwd(), 'public', 'uploads', 'comprobantes', filename);
+
+      // Crear directorio si no existe
+      const comprobantesDir = path.join(process.cwd(), 'public', 'uploads', 'comprobantes');
+      if (!fs.existsSync(comprobantesDir)) {
+        fs.mkdirSync(comprobantesDir, { recursive: true });
+      }
+
+      // Guardar archivo
+      const buffer = await data.toBuffer();
+      await writeFile(filepath, buffer);
+
+      const url = `/uploads/comprobantes/${filename}`;
+
+      reply.send({
+        success: true,
+        data: {
+          url,
+          filename
+        }
+      });
+    } catch (error) {
+      console.error('Error uploading comprobante:', error);
+      reply.status(500).send({ success: false, error: 'Error al subir comprobante' });
+    }
+  });
+
   // GET /upload/galeria - Listar imágenes de la galería
   fastify.get('/galeria', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'materiales');
-      
+
       // Crear directorio si no existe
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });

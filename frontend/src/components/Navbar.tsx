@@ -21,6 +21,7 @@ export default function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    setUser(null);
     router.push('/');
   };
 
@@ -99,6 +100,24 @@ export default function Navbar() {
                 <Link href="/proveedor/materiales" className={`px-3 py-2 rounded ${pathname.startsWith('/proveedor') ? 'bg-purple-50 text-purple-600' : 'text-gray-600 hover:text-gray-900'}`}>
                   Mis Materiales
                 </Link>
+              ) : user?.rol === 'CONSTRUCTOR' ? (
+                <>
+                  <Link href="/items" className={`px-3 py-2 rounded ${pathname.startsWith('/items') ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}>
+                    Mis Items
+                  </Link>
+                  <Link href="/proveedor/materiales" className={`px-3 py-2 rounded ${pathname.startsWith('/proveedor') ? 'bg-purple-50 text-purple-600' : 'text-gray-600 hover:text-gray-900'}`}>
+                    Mis Materiales
+                  </Link>
+                </>
+              ) : user?.rol === 'PROVEEDOR_SERVICIOS' ? (
+                <>
+                  <Link href="/items" className={`px-3 py-2 rounded ${pathname.startsWith('/items') ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}>
+                    Mis Servicios
+                  </Link>
+                  <Link href="/proveedor/materiales" className={`px-3 py-2 rounded ${pathname.startsWith('/proveedor') ? 'bg-purple-50 text-purple-600' : 'text-gray-600 hover:text-gray-900'}`}>
+                    Mis Materiales
+                  </Link>
+                </>
               ) : (
                 <>
                   <Link href="/proyectos" className={`px-3 py-2 rounded ${pathname.startsWith('/proyectos') ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}>
@@ -118,6 +137,9 @@ export default function Navbar() {
                   </Link>
                   {user?.rol === 'ADMIN' && (
                     <>
+                      <Link href="/admin/dashboard" className={`px-3 py-2 rounded ${pathname.startsWith('/admin/dashboard') ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:text-gray-900'}`}>
+                        Dashboard
+                      </Link>
                       <Link href="/admin/materiales" className={`px-3 py-2 rounded ${pathname.startsWith('/admin/materiales') ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:text-gray-900'}`}>
                         Catálogo
                       </Link>
@@ -164,6 +186,24 @@ export default function Navbar() {
                 <Link href="/proveedor/materiales" className="block py-2 text-gray-600">
                   Mis Materiales
                 </Link>
+              ) : user?.rol === 'CONSTRUCTOR' ? (
+                <>
+                  <Link href="/items" className="block py-2 text-gray-600">
+                    Mis Items
+                  </Link>
+                  <Link href="/proveedor/materiales" className="block py-2 text-gray-600">
+                    Mis Materiales
+                  </Link>
+                </>
+              ) : user?.rol === 'PROVEEDOR_SERVICIOS' ? (
+                <>
+                  <Link href="/items" className="block py-2 text-gray-600">
+                    Mis Servicios
+                  </Link>
+                  <Link href="/proveedor/materiales" className="block py-2 text-gray-600">
+                    Mis Materiales
+                  </Link>
+                </>
               ) : (
                 <>
                   <Link href="/proyectos" className="block py-2 text-gray-600">
@@ -183,6 +223,9 @@ export default function Navbar() {
                   </Link>
                   {user?.rol === 'ADMIN' && (
                     <>
+                      <Link href="/admin/dashboard" className="block py-2 text-gray-600">
+                        Dashboard
+                      </Link>
                       <Link href="/admin/materiales" className="block py-2 text-gray-600">
                         Catálogo
                       </Link>

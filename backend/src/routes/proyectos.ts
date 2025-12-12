@@ -3,9 +3,15 @@ import { proyectosController } from '../controllers/proyectosController'
 import { presupuestoController } from '../controllers/presupuestoController'
 
 export async function proyectosRoutes(fastify: FastifyInstance) {
-  // Proteger todas las rutas con autenticación
+  // Proteger todas las rutas con autenticación y verificación de rol
   fastify.addHook('preHandler', async (request, reply) => {
     await request.jwtVerify()
+
+    const user = request.user as any
+    // Solo permitir ADMIN y CLIENTE acceder a proyectos
+    if (user.rol !== 'ADMIN' && user.rol !== 'CLIENTE') {
+      reply.status(403).send({ error: 'Acceso denegado. Solo clientes pueden gestionar proyectos.' })
+    }
   })
 
   // GET /proyectos

@@ -17,13 +17,26 @@ export const itemsController = {
   // GET /items
   async getItems(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const userId = (request as any).user?.id;
-      
+      const user = (request as any).user;
+      const userId = user?.id;
+      const userRol = user?.rol;
+
+      let whereCondition: any = { esActivo: true };
+
+      // Filtrar según el rol del usuario
+      if (userRol === 'ADMIN') {
+        // Admin ve todos los items
+        // No agregar condición adicional
+      } else if (userRol === 'CONSTRUCTOR' || userRol === 'PROVEEDOR_SERVICIOS') {
+        // Constructores y proveedores de servicios ven sus propios items
+        whereCondition.usuarioId = userId;
+      } else {
+        // Otros roles (como CLIENTE) ven items públicos o del sistema
+        whereCondition.usuarioId = null;
+      }
+
       const items = await prisma.item.findMany({
-        where: { 
-          esActivo: true,
-          usuarioId: userId || null
-        },
+        where: whereCondition,
         include: {
           materialesPorItem: {
             include: {
@@ -140,20 +153,29 @@ export const itemsController = {
   // PUT /items/:id
   async updateItem(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     try {
-      const userId = (request as any).user?.id;
+      const user = (request as any).user;
+      const userId = user?.id;
+      const userRol = user?.rol;
       const { id } = request.params
-      
+
+      let whereCondition: any = { id };
+
+      // Si no es admin, solo puede editar sus propios items
+      if (userRol !== 'ADMIN') {
+        whereCondition.usuarioId = userId;
+      }
+
       const existing = await prisma.item.findFirst({
-        where: { id, usuarioId: userId }
+        where: whereCondition
       });
-      
+
       if (!existing) {
         return reply.status(404).send({
           success: false,
-          error: 'Item no encontrado'
+          error: 'Item no encontrado o sin permisos para editarlo'
         });
       }
-      
+
       const validatedData = createItemSchema.partial().parse(request.body)
 
       const item = await prisma.item.update({
@@ -193,17 +215,26 @@ export const itemsController = {
   // DELETE /items/:id
   async deleteItem(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     try {
-      const userId = (request as any).user?.id;
+      const user = (request as any).user;
+      const userId = user?.id;
+      const userRol = user?.rol;
       const { id } = request.params
 
+      let whereCondition: any = { id };
+
+      // Si no es admin, solo puede eliminar sus propios items
+      if (userRol !== 'ADMIN') {
+        whereCondition.usuarioId = userId;
+      }
+
       const existing = await prisma.item.findFirst({
-        where: { id, usuarioId: userId }
+        where: whereCondition
       });
-      
+
       if (!existing) {
         return reply.status(404).send({
           success: false,
-          error: 'Item no encontrado'
+          error: 'Item no encontrado o sin permisos para eliminarlo'
         });
       }
 
@@ -268,7 +299,7 @@ export const itemsController = {
 
       // Calcular costo de materiales
       const costoMateriales = item.materialesPorItem.reduce((total, materialItem) => {
-        const precio = materialItem.material.precioPersonalizado || 
+        const precio = materialItem.material.precio ||
                       materialItem.material.ofertas?.[0]?.precio || 0;
         const costoMaterial = Number(precio) * Number(materialItem.cantidadPorUnidad)
         return total + costoMaterial
@@ -295,7 +326,7 @@ export const itemsController = {
           costoUnitario,
           costoTotal,
           desgloseMateriales: item.materialesPorItem.map(materialItem => {
-            const precio = materialItem.material.precioPersonalizado || 
+            const precio = materialItem.material.precio ||
                           materialItem.material.ofertas?.[0]?.precio || 0;
             return {
               material: materialItem.material.nombre,

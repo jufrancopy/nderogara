@@ -42,10 +42,22 @@ export default function LoginPage() {
         return;
       }
 
+      // Limpiar cualquier sesión anterior
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+
       localStorage.setItem('token', data.data.token);
       localStorage.setItem('user', JSON.stringify(data.data.user));
 
-      router.push('/proyectos');
+      // Redirect based on user role
+      const userRole = data.data.user.rol;
+      if (userRole === 'ADMIN') {
+        router.push('/admin/dashboard');
+      } else if (userRole === 'PROVEEDOR_MATERIALES' || userRole === 'CONSTRUCTOR' || userRole === 'PROVEEDOR_SERVICIOS') {
+        router.push('/proveedor/materiales');
+      } else {
+        router.push('/proyectos');
+      }
     } catch (err) {
       setError('Error de conexión con el servidor');
     } finally {

@@ -28,9 +28,13 @@ interface Proyecto {
   clienteNombre?: string
   clienteTelefono?: string
   clienteEmail?: string
+  encargadoNombre?: string
+  encargadoTelefono?: string
+  imagenUrl?: string
   usuario?: {
     name: string
     email: string
+    telefono?: string
   }
   presupuestoItems?: PresupuestoItem[]
   cotizaciones?: Cotizacion[]
@@ -97,6 +101,10 @@ export default function ProyectoDetallePage() {
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
   const [materialesPorItem, setMaterialesPorItem] = useState<Record<string, any[]>>({})
   const [modalImage, setModalImage] = useState<string | null>(null)
+  const [modalPagosProyecto, setModalPagosProyecto] = useState<{
+    isOpen: boolean
+    etapas: any[]
+  }>({ isOpen: false, etapas: [] })
 
   useEffect(() => {
     fetchProyecto()
@@ -318,6 +326,45 @@ export default function ProyectoDetallePage() {
     return proyecto.presupuestoItems.reduce((total, item) => total + Number(item.costoTotal), 0)
   }
 
+  const abrirModalPagosProyecto = async () => {
+    try {
+      // Obtener todas las etapas del proyecto con sus pagos
+      const etapasResponse = await api.get(`/proyectos/${proyectoId}/etapas`)
+      const etapas = etapasResponse.data.data || []
+
+      // Cargar pagos para cada etapa
+      const etapasConPagos = await Promise.all(
+        etapas.map(async (etapa: any) => {
+          try {
+            const pagosResponse = await api.get(`/proyectos/${proyectoId}/etapas/${etapa.id}/pagos`)
+            return {
+              ...etapa,
+              pagos: pagosResponse.data.data || []
+            }
+          } catch (error) {
+            console.error(`Error fetching pagos for etapa ${etapa.id}:`, error)
+            return {
+              ...etapa,
+              pagos: []
+            }
+          }
+        })
+      )
+
+      setModalPagosProyecto({
+        isOpen: true,
+        etapas: etapasConPagos
+      })
+    } catch (error) {
+      console.error('Error fetching etapas y pagos:', error)
+      toast.error('Error al cargar el histórico de pagos')
+    }
+  }
+
+  const cerrarModalPagosProyecto = () => {
+    setModalPagosProyecto({ isOpen: false, etapas: [] })
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -439,6 +486,12 @@ export default function ProyectoDetallePage() {
                 <Building2 className="h-4 w-4 mr-2" />
                 Monitoreo de Obra
               </Link>
+              <button
+                onClick={() => abrirModalPagosProyecto()}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center"
+              >
+                💰 Histórico de Pagos
+              </button>
               <button
                 onClick={generarPDFCostos}
                 className="text-white px-4 py-2 rounded-md transition-colors flex items-center"
@@ -916,11 +969,183 @@ export default function ProyectoDetallePage() {
             >
               ×
             </button>
-            <img 
+            <img
               src={modalImage}
               alt="Plano ampliado"
               className="max-w-full max-h-full object-contain"
             />
+          </div>
+        </div>
+      )}
+
+      {/* Modal de histórico de pagos del proyecto */}
+      {modalPagosProyecto.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Histórico de Pagos</h2>
+                  <p className="text-gray-600">{proyecto.nombre}</p>
+                </div>
+                <button
+                  onClick={cerrarModalPagosProyecto}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              {modalPagosProyecto.etapas.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No hay etapas con pagos registrados</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {modalPagosProyecto.etapas.map((etapa: any) => (
+                    <div key={etapa.id} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-medium text-gray-900">{etapa.nombre}</h3>
+                          <p className="text-sm text-gray-600">Etapa {etapa.orden}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            etapa.estado === 'COMPLETADA' ? 'bg-green-100 text-green-800' :
+                            etapa.estado === 'EN_PROGRESO' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {etapa.estado.replace('_', ' ')}
+                          </span>
+                        </div>
+                      </div>
+
+                      {etapa.pagos.length === 0 ? (
+                        <p className="text-sm text-gray-500 italic">No hay pagos registrados para esta etapa</p>
+                      ) : (
+                        <div className="space-y-4">
+                          {/* Agrupar pagos por item */}
+                          {(() => {
+                            const pagosPorItem: { [key: string]: typeof etapa.pagos } = {}
+
+                            etapa.pagos.forEach((pago: any) => {
+                              const itemKey = pago.item?.id || 'sin-item'
+                              if (!pagosPorItem[itemKey]) {
+                                pagosPorItem[itemKey] = []
+                              }
+                              pagosPorItem[itemKey].push(pago)
+                            })
+
+                            return Object.entries(pagosPorItem).map(([itemKey, pagosItem]) => {
+                              // Calcular totales para este item en esta etapa
+                              const totalPagadoAprobado = pagosItem
+                                .filter((p: any) => p.estado === 'APROBADO')
+                                .reduce((sum: number, p: any) => sum + Number(p.monto), 0)
+
+                              const totalPagadoPendiente = pagosItem
+                                .filter((p: any) => p.estado === 'PENDIENTE')
+                                .reduce((sum: number, p: any) => sum + Number(p.monto), 0)
+
+                              const totalPagado = totalPagadoAprobado + totalPagadoPendiente
+
+                              const item = pagosItem[0]?.item
+
+                              return (
+                                <div key={itemKey} className="border rounded-lg p-4 bg-white">
+                                  <div className="flex justify-between items-start mb-3">
+                                    <div>
+                                      <h4 className="font-medium text-gray-900">
+                                        {item ? item.nombre : 'Pagos varios'}
+                                      </h4>
+                                      <div className="text-sm text-gray-600 space-y-1">
+                                        <p>Total pagado: {formatPrice(totalPagado)}</p>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      {totalPagado > 0 && (
+                                        <span className="text-green-600 font-medium text-sm">
+                                          💰 {pagosItem.length} pago{pagosItem.length !== 1 ? 's' : ''}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Lista de pagos del item */}
+                                  <div className="space-y-2">
+                                    <h5 className="text-sm font-medium text-gray-700">Historial de pagos:</h5>
+                                    {pagosItem.map((pago: any) => (
+                                      <div key={pago.id} className="bg-gray-50 rounded border p-3">
+                                        <div className="flex justify-between items-center">
+                                          <div className="flex-1">
+                                            <p className="text-sm font-medium">
+                                              {formatPrice(pago.monto)} - {new Date(pago.fechaPago).toLocaleDateString('es-PY')}
+                                            </p>
+                                            {pago.notas && (
+                                              <p className="text-xs text-gray-600 mt-1">{pago.notas}</p>
+                                            )}
+                                          </div>
+                                          <span className={`px-2 py-1 text-xs rounded-full ml-3 ${
+                                            pago.estado === 'APROBADO' ? 'bg-green-100 text-green-800' :
+                                            pago.estado === 'RECHAZADO' ? 'bg-red-100 text-red-800' :
+                                            'bg-yellow-100 text-yellow-800'
+                                          }`}>
+                                            {pago.estado}
+                                          </span>
+                                        </div>
+
+                                        {pago.comprobanteUrl && (
+                                          <div className="mt-2 flex items-center space-x-2">
+                                            {pago.comprobanteUrl.toLowerCase().endsWith('.pdf') ? (
+                                              <div className="flex items-center space-x-1 text-xs text-red-600">
+                                                <span>📄</span>
+                                                <a
+                                                  href={`http://localhost:3001${pago.comprobanteUrl}`}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="text-blue-600 hover:text-blue-800 underline"
+                                                >
+                                                  PDF
+                                                </a>
+                                              </div>
+                                            ) : (
+                                              <div className="flex items-center space-x-2">
+                                                <img
+                                                  src={`http://localhost:3001${pago.comprobanteUrl}`}
+                                                  alt="Comprobante"
+                                                  className="w-8 h-8 object-cover rounded border cursor-pointer"
+                                                  onClick={() => window.open(`http://localhost:3001${pago.comprobanteUrl}`, '_blank')}
+                                                  onError={(e) => {
+                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                  }}
+                                                />
+                                                <span className="text-green-600 text-xs">🖼️</span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )
+                            })
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex justify-end mt-6 pt-4 border-t">
+                <button
+                  onClick={cerrarModalPagosProyecto}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

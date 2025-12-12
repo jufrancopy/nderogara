@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Building2, Plus, Search, Edit, Trash2, Package, Calculator } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
@@ -23,9 +24,11 @@ interface Item {
 }
 
 export default function ItemsPage() {
+  const router = useRouter()
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [user, setUser] = useState<any>(null)
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean
     itemId: string
@@ -33,8 +36,15 @@ export default function ItemsPage() {
   }>({ isOpen: false, itemId: '', itemNombre: '' })
 
   useEffect(() => {
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      setUser(JSON.parse(userData))
+    } else {
+      router.push('/login')
+      return
+    }
     fetchItems()
-  }, [])
+  }, [router])
 
   const fetchItems = async () => {
     try {
@@ -117,13 +127,15 @@ export default function ItemsPage() {
           {/* Page Header */}
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Items de Construcción</h2>
-            <Link
-              href="/items/nuevo"
-              className="bg-[#38603B] text-white px-4 py-2 rounded-md hover:bg-[#2d4a2f] transition-colors flex items-center"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Item
-            </Link>
+            {user?.rol !== 'CLIENTE' && (
+              <Link
+                href="/items/nuevo"
+                className="bg-[#38603B] text-white px-4 py-2 rounded-md hover:bg-[#2d4a2f] transition-colors flex items-center"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Item
+              </Link>
+            )}
           </div>
 
           {/* Search Bar */}
@@ -161,31 +173,33 @@ export default function ItemsPage() {
                           <h3 className="text-lg font-medium text-gray-900">
                             {item.nombre}
                           </h3>
-                          <div className="flex items-center space-x-2">
-                            <Link 
-                              href={`/items/${item.id}/materiales`}
-                              className="text-purple-600 hover:text-purple-800"
-                              title="Gestionar materiales"
-                            >
-                              <Package className="h-4 w-4" />
-                            </Link>
-                            <Link 
-                              href={`/items/${item.id}/calcular`}
-                              className="text-green-600 hover:text-green-800"
-                              title="Calcular costo"
-                            >
-                              <Calculator className="h-4 w-4" />
-                            </Link>
-                            <Link href={`/items/editar/${item.id}`} className="text-blue-600 hover:text-blue-800">
-                              <Edit className="h-4 w-4" />
-                            </Link>
-                            <button 
-                              onClick={() => handleDeleteClick(item.id, item.nombre)}
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
+                          {user?.rol !== 'CLIENTE' && (
+                            <div className="flex items-center space-x-2">
+                              <Link
+                                href={`/items/${item.id}/materiales`}
+                                className="text-purple-600 hover:text-purple-800"
+                                title="Gestionar materiales"
+                              >
+                                <Package className="h-4 w-4" />
+                              </Link>
+                              <Link
+                                href={`/items/${item.id}/calcular`}
+                                className="text-green-600 hover:text-green-800"
+                                title="Calcular costo"
+                              >
+                                <Calculator className="h-4 w-4" />
+                              </Link>
+                              <Link href={`/items/editar/${item.id}`} className="text-blue-600 hover:text-blue-800">
+                                <Edit className="h-4 w-4" />
+                              </Link>
+                              <button
+                                onClick={() => handleDeleteClick(item.id, item.nombre)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
                         </div>
                         
                         {item.descripcion && (

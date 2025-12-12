@@ -4,8 +4,12 @@ import { materialesPorItemController } from '../controllers/materialesPorItemCon
 import { hasRole } from '../middleware/hasRole'
 
 export async function itemsRoutes(fastify: FastifyInstance) {
-  // GET /items - Público
-  fastify.get('/', itemsController.getItems)
+  // GET /items - Requiere autenticación
+  fastify.get('/', {
+    preHandler: async (request, reply) => {
+      await request.jwtVerify()
+    }
+  }, itemsController.getItems)
 
   // GET /items/:id - Público
   fastify.get('/:id', itemsController.getItemById)
@@ -13,28 +17,28 @@ export async function itemsRoutes(fastify: FastifyInstance) {
   // GET /items/:id/costo-estimado - Público
   fastify.get('/:id/costo-estimado', itemsController.getCostoEstimado)
 
-  // POST /items - Solo administradores
-  fastify.post('/', { 
+  // POST /items - Administradores, constructores y proveedores de servicios
+  fastify.post('/', {
     preHandler: [async (request, reply) => {
       await request.jwtVerify()
-      await hasRole(['ADMIN'])(request, reply)
-    }] 
+      await hasRole(['ADMIN', 'CONSTRUCTOR', 'PROVEEDOR_SERVICIOS'])(request, reply)
+    }]
   }, itemsController.createItem)
 
-  // PUT /items/:id - Solo administradores
-  fastify.put('/:id', { 
+  // PUT /items/:id - Administradores, constructores y proveedores de servicios
+  fastify.put('/:id', {
     preHandler: [async (request, reply) => {
       await request.jwtVerify()
-      await hasRole(['ADMIN'])(request, reply)
-    }] 
+      await hasRole(['ADMIN', 'CONSTRUCTOR', 'PROVEEDOR_SERVICIOS'])(request, reply)
+    }]
   }, itemsController.updateItem)
 
-  // DELETE /items/:id - Solo administradores
-  fastify.delete('/:id', { 
+  // DELETE /items/:id - Administradores, constructores y proveedores de servicios
+  fastify.delete('/:id', {
     preHandler: [async (request, reply) => {
       await request.jwtVerify()
-      await hasRole(['ADMIN'])(request, reply)
-    }] 
+      await hasRole(['ADMIN', 'CONSTRUCTOR', 'PROVEEDOR_SERVICIOS'])(request, reply)
+    }]
   }, itemsController.deleteItem)
 
   // Rutas para materiales en items - Solo administradores

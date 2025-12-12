@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Building2, Plus, Search, Edit, Trash2, Calendar, MapPin, User, Eye } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
@@ -42,10 +43,12 @@ const estadoLabels = {
 }
 
 export default function ProyectosPage() {
+  const router = useRouter()
   const [proyectos, setProyectos] = useState<Proyecto[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [estadoFilter, setEstadoFilter] = useState('')
+  const [user, setUser] = useState<any>(null)
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean
     proyectoId: string
@@ -53,8 +56,21 @@ export default function ProyectosPage() {
   }>({ isOpen: false, proyectoId: '', proyectoNombre: '' })
 
   useEffect(() => {
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      const parsedUser = JSON.parse(userData)
+      setUser(parsedUser)
+      // Redirect providers and constructors away from projects
+      if (parsedUser.rol === 'PROVEEDOR_MATERIALES' || parsedUser.rol === 'CONSTRUCTOR' || parsedUser.rol === 'PROVEEDOR_SERVICIOS') {
+        router.push('/proveedor/materiales')
+        return
+      }
+    } else {
+      router.push('/login')
+      return
+    }
     fetchProyectos()
-  }, [])
+  }, [router])
 
   const fetchProyectos = async () => {
     try {
@@ -129,13 +145,15 @@ export default function ProyectosPage() {
           {/* Page Header */}
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Proyectos</h2>
-            <Link
-              href="/proyectos/nuevo"
-              className="bg-[#38603B] text-white px-4 py-2 rounded-md hover:bg-[#2d4a2f] transition-colors flex items-center"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Proyecto
-            </Link>
+            {user?.rol !== 'CLIENTE' && (
+              <Link
+                href="/proyectos/nuevo"
+                className="bg-[#38603B] text-white px-4 py-2 rounded-md hover:bg-[#2d4a2f] transition-colors flex items-center"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Proyecto
+              </Link>
+            )}
           </div>
 
           {/* Filters */}
@@ -190,24 +208,34 @@ export default function ProyectosPage() {
                               {estadoLabels[proyecto.estado as keyof typeof estadoLabels]}
                             </span>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Link 
-                              href={`/proyectos/${proyecto.id}`} 
+                          {user?.rol !== 'CLIENTE' ? (
+                            <div className="flex items-center space-x-2">
+                              <Link
+                                href={`/proyectos/${proyecto.id}`}
+                                className="text-green-600 hover:text-green-800"
+                                title="Ver detalle"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Link>
+                              <Link href={`/proyectos/editar/${proyecto.id}`} className="text-blue-600 hover:text-blue-800">
+                                <Edit className="h-4 w-4" />
+                              </Link>
+                              <button
+                                onClick={() => handleDeleteClick(proyecto.id, proyecto.nombre)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <Link
+                              href={`/proyectos/${proyecto.id}`}
                               className="text-green-600 hover:text-green-800"
                               title="Ver detalle"
                             >
                               <Eye className="h-4 w-4" />
                             </Link>
-                            <Link href={`/proyectos/editar/${proyecto.id}`} className="text-blue-600 hover:text-blue-800">
-                              <Edit className="h-4 w-4" />
-                            </Link>
-                            <button 
-                              onClick={() => handleDeleteClick(proyecto.id, proyecto.nombre)}
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
+                          )}
                         </div>
                         
                         {proyecto.descripcion && (

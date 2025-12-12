@@ -7,10 +7,10 @@ export default async function proveedorMaterialesRoutes(fastify: FastifyInstance
     try {
       await request.jwtVerify();
       const user = request.user as any;
-      
-      // Verificar que sea proveedor de materiales
-      if (user.rol !== 'PROVEEDOR_MATERIALES') {
-        reply.status(403).send({ error: 'Acceso denegado. Solo proveedores de materiales.' });
+
+      // Verificar que sea proveedor de materiales, constructor o proveedor de servicios
+      if (user.rol !== 'PROVEEDOR_MATERIALES' && user.rol !== 'CONSTRUCTOR' && user.rol !== 'PROVEEDOR_SERVICIOS') {
+        reply.status(403).send({ error: 'Acceso denegado. Solo proveedores autorizados.' });
       }
     } catch (err) {
       reply.status(401).send({ error: 'No autorizado' });

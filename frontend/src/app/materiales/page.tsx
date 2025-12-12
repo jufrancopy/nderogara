@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Building2, Plus, Search, Edit, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
@@ -33,10 +34,12 @@ interface Material {
 }
 
 export default function MaterialesPage() {
+  const router = useRouter()
   const [materiales, setMateriales] = useState<Material[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [user, setUser] = useState<any>(null)
   const itemsPerPage = 10
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean
@@ -44,10 +47,19 @@ export default function MaterialesPage() {
     materialNombre: string
   }>({ isOpen: false, materialId: '', materialNombre: '' })
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null)
+  const [priceUpdateMaterial, setPriceUpdateMaterial] = useState<Material | null>(null)
+  const [newPrice, setNewPrice] = useState('')
 
   useEffect(() => {
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      setUser(JSON.parse(userData))
+    } else {
+      router.push('/login')
+      return
+    }
     fetchMateriales()
-  }, [])
+  }, [router])
 
   const fetchMateriales = async () => {
     try {
@@ -104,6 +116,29 @@ export default function MaterialesPage() {
     setSelectedMaterial(material)
   }
 
+  const handlePriceUpdateClick = (material: Material) => {
+    setPriceUpdateMaterial(material)
+    setNewPrice(material.precioPersonalizado?.toString() || material.ofertas?.[0]?.precio?.toString() || '')
+  }
+
+  const handlePriceUpdateConfirm = async () => {
+    if (!priceUpdateMaterial || !newPrice) return
+
+    try {
+      await api.put(`/materiales/${priceUpdateMaterial.id}`, {
+        precioPersonalizado: parseFloat(newPrice)
+      })
+      toast.success('Precio actualizado exitosamente')
+      fetchMateriales()
+      setPriceUpdateMaterial(null)
+      setNewPrice('')
+    } catch (error: any) {
+      console.error('Error updating price:', error)
+      const errorMessage = error.response?.data?.error || 'Error al actualizar el precio'
+      toast.error(errorMessage)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Main Content */}
@@ -112,13 +147,15 @@ export default function MaterialesPage() {
           {/* Page Header */}
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Materiales</h2>
-            <Link
-              href="/materiales/nuevo"
-              className="bg-[#38603B] text-white px-4 py-2 rounded-md hover:bg-[#2d4a2f] transition-colors flex items-center"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Material
-            </Link>
+            {user?.rol !== 'CLIENTE' && (
+              <Link
+                href="/materiales/nuevo"
+                className="bg-[#38603B] text-white px-4 py-2 rounded-md hover:bg-[#2d4a2f] transition-colors flex items-center"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Material
+              </Link>
+            )}
           </div>
 
           {/* Search Bar */}
@@ -195,17 +232,23 @@ export default function MaterialesPage() {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <Link href={`/materiales/editar/${material.id}`} className="text-blue-600 hover:text-blue-800">
-                          <Edit className="h-4 w-4" />
-                        </Link>
-                        <button 
-                          onClick={() => handleDeleteClick(material.id, material.nombre)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                      {user?.rol !== 'CLIENTE' && (
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button
+                            onClick={() => handlePriceUpdateClick(material)}
+                            className="text-blue-600 hover:text-blue-800"
+                            title="Actualizar precio"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(material.id, material.nombre)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </li>
                 ))}
@@ -320,18 +363,20 @@ export default function MaterialesPage() {
               )}
               
               <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
-                <button 
+                <button
                   onClick={() => setSelectedMaterial(null)}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
                 >
                   Cerrar
                 </button>
-                <Link
-                  href={`/materiales/editar/${selectedMaterial.id}`}
-                  className="px-4 py-2 bg-[#38603B] text-white rounded hover:bg-[#2d4a2f] transition-colors"
-                >
-                  Editar
-                </Link>
+                {user?.rol !== 'CLIENTE' && (
+                  <Link
+                    href={`/materiales/editar/${selectedMaterial.id}`}
+                    className="px-4 py-2 bg-[#38603B] text-white rounded hover:bg-[#2d4a2f] transition-colors"
+                  >
+                    Editar
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -349,6 +394,63 @@ export default function MaterialesPage() {
         cancelText="Cancelar"
         type="danger"
       />
+
+      {/* Price Update Modal */}
+      {priceUpdateMaterial && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Actualizar Precio</h2>
+                <button
+                  onClick={() => setPriceUpdateMaterial(null)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-gray-600 mb-2">Material: <strong>{priceUpdateMaterial.nombre}</strong></p>
+                <div className="text-sm text-gray-500 mb-4">
+                  Unidad: {priceUpdateMaterial.unidad}
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nuevo Precio Personalizado (₲)
+                </label>
+                <input
+                  type="number"
+                  step="1"
+                  value={newPrice}
+                  onChange={(e) => setNewPrice(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Ingrese el nuevo precio"
+                  min="0"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setPriceUpdateMaterial(null)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handlePriceUpdateConfirm}
+                  className="px-4 py-2 bg-[#38603B] text-white rounded hover:bg-[#2d4a2f] transition-colors"
+                  disabled={!newPrice || parseFloat(newPrice) <= 0}
+                >
+                  Actualizar Precio
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -71,9 +71,10 @@ fastify.register(async function (fastify) {
   const { adminRoutes } = await import('./routes/admin')
   const { uploadRoutes } = await import('./routes/upload')
   const { inmueblesRoutes } = await import('./routes/inmuebles')
+  const { pagosRoutes } = await import('./routes/pagos')
   const proveedorMaterialesRoutes = await import('./routes/proveedorMateriales')
   const adminUsersRoutes = await import('./routes/adminUsers')
-  
+
   await fastify.register(authRoutes, { prefix: '/auth' })
   await fastify.register(uploadRoutes, { prefix: '/upload' })
   await fastify.register(adminRoutes, { prefix: '/admin' })
@@ -86,6 +87,7 @@ fastify.register(async function (fastify) {
   await fastify.register(proyectosRoutes, { prefix: '/proyectos' })
   await fastify.register(itemsRoutes, { prefix: '/items' })
   await fastify.register(etapasObraRoutes, { prefix: '/proyectos' })
+  await fastify.register(pagosRoutes)
 })
 
 const start = async () => {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 interface Material {
   id: string;
@@ -23,6 +24,9 @@ export default function MisMaterialesPage() {
   const router = useRouter();
   const [materiales, setMateriales] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
+  const [priceUpdateMaterial, setPriceUpdateMaterial] = useState<Material | null>(null);
+  const [newPrice, setNewPrice] = useState('');
+  const [priceDisplay, setPriceDisplay] = useState('');
 
   useEffect(() => {
     fetchMateriales();
@@ -83,6 +87,68 @@ export default function MisMaterialesPage() {
     }
   };
 
+  const handlePrecioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    let value = event.target.value;
+
+    // Si el campo está vacío, mostrar 0
+    if (!value) {
+      setPriceDisplay('0');
+      setNewPrice('0');
+      return;
+    }
+
+    // Permitir solo números
+    value = value.replace(/[^\d]/g, '');
+
+    // Si después de limpiar no hay valor, mostrar 0
+    if (!value) {
+      setPriceDisplay('0');
+      setNewPrice('0');
+      return;
+    }
+
+    // Convertir a número y formatear
+    const numericValue = parseInt(value, 10);
+    const formattedValue = numericValue.toLocaleString('es-PY');
+
+    setPriceDisplay(formattedValue);
+    setNewPrice(value);
+  };
+
+  const handlePriceUpdateClick = (material: Material) => {
+    setPriceUpdateMaterial(material);
+    const precioValue = material.precio?.toString() || '0';
+    setNewPrice(precioValue);
+    setPriceDisplay(parseInt(precioValue).toLocaleString('es-PY'));
+  };
+
+  const handlePriceUpdateConfirm = async () => {
+    if (!priceUpdateMaterial || !newPrice) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`http://localhost:3001/proveedor/materiales/${priceUpdateMaterial.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...priceUpdateMaterial,
+          precio: parseFloat(newPrice)
+        })
+      });
+
+      toast.success('Precio actualizado exitosamente');
+      fetchMateriales();
+      setPriceUpdateMaterial(null);
+      setNewPrice('');
+    } catch (error) {
+      console.error('Error updating price:', error);
+      toast.error('Error al actualizar el precio');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -100,11 +166,11 @@ export default function MisMaterialesPage() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Mis Materiales</h1>
-            <p className="text-gray-600 mt-2">Gestiona tu catálogo de materiales</p>
+            <p className="text-gray-600 mt-2">Gestiona los materiales que ofreces al mercado</p>
           </div>
           <Link
             href="/proveedor/materiales/nuevo"
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+            className="bg-[#38603B] text-white px-6 py-3 rounded-lg hover:bg-[#2d4a2f] transition flex items-center"
           >
             + Nuevo Material
           </Link>
@@ -154,33 +220,100 @@ export default function MisMaterialesPage() {
                   
                   <div className="mb-4">
                     <span className="text-2xl font-bold text-blue-600">
-                      ₲ {material.precio?.toLocaleString() || '0'}
+                      ₲ {material.precio ? Number(material.precio).toLocaleString('es-PY') : '0'}
                     </span>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <Link
-                      href={`/proveedor/materiales/editar/${material.id}`}
-                      className="flex-1 bg-blue-50 text-blue-600 px-4 py-2 rounded text-center hover:bg-blue-100 transition"
-                    >
-                      Editar
-                    </Link>
-                    <button
-                      onClick={() => toggleActivo(material.id, material.esActivo)}
-                      className="flex-1 bg-gray-50 text-gray-600 px-4 py-2 rounded hover:bg-gray-100 transition"
-                    >
-                      {material.esActivo ? 'Desactivar' : 'Activar'}
-                    </button>
-                    <button
-                      onClick={() => eliminarMaterial(material.id)}
-                      className="bg-red-50 text-red-600 px-4 py-2 rounded hover:bg-red-100 transition"
-                    >
-                      🗑️
-                    </button>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handlePriceUpdateClick(material)}
+                        className="flex-1 bg-blue-50 text-blue-600 px-3 py-2 rounded text-center hover:bg-blue-100 transition text-sm"
+                        title="Actualizar precio"
+                      >
+                        💰 Precio
+                      </button>
+                      <Link
+                        href={`/proveedor/materiales/editar/${material.id}`}
+                        className="flex-1 bg-purple-50 text-purple-600 px-3 py-2 rounded text-center hover:bg-purple-100 transition text-sm"
+                        title="Editar material completo"
+                      >
+                        ✏️ Editar
+                      </Link>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => toggleActivo(material.id, material.esActivo)}
+                        className="flex-1 bg-gray-50 text-gray-600 px-3 py-2 rounded hover:bg-gray-100 transition text-sm"
+                      >
+                        {material.esActivo ? 'Desactivar' : 'Activar'}
+                      </button>
+                      <button
+                        onClick={() => eliminarMaterial(material.id)}
+                        className="flex-1 bg-red-50 text-red-600 px-3 py-2 rounded hover:bg-red-100 transition text-sm"
+                      >
+                        🗑️ Eliminar
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Price Update Modal */}
+        {priceUpdateMaterial && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full">
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <h2 className="text-xl font-bold text-gray-900">Actualizar Precio</h2>
+                  <button
+                    onClick={() => setPriceUpdateMaterial(null)}
+                    className="text-gray-400 hover:text-gray-600 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="mb-4">
+                  <p className="text-gray-600 mb-2">Material: <strong>{priceUpdateMaterial.nombre}</strong></p>
+                  <div className="text-sm text-gray-500 mb-4">
+                    Unidad: {priceUpdateMaterial.unidad}
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nuevo Precio (₲)
+                  </label>
+                  <input
+                    type="text"
+                    value={priceDisplay}
+                    onChange={handlePrecioChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={() => setPriceUpdateMaterial(null)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handlePriceUpdateConfirm}
+                    className="px-4 py-2 bg-[#38603B] text-white rounded hover:bg-[#2d4a2f] transition-colors"
+                    disabled={!newPrice || parseFloat(newPrice) <= 0}
+                  >
+                    Actualizar Precio
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
