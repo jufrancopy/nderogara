@@ -33,7 +33,7 @@ export default function ItemsPage() {
     isOpen: boolean
     itemId: string
     itemNombre: string
-  }>({ isOpen: false, itemId: '; itemNombre: '' })
+  }>({ isOpen: false, itemId: '', itemNombre: '' })
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -51,7 +51,7 @@ export default function ItemsPage() {
       const response = await api.get('/items')
       setItems(response.data.data || [])
     } catch (error) {
-      console.error('Error fetching items:; error)
+      console.error('Error fetching items:', error)
       toast.error('Error al cargar los items')
       // Mock data como fallback
       setItems([
@@ -90,14 +90,14 @@ export default function ItemsPage() {
       toast.success('Item eliminado exitosamente')
       fetchItems()
     } catch (error: any) {
-      console.error('Error deleting item:; error)
+      console.error('Error deleting item:', error)
       const errorMessage = error.response?.data?.error || 'Error al eliminar el item'
       toast.error(errorMessage)
     }
   }
 
   const closeDeleteDialog = () => {
-    setDeleteDialog({ isOpen: false, itemId: '; itemNombre: '' })
+    setDeleteDialog({ isOpen: false, itemId: '', itemNombre: '' })
   }
 
   const formatPriceOrDefault = (price?: number) => {

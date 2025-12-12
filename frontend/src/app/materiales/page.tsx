@@ -45,7 +45,7 @@ export default function MaterialesPage() {
     isOpen: boolean
     materialId: string
     materialNombre: string
-  }>({ isOpen: false, materialId: '; materialNombre: '' })
+  }>({ isOpen: false, materialId: '', materialNombre: '' })
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null)
   const [priceUpdateMaterial, setPriceUpdateMaterial] = useState<Material | null>(null)
   const [newPrice, setNewPrice] = useState('')
@@ -66,7 +66,7 @@ export default function MaterialesPage() {
       const response = await api.get('/materiales')
       setMateriales(response.data.data || [])
     } catch (error) {
-      console.error('Error fetching materiales:; error)
+      console.error('Error fetching materiales:', error)
       toast.error('Error al cargar los materiales')
     } finally {
       setLoading(false)
@@ -102,14 +102,14 @@ export default function MaterialesPage() {
       toast.success('Material eliminado exitosamente')
       fetchMateriales() // Recargar la lista
     } catch (error: any) {
-      console.error('Error deleting material:; error)
+      console.error('Error deleting material:', error)
       const errorMessage = error.response?.data?.error || 'Error al eliminar el material'
       toast.error(errorMessage)
     }
   }
 
   const closeDeleteDialog = () => {
-    setDeleteDialog({ isOpen: false, materialId: '; materialNombre: '' })
+    setDeleteDialog({ isOpen: false, materialId: '', materialNombre: '' })
   }
 
   const handleShowDetail = (material: Material) => {
@@ -133,7 +133,7 @@ export default function MaterialesPage() {
       setPriceUpdateMaterial(null)
       setNewPrice('')
     } catch (error: any) {
-      console.error('Error updating price:; error)
+      console.error('Error updating price:', error)
       const errorMessage = error.response?.data?.error || 'Error al actualizar el precio'
       toast.error(errorMessage)
     }
