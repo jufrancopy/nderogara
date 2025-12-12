@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import PageLoader from '@/components/PageLoader';
+import { API_BASE_URL } from '@/lib/api';
 
 export default function AdminMaterialesPage() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function AdminMaterialesPage() {
   const fetchMateriales = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('${API_BASE_URL}/admin/materiales', {
+      const response = await fetch(`${API_BASE_URL}/admin/materiales`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
