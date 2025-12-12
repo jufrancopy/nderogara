@@ -79,9 +79,9 @@ export default function InmuebleDetallePage() {
           try {
             const payload = JSON.parse(atob(token.split('.')[1]));
             setIsOwner(payload.id === data.data.usuarioId);
-          } catch (error) {
-            console.error('Error al verificar propietario:error);
-          }
+    } catch (error) {
+      console.error('Error al cargar inmueble:', error);
+    }
         }
       }
     } catch (error) {
