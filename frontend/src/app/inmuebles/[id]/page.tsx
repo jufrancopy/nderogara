@@ -85,7 +85,7 @@ export default function InmuebleDetallePage() {
         }
       }
     } catch (error) {
-      console.error('Error al cargar inmueble:error);
+      toast.error('Error al cargar el inmueble');
     } finally {
       setLoading(false);
     }
@@ -117,7 +117,7 @@ export default function InmuebleDetallePage() {
       toast.success('Inmueble eliminado exitosamente');
       router.push('/inmuebles');
     } catch (error: any) {
-      console.error('Error al eliminar inmueble:error);
+      console.error('Error al eliminar inmueble:', error);
       const errorMessage = error.response?.data?.error || 'Error al eliminar el inmueble';
       toast.error(errorMessage);
     } finally {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { API_BASE_URL } from '@/lib/api';
 
 export default function NuevoMaterialProveedorPage() {
   const router = useRouter();
@@ -36,7 +37,7 @@ export default function NuevoMaterialProveedorPage() {
         setGaleria(data.data);
       }
     } catch (error) {
-      console.error('Error al cargar galería:error);
+      console.error('Error al crear material:', error);
     }
   };
 
@@ -45,7 +46,7 @@ export default function NuevoMaterialProveedorPage() {
     if (!file) return;
 
     const formDataUpload = new FormData();
-    formDataUpload.append('file; file);
+    formDataUpload.append('file', file);
 
     try {
       const token = localStorage.getItem('token');
@@ -61,7 +62,7 @@ export default function NuevoMaterialProveedorPage() {
         fetchGaleria();
       }
     } catch (error) {
-      console.error('Error al subir imagen:error);
+      console.error('Error al subir imagen:', error);
     }
   };
 
@@ -79,7 +80,7 @@ export default function NuevoMaterialProveedorPage() {
         }
       }
     } catch (error) {
-      console.error('Error al cargar categorías:error);
+      console.error('Error al cargar categorías:', error);
     }
   };
 
@@ -105,7 +106,7 @@ export default function NuevoMaterialProveedorPage() {
         router.push('/proveedor/materiales');
       }
     } catch (error) {
-      console.error('Error al crear material:error);
+      console.error('Error al crear material:error);', error);
     } finally {
       setLoading(false);
     }
