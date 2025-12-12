@@ -46,8 +46,8 @@ export default function LoginPage() {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
 
-      localStorage.setItem('token; data.data.token);
-      localStorage.setItem('user; JSON.stringify(data.data.user));
+      localStorage.setItem('token', data.data.token);
+      localStorage.setItem('user', JSON.stringify(data.data.user));
 
       // Redirect based on user role
       const userRole = data.data.user.rol;
@@ -76,7 +76,7 @@ export default function LoginPage() {
               className="h-28 w-28 object-contain mx-auto mb-4 cursor-pointer hover:opacity-80 transition-opacity"
             />
           </Link>
-          <h1 className="text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent" style={{backgroundImage: 'linear-gradient(to right, #38603B, #B99742); WebkitBackgroundClip: 'text; WebkitTextFillColor: 'transparent'}}>
+          <h1 className="text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent" style={{backgroundImage: 'linear-gradient(to right, #38603B, #B99742)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
             {isLogin ? 'Iniciar Sesión' : 'Registrarse'}
           </h1>
         </div>
