@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from '@/lib/api';
 
 export default function NuevoMaterialBasePage() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function NuevoMaterialBasePage() {
   const fetchGaleria = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('${API_BASE_URL}/upload/galeria', {
+      const response = await fetch(`${API_BASE_URL}/upload/galeria`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
@@ -46,15 +47,15 @@ export default function NuevoMaterialBasePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
+    const formDataUpload = new FormData();
+    formDataUpload.append('file', file);
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('${API_BASE_URL}/upload/imagen', {
+      const response = await fetch(`${API_BASE_URL}/upload/imagen`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
-        body: formData
+        body: formDataUpload
       });
 
       const data = await response.json();
@@ -73,7 +74,7 @@ export default function NuevoMaterialBasePage() {
   const fetchCategorias = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('${API_BASE_URL}/categorias', {
+      const response = await fetch(`${API_BASE_URL}/categorias`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
@@ -94,7 +95,7 @@ export default function NuevoMaterialBasePage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('${API_BASE_URL}/admin/materiales', {
+      const response = await fetch(`${API_BASE_URL}/admin/materiales`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
