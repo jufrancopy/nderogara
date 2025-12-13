@@ -22,11 +22,17 @@ export const itemsController = {
       const userRol = user?.rol;
 
       // Parámetros de paginación
-      const page = parseInt(request.query.page || '1');
-      const limit = parseInt(request.query.limit || '10');
+      const pageParam = request.query.page;
+      const limitParam = request.query.limit;
       const search = request.query.search?.trim();
 
-      const skip = (page - 1) * limit;
+      // Si no se pasan parámetros de paginación, devolver todos los items (comportamiento legacy)
+      const usePagination = pageParam !== undefined || limitParam !== undefined;
+
+      const page = usePagination ? parseInt(pageParam || '1') : 1;
+      const limit = usePagination ? parseInt(limitParam || '10') : undefined; // undefined = sin límite
+
+      const skip = limit ? (page - 1) * limit : undefined;
 
       let whereCondition: any = { esActivo: true };
 
@@ -50,7 +56,7 @@ export const itemsController = {
         ];
       }
 
-      // Obtener items paginados
+      // Obtener items paginados o todos
       const [items, total] = await Promise.all([
         prisma.item.findMany({
           where: whereCondition,
@@ -65,13 +71,13 @@ export const itemsController = {
             }
           },
           orderBy: { nombre: 'asc' },
-          skip,
-          take: limit
+          ...(skip !== undefined && { skip }),
+          ...(limit !== undefined && { take: limit })
         }),
         prisma.item.count({ where: whereCondition })
       ]);
 
-      const totalPages = Math.ceil(total / limit);
+      const totalPages = limit ? Math.ceil(total / limit) : 1;
 
       return reply.send({
         success: true,

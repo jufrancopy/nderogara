@@ -176,7 +176,9 @@ export default function ProyectoDetallePage() {
   const fetchItems = async () => {
     try {
       const response = await api.get('/items')
-      setItems(response.data.data || [])
+      // Cuando no se usan parámetros de paginación, los items vienen directamente en data.items
+      const data = response.data.data
+      setItems(data.items || data || [])
     } catch (error) {
       console.error('Error fetching items:', error)
     }
