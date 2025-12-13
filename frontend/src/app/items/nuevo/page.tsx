@@ -10,6 +10,70 @@ import { z } from 'zod'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
 
+// Componente para input con formato de miles
+const FormattedNumberInput = ({
+  value,
+  onChange,
+  placeholder,
+  className,
+  ...props
+}: {
+  value: number | undefined
+  onChange: (value: number | undefined) => void
+  placeholder?: string
+  className?: string
+  [key: string]: any
+}) => {
+  const [displayValue, setDisplayValue] = useState(
+    value ? value.toLocaleString('es-PY') : ''
+  )
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value
+
+    // Remover todos los caracteres no numéricos
+    const numericValue = inputValue.replace(/\D/g, '')
+
+    if (numericValue === '') {
+      setDisplayValue('')
+      onChange(undefined)
+    } else {
+      const numberValue = parseInt(numericValue, 10)
+      setDisplayValue(numberValue.toLocaleString('es-PY'))
+      onChange(numberValue)
+    }
+  }
+
+  const handleFocus = () => {
+    // Al enfocar, mostrar el valor sin formato para facilitar edición
+    if (value) {
+      setDisplayValue(value.toString())
+    }
+  }
+
+  const handleBlur = () => {
+    // Al desenfocar, volver a formatear
+    if (value) {
+      setDisplayValue(value.toLocaleString('es-PY'))
+    } else {
+      setDisplayValue('')
+    }
+  }
+
+  return (
+    <input
+      type="text"
+      value={displayValue}
+      onChange={handleChange}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      placeholder={placeholder}
+      className={className}
+      {...props}
+    />
+  )
+}
+
 const itemSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
   descripcion: z.string().optional(),
@@ -23,11 +87,13 @@ type ItemForm = z.infer<typeof itemSchema>
 export default function NuevoItemPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [manoObraValue, setManoObraValue] = useState<number | undefined>(0)
 
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    formState: { errors },
+    setValue
   } = useForm<ItemForm>({
     resolver: zodResolver(itemSchema),
     defaultValues: {
@@ -129,13 +195,14 @@ export default function NuevoItemPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Mano de Obra Unitaria (₲)
                     </label>
-                    <input
-                      type="number"
-                      step="1"
-                      min="0"
-                      {...register('manoObraUnitaria', { valueAsNumber: true })}
+                    <FormattedNumberInput
+                      value={manoObraValue}
+                      onChange={(value) => {
+                        setManoObraValue(value)
+                        setValue('manoObraUnitaria', value || 0)
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="25000"
+                      placeholder="25.000"
                     />
                     {errors.manoObraUnitaria && (
                       <p className="mt-1 text-sm text-red-600">{errors.manoObraUnitaria.message}</p>
