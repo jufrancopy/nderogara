@@ -689,7 +689,7 @@ export default function ProyectoDetallePage() {
                           required
                         >
                           <option value="">Seleccionar item</option>
-                          {items
+                          {Array.isArray(items) && items
                             .filter(item => !proyecto?.presupuestoItems?.some(pi => pi.item.id === item.id))
                             .map(item => (
                               <option key={item.id} value={item.id}>
