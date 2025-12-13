@@ -401,14 +401,23 @@ export default function ProyectoDetallePage() {
       setCurrentIndex((prev) => (prev - 1 + imagenes.length) % imagenes.length);
     };
 
+    // Función para obtener la URL correcta de la imagen
+    const getImageUrl = (imageUrl: string) => {
+      // Si la URL ya es absoluta (empieza con http), úsala tal cual
+      // Si es relativa, concaténala con API_BASE_URL
+      return imageUrl.startsWith('http') ? imageUrl : `${API_BASE_URL}${imageUrl}`;
+    };
+
+    const currentImageUrl = getImageUrl(imagenes[currentIndex]);
+
     return (
       <div className="relative">
         <div className="aspect-[16/9] bg-gray-200 overflow-hidden rounded-lg">
-          <img 
-            src={`${API_BASE_URL}${imagenes[currentIndex]}`}
+          <img
+            src={currentImageUrl}
             alt={`Plano ${currentIndex + 1}`}
             className="w-full h-full object-cover cursor-pointer"
-            onClick={() => setModalImage(`${API_BASE_URL}${imagenes[currentIndex]}`)}
+            onClick={() => setModalImage(currentImageUrl)}
           />
         </div>
         
