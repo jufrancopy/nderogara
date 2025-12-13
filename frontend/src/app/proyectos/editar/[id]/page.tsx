@@ -8,7 +8,15 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
-import api from '@/lib/api'
+import api, { API_BASE_URL } from '@/lib/api'
+
+interface User {
+  id: string
+  name: string | null
+  email: string
+  telefono: string | null
+  empresa: string | null
+}
 
 const proyectoSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
@@ -35,31 +43,68 @@ export default function EditarProyectoPage() {
   
   const [loading, setLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
+  const [imagenes, setImagenes] = useState<string[]>([])
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const [clientes, setClientes] = useState<User[]>([])
+  const [constructores, setConstructores] = useState<User[]>([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    reset
+    reset,
+    setValue
   } = useForm<ProyectoForm>({
     resolver: zodResolver(proyectoSchema)
   })
 
   useEffect(() => {
     fetchProyecto()
+    fetchUsers()
   }, [proyectoId])
+
+  const fetchUsers = async () => {
+    setLoadingUsers(true)
+    try {
+      const [clientesResponse, constructoresResponse] = await Promise.all([
+        api.get('/auth/users-by-role?rol=CLIENTE'),
+        api.get('/auth/users-by-role?rol=CONSTRUCTOR')
+      ])
+
+      setClientes(clientesResponse.data.data || [])
+      setConstructores(constructoresResponse.data.data || [])
+    } catch (error) {
+      console.error('Error fetching users:', error)
+      toast.error('Error al cargar usuarios')
+    } finally {
+      setLoadingUsers(false)
+    }
+  }
 
   const fetchProyecto = async () => {
     try {
       const response = await api.get(`/proyectos/${proyectoId}`)
       const proyecto = response.data.data
-      
+
+      // Cargar imágenes existentes
+      if (proyecto.imagenUrl) {
+        try {
+          const imagenesExistentes = JSON.parse(proyecto.imagenUrl)
+          if (Array.isArray(imagenesExistentes)) {
+            setImagenes(imagenesExistentes)
+          }
+        } catch (e) {
+          console.log('Error parsing existing images:', e)
+        }
+      }
+
       // Formatear fechas para inputs de tipo date
       const formatDateForInput = (dateString?: string) => {
         if (!dateString) return ''
         return new Date(dateString).toISOString().split('T')[0]
       }
-      
+
       reset({
         nombre: proyecto.nombre,
         descripcion: proyecto.descripcion || '',
@@ -84,6 +129,68 @@ export default function EditarProyectoPage() {
     }
   }
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    console.log('🖼️ Subiendo', files.length, 'archivos para editar');
+    setUploadingImages(true);
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        console.log('📤 Subiendo archivo:', file.name, file.size, 'bytes');
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/upload`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData
+        });
+
+        const data = await response.json();
+        console.log('📥 Respuesta upload:', data);
+
+        if (data.success) {
+          console.log('✅ URL obtenida:', data.data.url);
+          return data.data.url;
+        }
+        throw new Error(data.error || 'Error al subir imagen');
+      });
+
+      const urls = await Promise.all(uploadPromises);
+      console.log('🎉 URLs finales:', urls);
+      setImagenes(prev => {
+        const newImages = [...prev, ...urls];
+        console.log('📸 Estado imagenes actualizado:', newImages);
+        return newImages;
+      });
+      toast.success(`${urls.length} imagen(es) subida(s) exitosamente`);
+    } catch (error) {
+      console.error('❌ Error uploading:', error);
+      toast.error('Error al subir algunas imágenes');
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const handleClienteChange = (userId: string) => {
+    const cliente = clientes.find(c => c.id === userId)
+    if (cliente) {
+      setValue('clienteNombre', cliente.name || '')
+      setValue('clienteTelefono', cliente.telefono || '')
+      setValue('clienteEmail', cliente.email)
+    }
+  }
+
+  const handleEncargadoChange = (userId: string) => {
+    const encargado = constructores.find(c => c.id === userId)
+    if (encargado) {
+      setValue('encargadoNombre', encargado.name || '')
+      setValue('encargadoTelefono', encargado.telefono || '')
+    }
+  };
+
   const onSubmit = async (data: ProyectoForm) => {
     setLoading(true)
     try {
@@ -93,8 +200,13 @@ export default function EditarProyectoPage() {
         fechaInicio: data.fechaInicio || undefined,
         fechaFinEstimada: data.fechaFinEstimada || undefined,
         margenGanancia: data.margenGanancia || undefined,
-        clienteEmail: data.clienteEmail || undefined
+        clienteEmail: data.clienteEmail || undefined,
+        imagenUrl: imagenes.length > 0 ? JSON.stringify(imagenes) : undefined
       }
+
+      console.log('📝 Enviando actualización del proyecto:', cleanData)
+      console.log('🖼️ Imágenes a actualizar:', imagenes)
+      console.log('📄 imagenUrl serializada:', cleanData.imagenUrl)
 
       await api.put(`/proyectos/${proyectoId}`, cleanData)
       toast.success('Proyecto actualizado exitosamente')
@@ -220,6 +332,42 @@ export default function EditarProyectoPage() {
                     />
                   </div>
 
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Planos e Imágenes
+                    </label>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      disabled={uploadingImages}
+                    />
+                    {uploadingImages && (
+                      <p className="mt-1 text-sm text-blue-600">Subiendo imágenes...</p>
+                    )}
+                    {imagenes.length > 0 && (
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        {imagenes.map((url, index) => (
+                          <div key={index} className="relative">
+                            <img src={`${API_BASE_URL}${url}`} alt={`Plano ${index + 1}`} className="w-full h-20 object-cover rounded" />
+                            <button
+                              type="button"
+                              onClick={() => setImagenes(prev => prev.filter((_, i) => i !== index))}
+                              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <p className="mt-1 text-sm text-gray-500">
+                      Puedes subir múltiples imágenes de planos, fachadas, etc.
+                    </p>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Fecha de Inicio
@@ -250,6 +398,25 @@ export default function EditarProyectoPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Seleccionar Encargado
+                    </label>
+                    <select
+                      onChange={(e) => handleEncargadoChange(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      disabled={loadingUsers}
+                    >
+                      <option value="">Seleccionar constructor...</option>
+                      {constructores.map((constructor) => (
+                        <option key={constructor.id} value={constructor.id}>
+                          {constructor.name || constructor.email}
+                          {constructor.empresa && ` (${constructor.empresa})`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Nombre del Encargado
                     </label>
                     <input
@@ -259,7 +426,7 @@ export default function EditarProyectoPage() {
                     />
                   </div>
 
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Teléfono del Encargado
                     </label>
@@ -276,6 +443,25 @@ export default function EditarProyectoPage() {
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Información del Cliente</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Seleccionar Cliente
+                    </label>
+                    <select
+                      onChange={(e) => handleClienteChange(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      disabled={loadingUsers}
+                    >
+                      <option value="">Seleccionar cliente...</option>
+                      {clientes.map((cliente) => (
+                        <option key={cliente.id} value={cliente.id}>
+                          {cliente.name || cliente.email}
+                          {cliente.empresa && ` (${cliente.empresa})`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Nombre del Cliente
@@ -298,7 +484,7 @@ export default function EditarProyectoPage() {
                     />
                   </div>
 
-                  <div className="md:col-span-2">
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Email del Cliente
                     </label>

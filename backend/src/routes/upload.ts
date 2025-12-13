@@ -13,6 +13,56 @@ export async function uploadRoutes(fastify: FastifyInstance) {
     await request.jwtVerify();
   });
 
+  // POST /upload - Subir imagen general (para proyectos, etc.)
+  fastify.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const data = await request.file();
+
+      if (!data) {
+        return reply.status(400).send({ success: false, error: 'No se envió ningún archivo' });
+      }
+
+      // Validar tipo de archivo
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedTypes.includes(data.mimetype)) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Tipo de archivo no permitido. Solo imágenes JPG, PNG, WEBP y GIF'
+        });
+      }
+
+      // Generar nombre único
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(2);
+      const ext = path.extname(data.filename);
+      const filename = `proyecto_${timestamp}_${random}${ext}`;
+      const filepath = path.join(process.cwd(), 'public', 'uploads', filename);
+
+      // Crear directorio si no existe
+      const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      // Guardar archivo
+      const buffer = await data.toBuffer();
+      await writeFile(filepath, buffer);
+
+      const url = `/uploads/${filename}`;
+
+      reply.send({
+        success: true,
+        data: {
+          url,
+          filename
+        }
+      });
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      reply.status(500).send({ success: false, error: 'Error al subir archivo' });
+    }
+  });
+
   // POST /upload/imagen - Subir imagen
   fastify.post('/imagen', async (request: FastifyRequest, reply: FastifyReply) => {
     try {

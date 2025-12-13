@@ -113,3 +113,30 @@ export const getProfile = async (request: FastifyRequest, reply: FastifyReply) =
     reply.status(500).send({ success: false, error: 'Error al obtener perfil' });
   }
 };
+
+export const getUsersByRole = async (request: FastifyRequest<{ Querystring: { rol: string } }>, reply: FastifyReply) => {
+  try {
+    const { rol } = request.query;
+
+    if (!rol) {
+      return reply.status(400).send({ success: false, error: 'El parámetro rol es requerido' });
+    }
+
+    const users = await prisma.user.findMany({
+      where: { rol: rol as any },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        telefono: true,
+        empresa: true,
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    reply.send({ success: true, data: users });
+  } catch (error) {
+    console.error('Error al obtener usuarios por rol:', error);
+    reply.status(500).send({ success: false, error: 'Error al obtener usuarios' });
+  }
+};

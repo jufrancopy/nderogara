@@ -519,24 +519,54 @@ export default function ProyectoDetallePage() {
             {/* Información del Proyecto */}
             <div className="lg:col-span-2 space-y-6">
               {/* Planos del Proyecto */}
-              {proyecto.imagenUrl && (() => {
+              {(() => {
+                console.log('🔍 Debug imagenUrl:', proyecto.imagenUrl);
+                console.log('🔍 Debug proyecto:', proyecto);
+
+                if (!proyecto.imagenUrl) {
+                  console.log('❌ No hay imagenUrl');
+                  return (
+                    <div className="bg-white shadow rounded-lg p-6">
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Planos del Proyecto</h3>
+                      <div className="text-center py-8 text-gray-500">
+                        <p>No hay planos disponibles para este proyecto</p>
+                        <p className="text-sm mt-2">Los planos se pueden agregar al crear o editar el proyecto</p>
+                      </div>
+                    </div>
+                  );
+                }
+
                 try {
                   const imagenes = JSON.parse(proyecto.imagenUrl);
+                  console.log('✅ JSON parseado:', imagenes);
+
                   if (Array.isArray(imagenes) && imagenes.length > 0) {
+                    console.log('✅ Mostrando carrusel con', imagenes.length, 'imágenes');
                     return (
                       <div className="bg-white shadow rounded-lg p-6">
                         <h3 className="text-lg font-medium text-gray-900 mb-4">Planos del Proyecto</h3>
                         <PlanosCarrusel imagenes={imagenes} />
                       </div>
                     );
+                  } else {
+                    console.log('❌ Array vacío o no es array');
+                    return (
+                      <div className="bg-white shadow rounded-lg p-6">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Planos del Proyecto</h3>
+                        <div className="text-center py-8 text-gray-500">
+                          <p>No hay planos disponibles</p>
+                        </div>
+                      </div>
+                    );
                   }
                 } catch (e) {
+                  console.log('❌ Error parsing JSON:', e);
                   // Si no es JSON válido, mostrar como imagen única
                   return (
                     <div className="bg-white shadow rounded-lg p-6">
                       <h3 className="text-lg font-medium text-gray-900 mb-4">Imagen del Proyecto</h3>
-                      <img 
-                        src={`${API_BASE_URL}${proyecto.imagenUrl}`} 
+                      <img
+                        src={`${API_BASE_URL}${proyecto.imagenUrl}`}
                         alt={proyecto.nombre}
                         className="w-full h-64 object-cover rounded-lg cursor-pointer"
                         onClick={() => setModalImage(`${API_BASE_URL}${proyecto.imagenUrl}`)}
@@ -544,7 +574,6 @@ export default function ProyectoDetallePage() {
                     </div>
                   );
                 }
-                return null;
               })()}
 
               {/* Detalles Generales */}

@@ -19,6 +19,7 @@ const createProyectoSchema = z.object({
   clienteEmail: z.string().email().optional(),
   encargadoNombre: z.string().optional(),
   encargadoTelefono: z.string().optional(),
+  imagenUrl: z.string().optional(),
 })
 
 export const proyectosController = {
@@ -122,7 +123,9 @@ export const proyectosController = {
       const usuarioId = (request.user as any).id
 
       console.log('📝 Creating proyecto with data:', request.body)
+      console.log('🖼️ imagenUrl received:', (request.body as any).imagenUrl)
       const validatedData = createProyectoSchema.parse(request.body)
+      console.log('✅ Validated data imagenUrl:', validatedData.imagenUrl)
 
       const proyecto = await prisma.proyecto.create({
         data: {
