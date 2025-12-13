@@ -15,11 +15,18 @@ const createItemSchema = z.object({
 
 export const itemsController = {
   // GET /items
-  async getItems(request: FastifyRequest, reply: FastifyReply) {
+  async getItems(request: FastifyRequest<{ Querystring: { page?: string; limit?: string; search?: string } }>, reply: FastifyReply) {
     try {
       const user = (request as any).user;
       const userId = user?.id;
       const userRol = user?.rol;
+
+      // Parámetros de paginación
+      const page = parseInt(request.query.page || '1');
+      const limit = parseInt(request.query.limit || '10');
+      const search = request.query.search?.trim();
+
+      const skip = (page - 1) * limit;
 
       let whereCondition: any = { esActivo: true };
 
@@ -35,24 +42,50 @@ export const itemsController = {
         whereCondition.usuarioId = null;
       }
 
-      const items = await prisma.item.findMany({
-        where: whereCondition,
-        include: {
-          materialesPorItem: {
-            include: {
-              material: true
+      // Agregar búsqueda si existe
+      if (search) {
+        whereCondition.OR = [
+          { nombre: { contains: search, mode: 'insensitive' } },
+          { descripcion: { contains: search, mode: 'insensitive' } }
+        ];
+      }
+
+      // Obtener items paginados
+      const [items, total] = await Promise.all([
+        prisma.item.findMany({
+          where: whereCondition,
+          include: {
+            materialesPorItem: {
+              include: {
+                material: true
+              }
+            },
+            _count: {
+              select: { materialesPorItem: true }
             }
           },
-          _count: {
-            select: { materialesPorItem: true }
-          }
-        },
-        orderBy: { nombre: 'asc' }
-      })
+          orderBy: { nombre: 'asc' },
+          skip,
+          take: limit
+        }),
+        prisma.item.count({ where: whereCondition })
+      ]);
+
+      const totalPages = Math.ceil(total / limit);
 
       return reply.send({
         success: true,
-        data: items
+        data: {
+          items,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext: page < totalPages,
+            hasPrev: page > 1
+          }
+        }
       })
     } catch (error) {
       console.error('Error fetching items:', error)

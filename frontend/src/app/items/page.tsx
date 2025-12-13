@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Building2, Plus, Search, Edit, Trash2, Package, Calculator } from 'lucide-react'
+import { Building2, Plus, Search, Edit, Trash2, Package, Calculator, ChevronLeft, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -23,6 +23,15 @@ interface Item {
   createdAt: string
 }
 
+interface PaginationInfo {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+  hasNext: boolean
+  hasPrev: boolean
+}
+
 export default function ItemsPage() {
   const router = useRouter()
   const [items, setItems] = useState<Item[]>([])
@@ -35,6 +44,11 @@ export default function ItemsPage() {
     itemNombre: string
   }>({ isOpen: false, itemId: '', itemNombre: '' })
 
+  // Estado de paginación
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null)
+  const [pageSize] = useState(10) // Items por página
+
   useEffect(() => {
     const userData = localStorage.getItem('user')
     if (userData) {
@@ -44,12 +58,38 @@ export default function ItemsPage() {
       return
     }
     fetchItems()
-  }, [router])
+  }, [router, currentPage])
+
+  // Efecto para búsqueda con debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage !== 1) {
+        setCurrentPage(1) // Reset to first page when searching
+      } else {
+        fetchItems()
+      }
+    }, 500) // 500ms debounce
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
 
   const fetchItems = async () => {
     try {
-      const response = await api.get('/items')
-      setItems(response.data.data || [])
+      setLoading(true)
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageSize.toString(),
+      })
+
+      if (searchTerm.trim()) {
+        params.append('search', searchTerm.trim())
+      }
+
+      const response = await api.get(`/items?${params}`)
+      const data = response.data.data
+
+      setItems(data.items || [])
+      setPagination(data.pagination)
     } catch (error) {
       console.error('Error fetching items:', error)
       toast.error('Error al cargar los items')
@@ -66,15 +106,35 @@ export default function ItemsPage() {
           createdAt: new Date().toISOString()
         }
       ])
+      setPagination({
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  const filteredItems = items.filter(item =>
-    item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // Funciones de paginación
+  const goToPage = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const goToNextPage = () => {
+    if (pagination?.hasNext) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  const goToPrevPage = () => {
+    if (pagination?.hasPrev) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
 
   const handleDeleteClick = (itemId: string, itemNombre: string) => {
     setDeleteDialog({
@@ -159,13 +219,13 @@ export default function ItemsPage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                 <p className="mt-2 text-gray-500">Cargando items...</p>
               </div>
-            ) : filteredItems.length === 0 ? (
+            ) : items.length === 0 ? (
               <div className="p-6 text-center">
                 <p className="text-gray-500">No se encontraron items</p>
               </div>
             ) : (
               <ul className="divide-y divide-gray-200">
-                {filteredItems.map((item) => (
+                {items.map((item) => (
                   <li key={item.id} className="px-6 py-4 hover:bg-gray-50">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -245,6 +305,75 @@ export default function ItemsPage() {
         cancelText="Cancelar"
         type="danger"
       />
+
+      {/* Pagination Controls */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          {/* Info */}
+          <div className="text-sm text-gray-700">
+            Mostrando {(pagination.page - 1) * pagination.limit + 1} a{' '}
+            {Math.min(pagination.page * pagination.limit, pagination.total)} de{' '}
+            {pagination.total} items
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center gap-2">
+            {/* Previous Button */}
+            <button
+              onClick={goToPrevPage}
+              disabled={!pagination.hasPrev}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Anterior
+            </button>
+
+            {/* Page Numbers */}
+            <div className="flex gap-1">
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                let pageNum: number
+
+                if (pagination.totalPages <= 5) {
+                  // Show all pages if 5 or less
+                  pageNum = i + 1
+                } else {
+                  // Show pages around current page
+                  const start = Math.max(1, pagination.page - 2)
+                  pageNum = start + i
+
+                  if (pageNum > pagination.totalPages) {
+                    pageNum = pagination.totalPages - (4 - i)
+                  }
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => goToPage(pageNum)}
+                    className={`px-3 py-1 border rounded-md text-sm font-medium ${
+                      pageNum === pagination.page
+                        ? 'bg-[#38603B] text-white border-[#38603B]'
+                        : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Next Button */}
+            <button
+              onClick={goToNextPage}
+              disabled={!pagination.hasNext}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              Siguiente
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
