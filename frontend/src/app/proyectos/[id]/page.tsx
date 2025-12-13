@@ -619,18 +619,14 @@ export default function ProyectoDetallePage() {
 
               {/* Galería Completa de Planos */}
               {(() => {
-                console.log('🔍 Debug imagenUrl:', proyecto.imagenUrl);
-
                 if (!proyecto.imagenUrl) {
                   return null; // No mostrar nada si no hay imágenes
                 }
 
                 try {
                   const imagenes = JSON.parse(proyecto.imagenUrl);
-                  console.log('✅ JSON parseado:', imagenes);
 
                   if (Array.isArray(imagenes) && imagenes.length > 0) {
-                    console.log('✅ Mostrando galería completa con', imagenes.length, 'imágenes');
                     return (
                       <div className="bg-white shadow rounded-lg p-6">
                         <h3 className="text-lg font-medium text-gray-900 mb-4">Galería Completa de Planos</h3>
@@ -639,7 +635,6 @@ export default function ProyectoDetallePage() {
                     );
                   }
                 } catch (e) {
-                  console.log('❌ Error parsing JSON:', e);
                   // Si no es JSON válido, mostrar como imagen única
                   return (
                     <div className="bg-white shadow rounded-lg p-6">
