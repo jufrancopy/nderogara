@@ -513,15 +513,17 @@ export default function ProyectoDetallePage() {
                 style={{backgroundColor: '#38603B'}}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#633722'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#38603B'}
+                title="Monitoreo de Obra"
               >
                 <Building2 className="h-4 w-4 mr-2" />
-                Monitoreo de Obra
+                Monitoreo
               </Link>
               <button
                 onClick={() => abrirModalPagosProyecto()}
                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center"
+                title="Histórico de Pagos"
               >
-                💰 Histórico de Pagos
+                💰 Pagos
               </button>
               <button
                 onClick={generarPDFCostos}
@@ -529,9 +531,10 @@ export default function ProyectoDetallePage() {
                 style={{backgroundColor: '#B99742'}}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#7D4C3A'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#B99742'}
+                title="Descargar Costos PDF"
               >
                 <FileText className="h-4 w-4 mr-2" />
-                Descargar Costos PDF
+                Costos
               </button>
               <Link
                 href={`/proyectos/editar/${proyecto.id}`}
@@ -539,9 +542,10 @@ export default function ProyectoDetallePage() {
                 style={{backgroundColor: '#633722'}}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#38603B'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#633722'}
+                title="Editar Proyecto"
               >
                 <Edit className="h-4 w-4 mr-2" />
-                Editar Proyecto
+                Editar
               </Link>
             </div>
           </div>
