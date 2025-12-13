@@ -591,8 +591,8 @@ export default function ProyectoDetallePage() {
                   <FileText className="h-5 w-5 mr-2" />
                   Información General
                 </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   {proyecto.superficieTotal && (
                     <div className="flex items-center">
                       <Ruler className="h-4 w-4 text-gray-400 mr-2" />
@@ -600,7 +600,7 @@ export default function ProyectoDetallePage() {
                       <span className="ml-2 font-medium">{proyecto.superficieTotal} m²</span>
                     </div>
                   )}
-                  
+
                   {proyecto.direccion && (
                     <div className="flex items-center">
                       <MapPin className="h-4 w-4 text-gray-400 mr-2" />
@@ -608,19 +608,19 @@ export default function ProyectoDetallePage() {
                       <span className="ml-2 font-medium">{proyecto.direccion}</span>
                     </div>
                   )}
-                  
+
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 text-gray-400 mr-2" />
                     <span className="text-sm text-gray-600">Inicio:</span>
                     <span className="ml-2 font-medium">{formatDate(proyecto.fechaInicio)}</span>
                   </div>
-                  
+
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 text-gray-400 mr-2" />
                     <span className="text-sm text-gray-600">Fin estimado:</span>
                     <span className="ml-2 font-medium">{formatDate(proyecto.fechaFinEstimada)}</span>
                   </div>
-                  
+
                   {proyecto.margenGanancia && (
                     <div className="flex items-center">
                       <DollarSign className="h-4 w-4 text-gray-400 mr-2" />
@@ -628,6 +628,78 @@ export default function ProyectoDetallePage() {
                       <span className="ml-2 font-medium">{proyecto.margenGanancia}%</span>
                     </div>
                   )}
+                </div>
+
+                {/* Planos en Información General */}
+                <div className="border-t pt-4">
+                  <h4 className="text-md font-medium text-gray-900 mb-3 flex items-center">
+                    🏗️ Planos del Proyecto
+                  </h4>
+
+                  {(() => {
+                    if (!proyecto.imagenUrl) {
+                      return (
+                        <div className="text-center py-4 text-gray-500">
+                          <p className="text-sm">No hay planos disponibles</p>
+                        </div>
+                      );
+                    }
+
+                    try {
+                      const imagenes = JSON.parse(proyecto.imagenUrl);
+
+                      if (Array.isArray(imagenes) && imagenes.length > 0) {
+                        // Mostrar máximo 3 imágenes en miniatura
+                        const imagenesPreview = imagenes.slice(0, 3);
+                        const tieneMasImagenes = imagenes.length > 3;
+
+                        return (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-3 gap-2">
+                              {imagenesPreview.map((url: string, index: number) => {
+                                // Función para obtener la URL correcta de la imagen
+                                const getImageUrl = (imageUrl: string) => {
+                                  return imageUrl.startsWith('http') ? imageUrl : `${API_BASE_URL}${imageUrl}`;
+                                };
+
+                                return (
+                                  <div key={index} className="relative">
+                                    <img
+                                      src={getImageUrl(url)}
+                                      alt={`Plano ${index + 1}`}
+                                      className="w-full h-16 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                                      onClick={() => setModalImage(getImageUrl(url))}
+                                    />
+                                  </div>
+                                );
+                              })}
+                              {tieneMasImagenes && (
+                                <div className="flex items-center justify-center bg-gray-100 rounded border text-gray-600 text-sm font-medium">
+                                  +{imagenes.length - 3} más
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 text-center">
+                              Click en las imágenes para ver en tamaño completo
+                            </p>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div className="text-center py-4 text-gray-500">
+                            <p className="text-sm">No hay planos disponibles</p>
+                          </div>
+                        );
+                      }
+                    } catch (e) {
+                      console.log('Error parsing images in info general:', e);
+                      return (
+                        <div className="text-center py-4 text-gray-500">
+                          <p className="text-sm">Error al cargar planos</p>
+                        </div>
+                      );
+                    }
+                  })()}
                 </div>
               </div>
 
