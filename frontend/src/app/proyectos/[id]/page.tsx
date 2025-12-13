@@ -415,6 +415,15 @@ export default function ProyectoDetallePage() {
   const PlanosCarrusel = ({ imagenes }: { imagenes: string[] }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
 
+    // Validar que imagenes sea un array válido
+    if (!Array.isArray(imagenes) || imagenes.length === 0) {
+      return (
+        <div className="aspect-[16/9] bg-gray-200 rounded-lg flex items-center justify-center">
+          <p className="text-gray-500">No hay imágenes disponibles</p>
+        </div>
+      );
+    }
+
     const nextSlide = () => {
       setCurrentIndex((prev) => (prev + 1) % imagenes.length);
     };
@@ -427,7 +436,9 @@ export default function ProyectoDetallePage() {
     const getImageUrl = (imageUrl: string) => {
       // Si la URL ya es absoluta (empieza con http), úsala tal cual
       // Si es relativa, concaténala con API_BASE_URL
-      return imageUrl.startsWith('http') ? imageUrl : `${API_BASE_URL}${imageUrl}`;
+      return imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('http')
+        ? imageUrl
+        : `${API_BASE_URL}${imageUrl || ''}`;
     };
 
     const currentImageUrl = getImageUrl(imagenes[currentIndex]);
@@ -440,9 +451,14 @@ export default function ProyectoDetallePage() {
             alt={`Plano ${currentIndex + 1}`}
             className="w-full h-full object-cover cursor-pointer"
             onClick={() => setModalImage(currentImageUrl)}
+            onError={(e) => {
+              console.error('Error loading image:', currentImageUrl);
+              // Fallback si la imagen no carga
+              e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjE4QzE0IDE5LjEgMTMuMSAyMCAxMiAyMEMxMC45IDIwIDEwIDE5LjEgMTAgMThWNFMxMC45IDIgMTIgMlpNMTIgNUEuNS41IDAgMCAxIDExLjUgNUMxMS41IDQuNSAxMiA0LjUgMTIgNFoiIGZpbGw9IiM5Q0E0QUYiLz4KPC9zdmc+';
+            }}
           />
         </div>
-        
+
         {imagenes.length > 1 && (
           <>
             <button
@@ -457,7 +473,7 @@ export default function ProyectoDetallePage() {
             >
               <ChevronRight className="h-5 w-5 text-gray-800" />
             </button>
-            
+
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
               {imagenes.map((_, idx) => (
                 <button
@@ -469,7 +485,7 @@ export default function ProyectoDetallePage() {
                 />
               ))}
             </div>
-            
+
             <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
               {currentIndex + 1} / {imagenes.length}
             </div>
