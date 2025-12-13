@@ -71,6 +71,8 @@ export async function uploadRoutes(fastify: FastifyInstance) {
         : 'http://localhost:3001';
       const url = `${baseUrl}/uploads/${filename}`;
 
+      console.log('🔗 URL generada:', url);
+
       reply.send({
         success: true,
         data: {

@@ -183,6 +183,18 @@ export default function EditarProyectoPage() {
 
       const urls = await Promise.all(uploadPromises);
       console.log('🎉 URLs finales:', urls);
+      console.log('🎉 Primera URL:', urls[0]);
+
+      // Verificar formato de URLs
+      urls.forEach((url, index) => {
+        console.log(`🔍 URL ${index}:`, url);
+        if (typeof url === 'string' && url.includes('https://')) {
+          console.log(`✅ URL ${index} parece correcta`);
+        } else {
+          console.log(`❌ URL ${index} parece malformada`);
+        }
+      });
+
       setImagenes(prev => {
         const newImages = [...prev, ...urls];
         console.log('📸 Estado imagenes actualizado:', newImages);
@@ -373,18 +385,25 @@ export default function EditarProyectoPage() {
                     )}
                     {imagenes.length > 0 && (
                       <div className="mt-3 grid grid-cols-3 gap-2">
-                        {imagenes.map((url, index) => (
-                          <div key={index} className="relative">
-                            <img src={`${API_BASE_URL}${url}`} alt={`Plano ${index + 1}`} className="w-full h-20 object-cover rounded" />
-                            <button
-                              type="button"
-                              onClick={() => setImagenes(prev => prev.filter((_, i) => i !== index))}
-                              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
+                        {imagenes.map((url, index) => {
+                          // Si la URL ya es absoluta (empieza con http), úsala tal cual
+                          // Si es relativa, concaténala con API_BASE_URL
+                          const imageSrc = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+                          console.log(`🖼️ Mostrando imagen ${index}:`, imageSrc);
+
+                          return (
+                            <div key={index} className="relative">
+                              <img src={imageSrc} alt={`Plano ${index + 1}`} className="w-full h-20 object-cover rounded" />
+                              <button
+                                type="button"
+                                onClick={() => setImagenes(prev => prev.filter((_, i) => i !== index))}
+                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                     <p className="mt-1 text-sm text-gray-500">
