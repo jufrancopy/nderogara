@@ -106,6 +106,28 @@ export default function ProyectoDetallePage() {
     etapas: any[]
   }>({ isOpen: false, etapas: [] })
 
+  // Efecto para manejar la tecla Escape en el modal de imagen
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && modalImage) {
+        setModalImage(null)
+      }
+    }
+
+    if (modalImage) {
+      document.addEventListener('keydown', handleKeyDown)
+      // Prevenir scroll del body cuando el modal está abierto
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = 'unset'
+    }
+  }, [modalImage])
+
   useEffect(() => {
     fetchProyecto()
     fetchItems()
@@ -527,65 +549,7 @@ export default function ProyectoDetallePage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Información del Proyecto */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Planos del Proyecto */}
-              {(() => {
-                console.log('🔍 Debug imagenUrl:', proyecto.imagenUrl);
-                console.log('🔍 Debug proyecto:', proyecto);
-
-                if (!proyecto.imagenUrl) {
-                  console.log('❌ No hay imagenUrl');
-                  return (
-                    <div className="bg-white shadow rounded-lg p-6">
-                      <h3 className="text-lg font-medium text-gray-900 mb-4">Planos del Proyecto</h3>
-                      <div className="text-center py-8 text-gray-500">
-                        <p>No hay planos disponibles para este proyecto</p>
-                        <p className="text-sm mt-2">Los planos se pueden agregar al crear o editar el proyecto</p>
-                      </div>
-                    </div>
-                  );
-                }
-
-                try {
-                  const imagenes = JSON.parse(proyecto.imagenUrl);
-                  console.log('✅ JSON parseado:', imagenes);
-
-                  if (Array.isArray(imagenes) && imagenes.length > 0) {
-                    console.log('✅ Mostrando carrusel con', imagenes.length, 'imágenes');
-                    return (
-                      <div className="bg-white shadow rounded-lg p-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Planos del Proyecto</h3>
-                        <PlanosCarrusel imagenes={imagenes} />
-                      </div>
-                    );
-                  } else {
-                    console.log('❌ Array vacío o no es array');
-                    return (
-                      <div className="bg-white shadow rounded-lg p-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Planos del Proyecto</h3>
-                        <div className="text-center py-8 text-gray-500">
-                          <p>No hay planos disponibles</p>
-                        </div>
-                      </div>
-                    );
-                  }
-                } catch (e) {
-                  console.log('❌ Error parsing JSON:', e);
-                  // Si no es JSON válido, mostrar como imagen única
-                  return (
-                    <div className="bg-white shadow rounded-lg p-6">
-                      <h3 className="text-lg font-medium text-gray-900 mb-4">Imagen del Proyecto</h3>
-                      <img
-                        src={`${API_BASE_URL}${proyecto.imagenUrl}`}
-                        alt={proyecto.nombre}
-                        className="w-full h-64 object-cover rounded-lg cursor-pointer"
-                        onClick={() => setModalImage(`${API_BASE_URL}${proyecto.imagenUrl}`)}
-                      />
-                    </div>
-                  );
-                }
-              })()}
-
-              {/* Detalles Generales */}
+              {/* Información General (con planos incluidos) */}
               <div className="bg-white shadow rounded-lg p-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                   <FileText className="h-5 w-5 mr-2" />
@@ -641,6 +605,7 @@ export default function ProyectoDetallePage() {
                       return (
                         <div className="text-center py-4 text-gray-500">
                           <p className="text-sm">No hay planos disponibles</p>
+                          <p className="text-xs text-gray-400 mt-1">Los planos se pueden agregar al crear o editar el proyecto</p>
                         </div>
                       );
                     }
@@ -702,6 +667,45 @@ export default function ProyectoDetallePage() {
                   })()}
                 </div>
               </div>
+
+              {/* Galería Completa de Planos */}
+              {(() => {
+                console.log('🔍 Debug imagenUrl:', proyecto.imagenUrl);
+
+                if (!proyecto.imagenUrl) {
+                  return null; // No mostrar nada si no hay imágenes
+                }
+
+                try {
+                  const imagenes = JSON.parse(proyecto.imagenUrl);
+                  console.log('✅ JSON parseado:', imagenes);
+
+                  if (Array.isArray(imagenes) && imagenes.length > 0) {
+                    console.log('✅ Mostrando galería completa con', imagenes.length, 'imágenes');
+                    return (
+                      <div className="bg-white shadow rounded-lg p-6">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Galería Completa de Planos</h3>
+                        <PlanosCarrusel imagenes={imagenes} />
+                      </div>
+                    );
+                  }
+                } catch (e) {
+                  console.log('❌ Error parsing JSON:', e);
+                  // Si no es JSON válido, mostrar como imagen única
+                  return (
+                    <div className="bg-white shadow rounded-lg p-6">
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Imagen del Proyecto</h3>
+                      <img
+                        src={`${API_BASE_URL}${proyecto.imagenUrl}`}
+                        alt={proyecto.nombre}
+                        className="w-full h-64 object-cover rounded-lg cursor-pointer"
+                        onClick={() => setModalImage(`${API_BASE_URL}${proyecto.imagenUrl}`)}
+                      />
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
               {/* Presupuesto */}
               <div className="bg-white shadow rounded-lg p-6">
@@ -1071,18 +1075,35 @@ export default function ProyectoDetallePage() {
 
       {/* Modal de imagen ampliada */}
       {modalImage && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
-          <div className="relative max-w-7xl max-h-full">
+        <div className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50">
+          <div className="relative max-w-7xl max-h-full p-4">
+            {/* Botón de cerrar arriba a la derecha */}
             <button
               onClick={() => setModalImage(null)}
-              className="absolute -top-10 right-0 text-white text-2xl hover:text-gray-300"
+              className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full w-12 h-12 flex items-center justify-center text-2xl font-bold transition-colors"
+              title="Cerrar (Esc)"
             >
               ×
             </button>
+
+            {/* Botón de cerrar abajo al centro */}
+            <button
+              onClick={() => setModalImage(null)}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-black/50 hover:bg-black/70 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            >
+              Cerrar
+            </button>
+
             <img
               src={modalImage}
               alt="Plano ampliado"
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            />
+
+            {/* Overlay clickeable para cerrar */}
+            <div
+              className="absolute inset-0 -z-10 cursor-pointer"
+              onClick={() => setModalImage(null)}
             />
           </div>
         </div>
