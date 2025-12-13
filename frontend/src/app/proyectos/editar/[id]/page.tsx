@@ -135,18 +135,41 @@ export default function EditarProyectoPage() {
 
     console.log('🖼️ Subiendo', files.length, 'archivos para editar');
     setUploadingImages(true);
+
     try {
+      // Primero probar el endpoint de test
+      console.log('🧪 Probando endpoint de test...');
+      const token = localStorage.getItem('token');
+      const testResponse = await fetch(`${API_BASE_URL}/upload/test`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const testData = await testResponse.json();
+      console.log('🧪 Respuesta test:', testData);
+
+      if (!testData.success) {
+        throw new Error('Endpoint de test falló');
+      }
+
+      console.log('✅ Endpoint funcionando, procediendo con subida...');
+
       const uploadPromises = Array.from(files).map(async (file) => {
         console.log('📤 Subiendo archivo:', file.name, file.size, 'bytes');
         const formData = new FormData();
         formData.append('file', file);
 
-        const token = localStorage.getItem('token');
         const response = await fetch(`${API_BASE_URL}/upload`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: formData
         });
+
+        if (!response.ok) {
+          console.log('❌ Response status:', response.status, response.statusText);
+          const errorText = await response.text();
+          console.log('❌ Error response:', errorText);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
 
         const data = await response.json();
         console.log('📥 Respuesta upload:', data);
@@ -168,7 +191,8 @@ export default function EditarProyectoPage() {
       toast.success(`${urls.length} imagen(es) subida(s) exitosamente`);
     } catch (error) {
       console.error('❌ Error uploading:', error);
-      toast.error('Error al subir algunas imágenes');
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error(`Error al subir imágenes: ${errorMessage}`);
     } finally {
       setUploadingImages(false);
     }

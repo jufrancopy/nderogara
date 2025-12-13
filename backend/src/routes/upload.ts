@@ -13,12 +13,28 @@ export async function uploadRoutes(fastify: FastifyInstance) {
     await request.jwtVerify();
   });
 
+  // GET /upload/test - Endpoint de prueba sin multipart
+  fastify.get('/test', async (request: FastifyRequest, reply: FastifyReply) => {
+    console.log('🧪 Request GET /upload/test recibido');
+    return reply.send({
+      success: true,
+      message: 'Upload endpoint funcionando',
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // POST /upload - Subir imagen general (para proyectos, etc.)
   fastify.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
+    console.log('📨 Request POST /upload recibido');
+    console.log('📨 Headers:', request.headers);
+    console.log('📨 Raw body length:', request.raw?.headers ? request.raw.headers['content-length'] : 'unknown');
+
     try {
       const data = await request.file();
+      console.log('📁 Archivo recibido:', data?.filename, data?.mimetype, data?.file?.bytesRead);
 
       if (!data) {
+        console.log('❌ No se envió ningún archivo');
         return reply.status(400).send({ success: false, error: 'No se envió ningún archivo' });
       }
 
@@ -48,7 +64,12 @@ export async function uploadRoutes(fastify: FastifyInstance) {
       const buffer = await data.toBuffer();
       await writeFile(filepath, buffer);
 
-      const url = `/uploads/${filename}`;
+      // Construir URL completa para producción
+      // En producción, los archivos estáticos se sirven desde el dominio del backend
+      const baseUrl = process.env.NODE_ENV === 'production'
+        ? 'https://apinderogara.thepydeveloper.dev'
+        : 'http://localhost:3001';
+      const url = `${baseUrl}/uploads/${filename}`;
 
       reply.send({
         success: true,
