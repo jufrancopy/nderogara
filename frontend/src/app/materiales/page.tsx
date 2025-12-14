@@ -98,7 +98,10 @@ export default function MaterialesPage() {
 
   const handleDeleteConfirm = async () => {
     try {
-      await api.delete(`/materiales/${deleteDialog.materialId}`)
+      // Determinar el endpoint correcto basado en el rol del usuario
+      const endpoint = user?.rol === 'ADMIN' ? `/admin/materiales/${deleteDialog.materialId}` : `/proveedor/materiales/${deleteDialog.materialId}`
+
+      await api.delete(endpoint)
       toast.success('Material eliminado exitosamente')
       fetchMateriales() // Recargar la lista
     } catch (error: any) {

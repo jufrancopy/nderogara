@@ -113,6 +113,27 @@ export const getMaterialesCatalogo = async (request: FastifyRequest, reply: Fast
   }
 };
 
+export const deleteMaterialCatalogo = async (
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) => {
+  try {
+    const { id } = request.params;
+
+    const material = await prisma.material.findUnique({ where: { id } });
+    if (!material || material.usuarioId !== null) {
+      return reply.status(404).send({ success: false, error: 'Material del catálogo no encontrado' });
+    }
+
+    await prisma.material.delete({ where: { id } });
+
+    reply.send({ success: true, message: 'Material eliminado exitosamente' });
+  } catch (error) {
+    console.error('Error al eliminar material del catálogo:', error);
+    reply.status(500).send({ success: false, error: 'Error al eliminar material' });
+  }
+};
+
 export const getAdminDashboard = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     // Estadísticas generales

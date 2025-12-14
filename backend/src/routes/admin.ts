@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { createMaterialCatalogo, updateMaterialCatalogo, getMaterialesCatalogo, getAdminDashboard } from '../controllers/materialesAdminController';
+import { createMaterialCatalogo, updateMaterialCatalogo, getMaterialesCatalogo, deleteMaterialCatalogo, getAdminDashboard } from '../controllers/materialesAdminController';
 import { isAdmin } from '../middleware/auth';
 
 export async function adminRoutes(fastify: FastifyInstance) {
@@ -11,5 +11,6 @@ export async function adminRoutes(fastify: FastifyInstance) {
   fastify.get('/dashboard', getAdminDashboard);
   fastify.post('/materiales', createMaterialCatalogo);
   fastify.put('/materiales/:id', updateMaterialCatalogo);
+  fastify.delete('/materiales/:id', deleteMaterialCatalogo);
   fastify.get('/materiales', getMaterialesCatalogo);
 }
