@@ -55,6 +55,7 @@ model User {
   items                 Item[]      // Items propios del usuario
   proveedor             Proveedor?  // Si es proveedor
   inmuebles             Inmueble[]  // Inmuebles publicados
+  notificaciones        Notificacion[] // Notificaciones del usuario
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
 }
@@ -250,6 +251,7 @@ model Proyecto {
   cotizaciones        Cotizacion[]
   etapasObra          EtapaObra[]
   inmuebles           Inmueble[]        // Inmuebles basados en este proyecto
+  notificaciones      Notificacion[]    // Notificaciones relacionadas con este proyecto
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 
@@ -406,4 +408,31 @@ model Inmueble {
   @@index([estado])
   @@index([ciudad])
   @@index([precio])
+}
+
+// Sistema de Notificaciones
+model Notificacion {
+  id          String       @id @default(cuid())
+  titulo      String
+  mensaje     String
+  tipo        TipoNotificacion @default(INFO)
+  leida       Boolean      @default(false)
+  usuarioId   String       // Usuario que recibe la notificación
+  proyectoId  String?      // Proyecto relacionado (opcional)
+  usuario     User         @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  proyecto    Proyecto?    @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([usuarioId])
+  @@index([proyectoId])
+  @@index([leida])
+  @@index([tipo])
+}
+
+enum TipoNotificacion {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
 }

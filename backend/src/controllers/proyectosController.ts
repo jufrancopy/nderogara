@@ -141,6 +141,37 @@ export const proyectosController = {
         }
       })
 
+      // Crear notificación si se asignó un constructor
+      if (validatedData.encargadoNombre) {
+        try {
+          // Buscar el usuario constructor por nombre
+          const constructor = await prisma.user.findFirst({
+            where: {
+              OR: [
+                { name: validatedData.encargadoNombre },
+                { email: validatedData.encargadoNombre }
+              ],
+              rol: 'CONSTRUCTOR'
+            }
+          })
+
+          if (constructor) {
+            await prisma.notificacion.create({
+              data: {
+                titulo: 'Nuevo proyecto asignado',
+                mensaje: `Se te ha asignado el proyecto "${proyecto.nombre}". Revisa los detalles y comienza con la planificación.`,
+                tipo: 'INFO',
+                usuarioId: constructor.id,
+                proyectoId: proyecto.id
+              }
+            })
+          }
+        } catch (error) {
+          console.error('Error creating notification:', error)
+          // No fallar la creación del proyecto por error en notificaciones
+        }
+      }
+
       return reply.status(201).send({
         success: true,
         data: proyecto,
