@@ -77,15 +77,20 @@ export default function NuevoMaterialPage() {
       const user = userData ? JSON.parse(userData) : null
 
       // Determinar el endpoint correcto basado en el rol del usuario
-      const endpoint = user?.rol === 'ADMIN' ? '/admin/materiales' : '/proveedor/materiales'
+      let endpoint = '/proveedor/materiales' // default
+      if (user?.rol === 'ADMIN') {
+        endpoint = '/admin/materiales'
+      }
 
-      await api.post(endpoint, data)
+      const response = await api.post(endpoint, data)
+
       toast.success('Material creado exitosamente')
       router.push('/materiales')
     } catch (error: any) {
       console.error('Error creating material:', error)
+      console.error('Error response:', error.response)
       const errorMessage = error.response?.data?.error || 'Error al crear el material'
-      toast.error(errorMessage)
+      toast.error(`Error: ${errorMessage}`)
     } finally {
       setLoading(false)
     }
