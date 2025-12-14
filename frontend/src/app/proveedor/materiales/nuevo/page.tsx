@@ -29,7 +29,7 @@ export default function NuevoMaterialProveedorPage() {
   const fetchGaleria = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/${1}`, {
+      const response = await fetch(`${API_BASE_URL}/upload/galeria`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
@@ -50,7 +50,7 @@ export default function NuevoMaterialProveedorPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/${1}`, {
+      const response = await fetch(`${API_BASE_URL}/upload`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formDataUpload
@@ -69,7 +69,7 @@ export default function NuevoMaterialProveedorPage() {
   const fetchCategorias = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/${1}`, {
+      const response = await fetch(`${API_BASE_URL}/categorias`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
@@ -90,7 +90,7 @@ export default function NuevoMaterialProveedorPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/${1}`, {
+      const response = await fetch(`${API_BASE_URL}/proveedor/materiales`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
