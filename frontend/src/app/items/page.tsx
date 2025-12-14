@@ -7,6 +7,7 @@ import { Building2, Plus, Search, Edit, Trash2, Package, Calculator, ChevronLeft
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import TableLoader from '@/components/TableLoader'
 import { formatPrice } from '@/lib/formatters'
 
 interface Item {
@@ -215,10 +216,7 @@ export default function ItemsPage() {
           {/* Items Table */}
           <div className="bg-white shadow overflow-hidden sm:rounded-md">
             {loading ? (
-              <div className="p-6 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-gray-500">Cargando items...</p>
-              </div>
+              <TableLoader message="Cargando items..." />
             ) : items.length === 0 ? (
               <div className="p-6 text-center">
                 <p className="text-gray-500">No se encontraron items</p>
@@ -307,14 +305,15 @@ export default function ItemsPage() {
       />
 
       {/* Pagination Controls */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Info */}
-          <div className="text-sm text-gray-700">
-            Mostrando {(pagination.page - 1) * pagination.limit + 1} a{' '}
-            {Math.min(pagination.page * pagination.limit, pagination.total)} de{' '}
-            {pagination.total} items
-          </div>
+      {pagination && pagination.totalPages > 1 && !loading && (
+        <div className="mt-6 px-4 sm:px-0">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            {/* Info */}
+            <div className="text-sm text-gray-700">
+              Mostrando {(pagination.page - 1) * pagination.limit + 1} a{' '}
+              {Math.min(pagination.page * pagination.limit, pagination.total)} de{' '}
+              {pagination.total} items
+            </div>
 
           {/* Controls */}
           <div className="flex items-center gap-2">
@@ -371,6 +370,7 @@ export default function ItemsPage() {
               Siguiente
               <ChevronRight className="h-4 w-4 ml-1" />
             </button>
+          </div>
           </div>
         </div>
       )}
