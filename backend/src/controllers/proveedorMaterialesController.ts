@@ -31,21 +31,57 @@ export const getMisMateriales = async (request: FastifyRequest, reply: FastifyRe
 export const crearMaterial = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const userId = (request.user as any).id;
-    const { nombre, descripcion, unidad, categoriaId, imagenUrl, precio, marca } = request.body as any;
+    const {
+      nombre,
+      descripcion,
+      unidad,
+      categoriaId,
+      imagenUrl,
+      precioUnitario,
+      tipoCalidad,
+      marca,
+      proveedor,
+      telefonoProveedor,
+      stockMinimo,
+      observaciones
+    } = request.body as any;
 
+    // Crear el material
     const material = await prisma.material.create({
       data: {
         nombre,
-        descripcion,
+        descripcion: observaciones || descripcion,
         unidad,
         categoriaId,
         imagenUrl,
-        precio: precio,
+        precio: precioUnitario,
         usuarioId: userId,
         esActivo: true
       },
       include: { categoria: true }
     });
+
+    // Si el usuario es proveedor de materiales, crear también la oferta
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { proveedor: true }
+    });
+
+    if (user?.rol === 'PROVEEDOR_MATERIALES' && user.proveedor) {
+      // Crear la oferta del proveedor
+      await prisma.ofertaProveedor.create({
+        data: {
+          materialId: material.id,
+          proveedorId: user.proveedor.id,
+          precio: precioUnitario,
+          tipoCalidad: tipoCalidad || 'COMUN',
+          marca: marca,
+          comisionPorcentaje: 10.00, // Comisión por defecto del 10%
+          stock: true, // Por defecto en stock
+          observaciones: observaciones
+        }
+      });
+    }
 
     reply.status(201).send(material);
   } catch (error) {

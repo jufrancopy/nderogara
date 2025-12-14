@@ -9,6 +9,8 @@ interface CreateMaterialCatalogoBody {
   unidad: string;
   categoriaId: string;
   imagenUrl?: string;
+  precioUnitario?: number;
+  observaciones?: string;
 }
 
 export const createMaterialCatalogo = async (
@@ -16,12 +18,28 @@ export const createMaterialCatalogo = async (
   reply: FastifyReply
 ) => {
   try {
+    // Only extract the fields that belong to the Material model
+    const {
+      nombre,
+      unidad,
+      categoriaId,
+      imagenUrl,
+      precioUnitario,
+      observaciones
+    } = request.body as any;
+
     const material = await prisma.material.create({
       data: {
-        ...(request.body as any),
+        nombre,
+        descripcion: observaciones,
+        unidad,
+        categoriaId,
+        imagenUrl,
+        precio: precioUnitario,
         usuarioId: null, // null = catálogo público
+        esActivo: true
       },
-      include: { 
+      include: {
         categoria: true,
         ofertas: {
           include: {
