@@ -73,7 +73,13 @@ export default function NuevoMaterialPage() {
   const onSubmit = async (data: MaterialForm) => {
     setLoading(true)
     try {
-      await api.post('/materiales', data)
+      const userData = localStorage.getItem('user')
+      const user = userData ? JSON.parse(userData) : null
+
+      // Determinar el endpoint correcto basado en el rol del usuario
+      const endpoint = user?.rol === 'ADMIN' ? '/admin/materiales' : '/proveedor/materiales'
+
+      await api.post(endpoint, data)
       toast.success('Material creado exitosamente')
       router.push('/materiales')
     } catch (error: any) {
