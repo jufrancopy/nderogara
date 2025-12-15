@@ -28,6 +28,7 @@ export default function MisMaterialesPage() {
   const [priceUpdateMaterial, setPriceUpdateMaterial] = useState<Material | null>(null);
   const [newPrice, setNewPrice] = useState('');
   const [priceDisplay, setPriceDisplay] = useState('');
+  const [deleteMaterialData, setDeleteMaterialData] = useState<Material | null>(null);
 
   useEffect(() => {
     fetchMateriales();
@@ -72,20 +73,36 @@ export default function MisMaterialesPage() {
     }
   };
 
-  const eliminarMaterial = async (id: string) => {
-    if (!confirm('¿Eliminar este material?')) return;
+  const handleDeleteClick = (material: Material) => {
+    setDeleteMaterialData(material);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteMaterialData) return;
 
     try {
       const token = localStorage.getItem('token');
-      await fetch(`${API_BASE_URL}/proveedor/materiales/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/proveedor/materiales/${deleteMaterialData.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      fetchMateriales();
+      if (response.ok) {
+        toast.success('Material eliminado exitosamente');
+        fetchMateriales();
+      } else {
+        toast.error('Error al eliminar el material');
+      }
     } catch (error) {
       console.error('Error al eliminar material:', error);
+      toast.error('Error al eliminar el material');
+    } finally {
+      setDeleteMaterialData(null);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteMaterialData(null);
   };
 
   const handlePrecioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -250,7 +267,7 @@ export default function MisMaterialesPage() {
                         {material.esActivo ? 'Desactivar' : 'Activar'}
                       </button>
                       <button
-                        onClick={() => eliminarMaterial(material.id)}
+                        onClick={() => handleDeleteClick(material)}
                         className="flex-1 bg-red-50 text-red-600 px-3 py-2 rounded hover:bg-red-100 transition text-sm"
                       >
                         🗑️ Eliminar
@@ -313,6 +330,35 @@ export default function MisMaterialesPage() {
                     Actualizar Precio
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteMaterialData && (
+          <div className="modal modal-open">
+            <div className="modal-box">
+              <h3 className="font-bold text-lg text-red-600">⚠️ Confirmar Eliminación</h3>
+              <p className="py-4">
+                ¿Estás seguro de que quieres eliminar el material <strong>"{deleteMaterialData.nombre}"</strong>?
+              </p>
+              <p className="text-sm text-gray-600 mb-4">
+                Esta acción no se puede deshacer. El material será eliminado permanentemente.
+              </p>
+              <div className="modal-action">
+                <button
+                  className="btn btn-ghost"
+                  onClick={handleDeleteCancel}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="btn btn-error"
+                  onClick={handleDeleteConfirm}
+                >
+                  🗑️ Eliminar
+                </button>
               </div>
             </div>
           </div>
