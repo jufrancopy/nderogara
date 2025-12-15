@@ -39,10 +39,13 @@ export const getMisMateriales = async (request: FastifyRequest, reply: FastifyRe
     });
 
     // Map precio to precio for frontend compatibility
-    const materialesMapped = materiales.map(material => ({
-      ...material,
-      precio: material.precio
-    }));
+    const materialesMapped = materiales.map(material => {
+      console.log(`Material ${material.id}: imagenUrl = ${material.imagenUrl}`);
+      return {
+        ...material,
+        precio: material.precio
+      };
+    });
 
     reply.send(materialesMapped);
   } catch (error) {
@@ -217,19 +220,24 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
     }
 
     // Crear el material del proveedor basado en el material base
+    const finalImagenUrl = imagenUrl || materialBase.imagenUrl;
+    console.log('Creando material con imagenUrl:', finalImagenUrl);
+
     const materialProveedor = await prisma.material.create({
       data: {
         nombre: materialBase.nombre,
         descripcion: materialBase.descripcion,
         unidad: materialBase.unidad,
         categoriaId: materialBase.categoriaId,
-        imagenUrl: imagenUrl || materialBase.imagenUrl, // Usar imagen personalizada si se proporciona
+        imagenUrl: finalImagenUrl,
         precio: precio,
         usuarioId: userId,
         esActivo: true
       },
       include: { categoria: true }
     });
+
+    console.log('Material creado con id:', materialProveedor.id, 'imagenUrl:', materialProveedor.imagenUrl);
 
     // Crear la oferta solo para PROVEEDOR_MATERIALES
     let oferta = null;
