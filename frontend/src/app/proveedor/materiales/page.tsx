@@ -243,6 +243,8 @@ export default function MisMaterialesPage() {
 
     try {
       let finalImageUrl = createOfferMaterial.imagenUrl; // Usar imagen del material base por defecto
+      console.log('Imagen base del material:', createOfferMaterial.imagenUrl);
+      console.log('¿Hay archivo subido?', !!offerImageFile);
 
       // Si el proveedor subió una imagen personalizada, subirla primero
       if (offerImageFile) {
@@ -261,11 +263,15 @@ export default function MisMaterialesPage() {
         if (uploadResponse.ok) {
           const uploadData = await uploadResponse.json();
           finalImageUrl = uploadData.url;
+          console.log('Imagen subida exitosamente:', finalImageUrl);
         } else {
+          console.log('Error en subida de imagen:', uploadResponse.status);
           toast.error('Error al subir la imagen');
           return;
         }
       }
+
+      console.log('ImagenUrl final a enviar:', finalImageUrl);
 
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/proveedor/ofertas-desde-base`, {
