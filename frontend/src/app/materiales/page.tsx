@@ -191,7 +191,7 @@ export default function MaterialesPage() {
           </div>
 
           {/* Materials Table */}
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          <div className="bg-white shadow-sm rounded-lg overflow-hidden">
             {loading ? (
               <div className="p-6 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -202,75 +202,118 @@ export default function MaterialesPage() {
                 <p className="text-gray-500">No se encontraron materiales</p>
               </div>
             ) : (
-              <ul className="divide-y divide-gray-200">
-                {paginatedMateriales.map((material) => (
-                  <li key={material.id} className="px-6 py-4 hover:bg-gray-50">
-                    <div className="flex items-start gap-4">
-                      <div className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-md flex items-center justify-center">
-                        {material.imagenUrl ? (
-                          <img 
-                            src={material.imagenUrl} 
-                            alt={material.nombre}
-                            className="w-full h-full object-cover rounded-md"
-                            onError={(e) => {
-                              e.currentTarget.parentElement!.innerHTML = '<span class="text-gray-400 text-xs">Sin imagen</span>'
-                            }}
-                          />
-                        ) : (
-                          <span className="text-gray-400 text-xs">Sin imagen</span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 
-                          className="text-lg font-medium text-blue-600 hover:text-blue-800 cursor-pointer mb-2"
-                          onClick={() => handleShowDetail(material)}
-                        >
-                          {material.nombre}
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="text-sm text-gray-500">
-                            <span className="font-medium">Unidad:</span> {material.unidad}
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Material
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Categoría
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Unidad
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Precio
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Estado
+                      </th>
+                      {user?.rol !== 'CLIENTE' && (
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Acciones
+                        </th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {paginatedMateriales.map((material) => (
+                      <tr key={material.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                              {material.imagenUrl ? (
+                                <img
+                                  src={material.imagenUrl}
+                                  alt={material.nombre}
+                                  className="w-full h-full object-cover rounded-lg"
+                                  onError={(e) => {
+                                    e.currentTarget.parentElement!.innerHTML = '<span class="text-gray-400 text-xs">Sin imagen</span>'
+                                  }}
+                                />
+                              ) : (
+                                <span className="text-gray-400 text-xs">Sin imagen</span>
+                              )}
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600"
+                                   onClick={() => handleShowDetail(material)}>
+                                {material.nombre}
+                              </div>
+                              {material.ofertas && material.ofertas.length > 0 && (
+                                <div className="text-xs text-gray-500">
+                                  {material.ofertas.length} {material.ofertas.length === 1 ? 'proveedor' : 'proveedores'}
+                                </div>
+                              )}
+                            </div>
                           </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{material.categoria?.nombre || 'Sin categoría'}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{material.unidad}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
                           {material.ofertas && material.ofertas.length > 0 ? (
-                            <>
-                              <div className="text-lg font-bold text-green-600">
-                                Desde {formatPrice(material.ofertas[0].precio)}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {material.ofertas.length} {material.ofertas.length === 1 ? 'proveedor' : 'proveedores'} disponibles
-                              </div>
-                            </>
+                            <div className="text-sm font-medium text-green-600">
+                              Desde {formatPrice(material.ofertas[0].precio)}
+                            </div>
                           ) : material.precioPersonalizado ? (
-                            <div className="text-lg font-bold text-blue-600">
+                            <div className="text-sm font-medium text-blue-600">
                               {formatPrice(material.precioPersonalizado)}
-                              <span className="text-xs text-gray-500 ml-2">(Personalizado)</span>
+                              <span className="text-xs text-gray-500 ml-1">(Personalizado)</span>
                             </div>
                           ) : (
-                            <div className="text-sm text-gray-400">Sin ofertas disponibles</div>
+                            <div className="text-sm text-gray-400">Sin precio</div>
                           )}
-                        </div>
-                      </div>
-                      {user?.rol !== 'CLIENTE' && (
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <button
-                            onClick={() => handlePriceUpdateClick(material)}
-                            className="text-blue-600 hover:text-blue-800"
-                            title="Actualizar precio"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(material.id, material.nombre)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            material.usuarioId === null
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {material.usuarioId === null ? 'Catálogo' : 'Proveedor'}
+                          </span>
+                        </td>
+                        {user?.rol !== 'CLIENTE' && (
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div className="flex justify-end space-x-2">
+                              <button
+                                onClick={() => handlePriceUpdateClick(material)}
+                                className="text-blue-600 hover:text-blue-900 px-2 py-1 rounded text-sm"
+                                title="Actualizar precio"
+                              >
+                                💰
+                              </button>
+                              <button
+                                onClick={() => handleDeleteClick(material.id, material.nombre)}
+                                className="text-red-600 hover:text-red-900 px-2 py-1 rounded text-sm"
+                                title="Eliminar"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
             
             {filteredMateriales.length > itemsPerPage && (
