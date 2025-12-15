@@ -13,6 +13,9 @@ export const getMaterialesBase = async (request: FastifyRequest, reply: FastifyR
       orderBy: { createdAt: 'desc' }
     });
 
+    console.log('Materiales base encontrados:', materialesBase.length);
+    materialesBase.forEach(m => console.log('Material base:', m.id, m.nombre));
+
     reply.send(materialesBase);
   } catch (error) {
     console.error('Error al obtener materiales base:', error);
