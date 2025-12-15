@@ -58,6 +58,10 @@ export const getMisMateriales = async (request: FastifyRequest, reply: FastifyRe
     // Map precio to precio for frontend compatibility
     const materialesMapped = materiales.map(material => {
       console.log(`Material ${material.id}: imagenUrl = ${material.imagenUrl}`);
+      console.log(`Material ${material.id}: ofertas =`, material.ofertas?.length || 0);
+      if (material.ofertas && material.ofertas.length > 0) {
+        console.log(`Material ${material.id}: primera oferta marca =`, material.ofertas[0].marca);
+      }
       return {
         ...material,
         precio: material.precio
