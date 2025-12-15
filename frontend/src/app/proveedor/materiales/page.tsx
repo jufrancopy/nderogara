@@ -400,78 +400,104 @@ export default function MisMaterialesPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {materiales.map((material) => (
-              <div key={material.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {material.imagenUrl && (
-                  <img
-                    src={material.imagenUrl}
-                    alt={material.nombre}
-                    className="w-full h-48 object-cover"
-                  />
-                )}
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-xl font-semibold text-gray-900">{material.nombre}</h3>
-                    <span className={`px-2 py-1 text-xs rounded ${material.esActivo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {material.esActivo ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </div>
-                  
-                  {material.marca && (
-                    <p className="text-sm text-gray-500 mb-2">Marca: {material.marca}</p>
-                  )}
-                  
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                    {material.descripcion || 'Sin descripción'}
-                  </p>
-                  
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm text-gray-500">{material.categoria.nombre}</span>
-                    <span className="text-sm text-gray-500">{material.unidad}</span>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <span className="text-2xl font-bold text-blue-600">
-                      ₲ {material.precio ? Number(material.precio).toLocaleString('es-PY') : '0'}
-                    </span>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handlePriceUpdateClick(material)}
-                        className="flex-1 bg-blue-50 text-blue-600 px-3 py-2 rounded text-center hover:bg-blue-100 transition text-sm"
-                        title="Actualizar precio"
-                      >
-                        💰 Precio
-                      </button>
-                      <Link
-                        href={`/proveedor/materiales/editar/${material.id}`}
-                        className="flex-1 bg-purple-50 text-purple-600 px-3 py-2 rounded text-center hover:bg-purple-100 transition text-sm"
-                        title="Editar material completo"
-                      >
-                        ✏️ Editar
-                      </Link>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => toggleActivo(material.id, material.esActivo)}
-                        className="flex-1 bg-gray-50 text-gray-600 px-3 py-2 rounded hover:bg-gray-100 transition text-sm"
-                      >
-                        {material.esActivo ? 'Desactivar' : 'Activar'}
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(material)}
-                        className="flex-1 bg-red-50 text-red-600 px-3 py-2 rounded hover:bg-red-100 transition text-sm"
-                      >
-                        🗑️ Eliminar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Material
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Marca
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Precio
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {materiales.map((material) => (
+                    <tr key={material.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          {material.imagenUrl && (
+                            <img
+                              src={material.imagenUrl}
+                              alt={material.nombre}
+                              className="w-10 h-10 rounded-lg object-cover mr-3"
+                            />
+                          )}
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{material.nombre}</div>
+                            <div className="text-sm text-gray-500">{material.categoria.nombre} • {material.unidad}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{material.marca || '-'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-blue-600">
+                          ₲ {material.precio ? Number(material.precio).toLocaleString('es-PY') : '0'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          material.esActivo
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {material.esActivo ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end space-x-2">
+                          <button
+                            onClick={() => handlePriceUpdateClick(material)}
+                            className="text-blue-600 hover:text-blue-900 px-2 py-1 rounded text-sm"
+                            title="Actualizar precio"
+                          >
+                            💰
+                          </button>
+                          <Link
+                            href={`/proveedor/materiales/editar/${material.id}`}
+                            className="text-purple-600 hover:text-purple-900 px-2 py-1 rounded text-sm"
+                            title="Editar material"
+                          >
+                            ✏️
+                          </Link>
+                          <button
+                            onClick={() => toggleActivo(material.id, material.esActivo)}
+                            className={`px-2 py-1 rounded text-sm ${
+                              material.esActivo
+                                ? 'text-gray-600 hover:text-gray-900'
+                                : 'text-green-600 hover:text-green-900'
+                            }`}
+                            title={material.esActivo ? 'Desactivar' : 'Activar'}
+                          >
+                            {material.esActivo ? '🚫' : '✅'}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(material)}
+                            className="text-red-600 hover:text-red-900 px-2 py-1 rounded text-sm"
+                            title="Eliminar"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
