@@ -162,6 +162,7 @@ export default function EditarMaterialProveedorPage() {
           // Inicializar el display del precio con formato
           setPrecioDisplay(formatNumber(material.precio.toString()));
 
+          console.log('Imagen del material a editar:', material.imagenUrl);
           setCurrentImageUrl(material.imagenUrl || '')
         } else {
           toast.error('Material no encontrado')
