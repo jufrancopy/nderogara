@@ -41,8 +41,21 @@ npm run build
 
 # Copiar archivos estáticos para standalone
 echo "📁 Copiando archivos estáticos..."
-cp -r .next/static .next/standalone/.next/
-cp -r public .next/standalone/
+cd frontend
+
+# Crear directorios necesarios
+mkdir -p .next/standalone/.next
+
+# Copiar archivos estáticos y del servidor
+cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
+cp -r .next/server .next/standalone/.next/ 2>/dev/null || true
+cp -r public .next/standalone/ 2>/dev/null || true
+
+# Copiar archivos específicos que necesita standalone
+cp next.config.ts .next/standalone/ 2>/dev/null || true
+cp package.json .next/standalone/ 2>/dev/null || true
+
+cd ..
 
 # Reiniciar servicios PM2
 echo "🔄 Reiniciando servicios..."
