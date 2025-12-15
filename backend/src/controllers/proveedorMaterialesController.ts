@@ -194,9 +194,25 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
       });
       console.log('Registro en Proveedor encontrado:', proveedorRecord ? 'Sí' : 'No');
 
+      // Si no existe registro, crearlo automáticamente
       if (!proveedorRecord) {
-        console.log('Proveedor no registrado correctamente en tabla Proveedor');
-        return reply.status(403).send({ error: 'Proveedor no registrado correctamente' });
+        console.log('Creando registro automático en tabla Proveedor...');
+        try {
+          proveedorRecord = await prisma.proveedor.create({
+            data: {
+              nombre: user.name || user.email.split('@')[0],
+              email: user.email,
+              telefono: user.telefono || null,
+              sitioWeb: null,
+              esActivo: true,
+              usuarioId: userId
+            }
+          });
+          console.log('Registro en Proveedor creado exitosamente');
+        } catch (createError) {
+          console.log('Error al crear registro en Proveedor:', createError);
+          return reply.status(500).send({ error: 'Error al registrar proveedor' });
+        }
       }
     }
 
