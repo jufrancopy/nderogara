@@ -154,6 +154,7 @@ export const actualizarMaterial = async (request: FastifyRequest, reply: Fastify
       return reply.status(404).send({ error: 'Material no encontrado' });
     }
 
+    // Actualizar el material
     const material = await prisma.material.update({
       where: { id },
       data: {
@@ -167,6 +168,22 @@ export const actualizarMaterial = async (request: FastifyRequest, reply: Fastify
       },
       include: { categoria: true }
     });
+
+    // Actualizar la marca en la oferta asociada si se proporcionó
+    if (marca !== undefined) {
+      console.log('Actualizando marca en oferta:', marca);
+      await prisma.ofertaProveedor.updateMany({
+        where: {
+          materialId: id,
+          proveedor: {
+            usuarioId: userId
+          }
+        },
+        data: {
+          marca: marca || null
+        }
+      });
+    }
 
     reply.send(material);
   } catch (error) {
@@ -268,10 +285,10 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
     // Crear la oferta solo para PROVEEDOR_MATERIALES
     let oferta = null;
     if (user.rol === 'PROVEEDOR_MATERIALES' && proveedorRecord) {
-      // Primero intentar actualizar una oferta existente para este material base
+      // Primero intentar actualizar una oferta existente para este material del proveedor
       const ofertaExistente = await prisma.ofertaProveedor.findFirst({
         where: {
-          materialId: materialBase.id,
+          materialId: materialProveedor.id,
           proveedorId: proveedorRecord.id
         }
       });
@@ -296,7 +313,7 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
         // Crear nueva oferta
         oferta = await prisma.ofertaProveedor.create({
           data: {
-            materialId: materialBase.id, // ← Vincular al material base original
+            materialId: materialProveedor.id, // ← Vincular al material del proveedor
             proveedorId: proveedorRecord.id,
             precio: precio,
             tipoCalidad: tipoCalidad || 'COMUN',
