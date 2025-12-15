@@ -14,10 +14,11 @@ import { API_BASE_URL } from '@/lib/api'
 const materialSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
   unidad: z.enum(['KG', 'BOLSA', 'M2', 'M3', 'ML', 'UNIDAD', 'LOTE', 'GLOBAL']),
-  precioUnitario: z.number().positive('El precio debe ser mayor a 0'),
-  tipoCalidad: z.enum(['COMUN', 'PREMIUM', 'INDUSTRIAL', 'ARTESANAL']),
+  precioUnitario: z.number().positive('El precio debe ser mayor a 0').optional(),
+  precioBase: z.number().positive('El precio base debe ser mayor a 0').optional(),
+  tipoCalidad: z.enum(['COMUN', 'PREMIUM', 'INDUSTRIAL', 'ARTESANAL']).optional(),
   marca: z.string().optional(),
-  proveedor: z.string().min(1, 'El proveedor es requerido'),
+  proveedor: z.string().optional(),
   telefonoProveedor: z.string().optional(),
   stockMinimo: z.number().int().min(0).optional(),
   imagenUrl: z.string().url('Debe ser una URL válida').optional().or(z.literal('')),
@@ -259,6 +260,36 @@ export default function NuevoMaterialPage() {
                       <p className="mt-1 text-sm text-red-600">{errors.precioUnitario.message}</p>
                     )}
                   </div>
+
+                  {(() => {
+                    const userData = localStorage.getItem('user')
+                    const user = userData ? JSON.parse(userData) : null
+                    const isAdmin = user?.rol === 'ADMIN'
+
+                    if (isAdmin) {
+                      return (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Precio Base de Mercado (₲)
+                          </label>
+                          <input
+                            type="number"
+                            step="1"
+                            {...register('precioBase', { valueAsNumber: true })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Precio de referencia"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Precio promedio de mercado para cálculos aproximados (solo para catálogo admin)
+                          </p>
+                          {errors.precioBase && (
+                            <p className="mt-1 text-sm text-red-600">{errors.precioBase.message}</p>
+                          )}
+                        </div>
+                      )
+                    }
+                    return null
+                  })()}
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">

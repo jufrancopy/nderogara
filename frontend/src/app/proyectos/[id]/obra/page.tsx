@@ -112,8 +112,6 @@ export default function MonitoreoObraPage() {
       const proyectoCompleto = proyectoResponse.data.data
       const presupuestoItems = proyectoCompleto.presupuestoItems || []
 
-      console.log('Presupuesto items:', presupuestoItems)
-
       // Calcular costo total por etapa
       const costosPorEtapaTemp: { [etapaId: string]: number } = {}
 
@@ -127,19 +125,14 @@ export default function MonitoreoObraPage() {
           return nombreEtapa.includes(nombreItem) || nombreItem.includes(nombreEtapa)
         })
 
-        console.log(`Etapa "${etapa.nombre}":`, itemsCoincidentes.length, 'items encontrados')
-
         // Sumar el costo total de todos los items coincidentes
         const costoTotal = itemsCoincidentes.reduce((sum: number, item: any) => {
           const costo = Number(item.costoTotal) || 0
-          console.log(`  - ${item.item.nombre}: ${costo}`)
           return sum + costo
         }, 0)
 
         // Si no se encontraron coincidencias, el costo es 0
         costosPorEtapaTemp[etapa.id] = costoTotal
-
-        console.log(`Costo total para "${etapa.nombre}": ${costoTotal}`)
       }
 
       setCostosPorEtapa(costosPorEtapaTemp)
@@ -283,19 +276,6 @@ export default function MonitoreoObraPage() {
 
       doc.setFontSize(16)
       doc.text(`COSTO TOTAL DEL PROYECTO: ${formatPrice(costoTotalProyecto)}`, 20, yPos)
-
-      // Margen de ganancia si existe
-      if (proyectoCompleto.margenGanancia) {
-        const margen = costoTotalProyecto * (Number(proyectoCompleto.margenGanancia) / 100)
-        const precioFinal = costoTotalProyecto + margen
-
-        yPos += 15
-        doc.setFontSize(12)
-        doc.text(`Margen de ganancia (${proyectoCompleto.margenGanancia}%): ${formatPrice(margen)}`, 20, yPos)
-        yPos += 10
-        doc.setFontSize(16)
-        doc.text(`PRECIO FINAL: ${formatPrice(precioFinal)}`, 20, yPos)
-      }
 
       // Descargar
       doc.save(`Costos_Obra_${proyecto?.nombre?.replace(/\s+/g, '_')}_${fechaActual.replace(/\//g, '-')}.pdf`)
@@ -459,16 +439,10 @@ export default function MonitoreoObraPage() {
 
       // Agregar información de pagos a cada presupuestoItem
       const itemsConPagos = itemsEtapa.map((presupuestoItem: any) => {
-        console.log('Procesando presupuestoItem:', presupuestoItem)
-        console.log('presupuestoItem.item.id:', presupuestoItem.item?.id)
-
         // Filtrar pagos que corresponden a este item
         const pagosDelItem = pagosExistentes.filter((pago: any) => {
-          console.log('Comparando pago.itemId:', pago.itemId, 'con presupuestoItem.item.id:', presupuestoItem.item?.id)
           return pago.itemId === presupuestoItem.item?.id
         })
-
-        console.log('Pagos encontrados para este item:', pagosDelItem.length, pagosDelItem)
 
         return {
           ...presupuestoItem,
@@ -525,8 +499,6 @@ export default function MonitoreoObraPage() {
 
       // Subir comprobante si existe
       if (comprobanteFile) {
-        console.log('Subiendo comprobante:', comprobanteFile.name, 'tipo:', comprobanteFile.type)
-
         const formData = new FormData()
         formData.append('file', comprobanteFile)
 
@@ -538,24 +510,14 @@ export default function MonitoreoObraPage() {
           body: formData
         })
 
-        console.log('Upload response status:', uploadResponse.status)
-
         if (uploadResponse.ok) {
           const uploadData = await uploadResponse.json()
-          console.log('Upload response data:', uploadData)
-          console.log('uploadData.data:', uploadData.data)
-          console.log('uploadData.data.url:', uploadData.data?.url)
-
           if (uploadData.data && uploadData.data.url) {
             comprobanteUrl = uploadData.data.url
-            console.log('Comprobante URL asignada correctamente:', comprobanteUrl)
           } else {
-            console.error('No se encontró URL en respuesta del servidor')
             throw new Error('Respuesta del servidor inválida')
           }
         } else {
-          const errorText = await uploadResponse.text()
-          console.error('Upload error response:', errorText)
           throw new Error('Error al subir comprobante')
         }
       }
@@ -569,14 +531,7 @@ export default function MonitoreoObraPage() {
         notas: 'Pago registrado desde monitoreo de obra'
       }
 
-      console.log('Creando pago con datos:', pagoData)
-      console.log('comprobanteUrl value:', comprobanteUrl)
-      console.log('comprobanteUrl type:', typeof comprobanteUrl)
-      console.log('comprobanteUrl length:', comprobanteUrl ? comprobanteUrl.length : 0)
-
       const pagoResponse = await api.post(`/proyectos/${proyectoId}/etapas/${pagoModal.etapaId}/pagos`, pagoData)
-
-      console.log('Pago creado exitosamente:', pagoResponse.data)
 
       toast.success('Pago registrado exitosamente')
       cerrarModalPago()
@@ -988,61 +943,52 @@ export default function MonitoreoObraPage() {
                                   </span>
                                 </div>
 
-                                {(() => {
-                                  console.log('Checking pago:', pago)
-                                  console.log('comprobanteUrl:', pago.comprobanteUrl)
-                                  return pago.comprobanteUrl && (
-                                    <div className="mt-3 p-3 bg-white rounded border">
-                                      <div className="flex items-center space-x-2 mb-2">
-                                        <span className="text-gray-600 text-sm font-medium">Comprobante:</span>
-                                        {pago.comprobanteUrl.toLowerCase().endsWith('.pdf') ? (
-                                          <span className="text-red-600 text-sm">📄 PDF</span>
-                                        ) : (
-                                          <span className="text-green-600 text-sm">🖼️ Imagen</span>
-                                        )}
-                                      </div>
+                                {pago.comprobanteUrl && (
+                                  <div className="mt-3 p-3 bg-white rounded border">
+                                    <div className="flex items-center space-x-2 mb-2">
+                                      <span className="text-gray-600 text-sm font-medium">Comprobante:</span>
                                       {pago.comprobanteUrl.toLowerCase().endsWith('.pdf') ? (
-                                        <div className="flex items-center justify-center p-4 bg-red-50 rounded">
+                                        <span className="text-red-600 text-sm">📄 PDF</span>
+                                      ) : (
+                                        <span className="text-green-600 text-sm">🖼️ Imagen</span>
+                                      )}
+                                    </div>
+                                    {pago.comprobanteUrl.toLowerCase().endsWith('.pdf') ? (
+                                      <div className="flex items-center justify-center p-4 bg-red-50 rounded">
+                                        <a
+                                          href={`${API_BASE_URL}${pago.comprobanteUrl}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-600 hover:text-blue-800 text-sm underline"
+                                        >
+                                          Ver comprobante PDF
+                                        </a>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        <img
+                                          src={`${API_BASE_URL}${pago.comprobanteUrl}`}
+                                          alt="Comprobante de pago"
+                                          className="w-full max-w-md h-auto rounded border shadow-sm"
+                                          onError={(e) => {
+                                            ;(e.target as HTMLImageElement).style.display = 'none'
+                                          }}
+                                        />
+                                        <div className="flex items-center space-x-2">
+                                          <span className="text-green-600 text-sm">🖼️</span>
                                           <a
                                             href={`${API_BASE_URL}${pago.comprobanteUrl}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-blue-600 hover:text-blue-800 text-sm underline"
                                           >
-                                            Ver comprobante PDF
+                                            Ver imagen completa
                                           </a>
                                         </div>
-                                      ) : (
-                                        <div className="space-y-2">
-                                          <img
-                                            src={`${API_BASE_URL}${pago.comprobanteUrl}`}
-                                            alt="Comprobante de pago"
-                                            className="w-full max-w-md h-auto rounded border shadow-sm"
-                                            onError={(e) => {
-                                              console.error('Error loading image:', `${API_BASE_URL}${pago.comprobanteUrl}`)
-                                              console.log('Pago data:', pago)
-                                              ;(e.target as HTMLImageElement).style.display = 'none'
-                                            }}
-                                            onLoad={() => {
-                                              console.log('Image loaded successfully:', `${API_BASE_URL}${pago.comprobanteUrl}`)
-                                            }}
-                                          />
-                                          <div className="flex items-center space-x-2">
-                                            <span className="text-green-600 text-sm">🖼️</span>
-                                            <a
-                                              href={`${API_BASE_URL}${pago.comprobanteUrl}`}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="text-blue-600 hover:text-blue-800 text-sm underline"
-                                            >
-                                              Ver imagen completa
-                                            </a>
-                                          </div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )
-                                })()}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>

@@ -44,14 +44,43 @@ export const materialesPorItemController = {
         },
         include: {
           material: {
-            select: {
-              nombre: true,
-              unidad: true,
-              precio: true
+            include: {
+              ofertas: {
+                where: { stock: true },
+                select: {
+                  precio: true,
+                  stock: true
+                }
+              }
             }
           }
         }
       })
+
+      // Determinar el precio unitario a usar (prioridad: ofertas → precio base → precio personalizado)
+      let precioUnitario = 0
+
+      // Buscar ofertas activas con stock
+      const ofertasActivas = materialPorItem.material.ofertas?.filter(oferta => oferta.stock === true) || []
+      if (ofertasActivas.length > 0) {
+        // Usar la oferta más económica
+        precioUnitario = Math.min(...ofertasActivas.map(o => Number(o.precio)))
+      } else if (materialPorItem.material.precioBase) {
+        // Usar precio base si no hay ofertas
+        precioUnitario = Number(materialPorItem.material.precioBase)
+      } else if (materialPorItem.material.precio) {
+        // Usar precio personalizado como último recurso
+        precioUnitario = Number(materialPorItem.material.precio)
+      }
+
+      // Crear la respuesta con el precio unitario determinado
+      const responseData = {
+        ...materialPorItem,
+        material: {
+          ...materialPorItem.material,
+          precioUnitario
+        }
+      }
 
       return reply.status(201).send({
         success: true,
@@ -97,18 +126,47 @@ export const materialesPorItemController = {
         },
         include: {
           material: {
-            select: {
-              nombre: true,
-              unidad: true,
-              precio: true
+            include: {
+              ofertas: {
+                where: { stock: true },
+                select: {
+                  precio: true,
+                  stock: true
+                }
+              }
             }
           }
         }
       })
 
+      // Determinar el precio unitario a usar (prioridad: ofertas → precio base → precio personalizado)
+      let precioUnitario = 0
+
+      // Buscar ofertas activas con stock
+      const ofertasActivas = materialPorItem.material.ofertas?.filter(oferta => oferta.stock === true) || []
+      if (ofertasActivas.length > 0) {
+        // Usar la oferta más económica
+        precioUnitario = Math.min(...ofertasActivas.map(o => Number(o.precio)))
+      } else if (materialPorItem.material.precioBase) {
+        // Usar precio base si no hay ofertas
+        precioUnitario = Number(materialPorItem.material.precioBase)
+      } else if (materialPorItem.material.precio) {
+        // Usar precio personalizado como último recurso
+        precioUnitario = Number(materialPorItem.material.precio)
+      }
+
+      // Crear la respuesta con el precio unitario determinado
+      const responseData = {
+        ...materialPorItem,
+        material: {
+          ...materialPorItem.material,
+          precioUnitario
+        }
+      }
+
       return reply.send({
         success: true,
-        data: materialPorItem,
+        data: responseData,
         message: 'Relación actualizada exitosamente'
       })
     } catch (error) {

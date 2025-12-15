@@ -23,6 +23,10 @@ const proyectoSchema = z.object({
   descripcion: z.string().optional(),
   superficieTotal: z.number().positive('La superficie debe ser mayor a 0').optional(),
   direccion: z.string().optional(),
+  ciudad: z.string().optional(),
+  departamento: z.string().optional(),
+  latitud: z.number().optional(),
+  longitud: z.number().optional(),
   fechaInicio: z.string().optional(),
   fechaFinEstimada: z.string().optional(),
   margenGanancia: z.number().min(0).max(100).optional(),
@@ -87,6 +91,13 @@ export default function NuevoProyectoPage() {
       const user = response.data.data
       setCurrentUser(user)
       setValue('usuarioId', user.id)
+
+      // Si el usuario actual es cliente, autocompletar su información
+      if (user.rol === 'CLIENTE') {
+        setValue('clienteNombre', user.name || '')
+        setValue('clienteTelefono', user.telefono || '')
+        setValue('clienteEmail', user.email)
+      }
     } catch (error) {
       console.error('Error fetching user:', error)
       // Si no puede obtener el usuario, redirigir al login
@@ -281,6 +292,62 @@ export default function NuevoProyectoPage() {
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ciudad
+                    </label>
+                    <input
+                      type="text"
+                      {...register('ciudad')}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Ej: Asunción, Luque"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Departamento
+                    </label>
+                    <input
+                      type="text"
+                      {...register('departamento')}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Ej: Central, Alto Paraná"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Latitud
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...register('latitud', { valueAsNumber: true })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="-25.2637"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Ejemplo: -25.2637 (para Asunción)
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Longitud
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...register('longitud', { valueAsNumber: true })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="-57.5759"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Ejemplo: -57.5759 (para Asunción)
+                    </p>
+                  </div>
+
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Planos e Imágenes
@@ -390,69 +457,71 @@ export default function NuevoProyectoPage() {
                 </div>
               </div>
 
-              {/* Información del Cliente */}
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Información del Cliente</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Seleccionar Cliente
-                    </label>
-                    <select
-                      onChange={(e) => handleClienteChange(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      disabled={loadingUsers}
-                    >
-                      <option value="">Seleccionar cliente...</option>
-                      {clientes.map((cliente) => (
-                        <option key={cliente.id} value={cliente.id}>
-                          {cliente.name || cliente.email}
-                          {cliente.empresa && ` (${cliente.empresa})`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              {/* Información del Cliente - Solo para constructores y administradores */}
+              {currentUser?.rol !== 'CLIENTE' && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Información del Cliente</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Seleccionar Cliente
+                      </label>
+                      <select
+                        onChange={(e) => handleClienteChange(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        disabled={loadingUsers}
+                      >
+                        <option value="">Seleccionar cliente...</option>
+                        {clientes.map((cliente) => (
+                          <option key={cliente.id} value={cliente.id}>
+                            {cliente.name || cliente.email}
+                            {cliente.empresa && ` (${cliente.empresa})`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre del Cliente
-                    </label>
-                    <input
-                      type="text"
-                      {...register('clienteNombre')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Nombre completo"
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nombre del Cliente
+                      </label>
+                      <input
+                        type="text"
+                        {...register('clienteNombre')}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Nombre completo"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Teléfono del Cliente
-                    </label>
-                    <input
-                      type="tel"
-                      {...register('clienteTelefono')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="3001234567"
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Teléfono del Cliente
+                      </label>
+                      <input
+                        type="tel"
+                        {...register('clienteTelefono')}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="3001234567"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email del Cliente
-                    </label>
-                    <input
-                      type="email"
-                      {...register('clienteEmail')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="cliente@email.com"
-                    />
-                    {errors.clienteEmail && (
-                      <p className="mt-1 text-sm text-red-600">{errors.clienteEmail.message}</p>
-                    )}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email del Cliente
+                      </label>
+                      <input
+                        type="email"
+                        {...register('clienteEmail')}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="cliente@email.com"
+                      />
+                      {errors.clienteEmail && (
+                        <p className="mt-1 text-sm text-red-600">{errors.clienteEmail.message}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Botones */}
               <div className="flex justify-end space-x-4 pt-6 border-t">

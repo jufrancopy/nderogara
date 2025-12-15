@@ -8,8 +8,10 @@ async function seed() {
 
   // 1. Crear usuarios
   const adminPassword = await bcrypt.hash('admin123', 10);
-  const admin = await prisma.user.create({
-    data: {
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@buildmanager.com' },
+    update: {},
+    create: {
       email: 'admin@buildmanager.com',
       name: 'Administrador',
       password: adminPassword,
@@ -19,8 +21,10 @@ async function seed() {
   console.log('✅ Admin creado');
 
   const userPassword = await bcrypt.hash('user123', 10);
-  const usuario = await prisma.user.create({
-    data: {
+  const usuario = await prisma.user.upsert({
+    where: { email: 'usuario@buildmanager.com' },
+    update: {},
+    create: {
       email: 'usuario@buildmanager.com',
       name: 'Usuario Demo',
       password: userPassword,
@@ -31,9 +35,11 @@ async function seed() {
 
   // 2. Crear proveedores
   const proveedorPassword = await bcrypt.hash('proveedor123', 10);
-  
-  const userINC = await prisma.user.create({
-    data: {
+
+  const userINC = await prisma.user.upsert({
+    where: { email: 'inc@proveedor.com' },
+    update: {},
+    create: {
       email: 'inc@proveedor.com',
       name: 'INC Paraguay',
       password: proveedorPassword,
@@ -41,18 +47,26 @@ async function seed() {
     }
   });
 
-  const proveedorINC = await prisma.proveedor.create({
-    data: {
+  const proveedorINC = await prisma.proveedor.upsert({
+    where: { usuarioId: userINC.id },
+    update: {},
+    create: {
       nombre: 'INC - Industria Nacional del Cemento',
       email: 'ventas@inc.com.py',
       telefono: '+595 21 123456',
       sitioWeb: 'https://inc.com.py',
+      ciudad: 'Asunción',
+      departamento: 'Central',
+      latitud: -25.2637,
+      longitud: -57.5759,
       usuarioId: userINC.id
     }
   });
 
-  const userPetrobras = await prisma.user.create({
-    data: {
+  const userPetrobras = await prisma.user.upsert({
+    where: { email: 'petrobras@proveedor.com' },
+    update: {},
+    create: {
       email: 'petrobras@proveedor.com',
       name: 'Petrobras Paraguay',
       password: proveedorPassword,
@@ -60,18 +74,26 @@ async function seed() {
     }
   });
 
-  const proveedorPetrobras = await prisma.proveedor.create({
-    data: {
+  const proveedorPetrobras = await prisma.proveedor.upsert({
+    where: { usuarioId: userPetrobras.id },
+    update: {},
+    create: {
       nombre: 'Petrobras Paraguay',
       email: 'ventas@petrobras.com.py',
       telefono: '+595 21 654321',
       sitioWeb: 'https://petrobras.com.py',
+      ciudad: 'Luque',
+      departamento: 'Central',
+      latitud: -25.2592,
+      longitud: -57.4872,
       usuarioId: userPetrobras.id
     }
   });
 
-  const userLadrillera = await prisma.user.create({
-    data: {
+  const userLadrillera = await prisma.user.upsert({
+    where: { email: 'ladrillera@proveedor.com' },
+    update: {},
+    create: {
       email: 'ladrillera@proveedor.com',
       name: 'Ladrillera Itá',
       password: proveedorPassword,
@@ -79,11 +101,17 @@ async function seed() {
     }
   });
 
-  const proveedorLadrillera = await prisma.proveedor.create({
-    data: {
+  const proveedorLadrillera = await prisma.proveedor.upsert({
+    where: { usuarioId: userLadrillera.id },
+    update: {},
+    create: {
       nombre: 'Ladrillera Itá',
       email: 'ventas@ladrillera-ita.com.py',
       telefono: '+595 21 789012',
+      ciudad: 'Luque',
+      departamento: 'Central',
+      latitud: -25.2592,
+      longitud: -57.4872,
       usuarioId: userLadrillera.id
     }
   });
@@ -91,8 +119,10 @@ async function seed() {
   console.log('✅ 3 Proveedores creados\n');
 
   // 3. Crear categoría
-  const categoria = await prisma.categoriaMaterial.create({
-    data: {
+  const categoria = await prisma.categoriaMaterial.upsert({
+    where: { nombre: 'Construcción General' },
+    update: {},
+    create: {
       nombre: 'Construcción General',
       descripcion: 'Materiales básicos de construcción'
     }

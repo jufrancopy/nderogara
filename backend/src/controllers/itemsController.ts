@@ -112,7 +112,13 @@ export const itemsController = {
         include: {
           materialesPorItem: {
             include: {
-              material: true
+              material: {
+                include: {
+                  ofertas: {
+                    where: { stock: true }
+                  }
+                }
+              }
             }
           }
         }
@@ -125,9 +131,40 @@ export const itemsController = {
         })
       }
 
+      // Procesar cada material para determinar el precio unitario correcto
+      const materialesProcesados = item.materialesPorItem.map(materialPorItem => {
+        let precioUnitario = 0
+
+        // Buscar ofertas activas con stock
+        const ofertasActivas = materialPorItem.material.ofertas?.filter(oferta => oferta.stock === true) || []
+        if (ofertasActivas.length > 0) {
+          // Usar la oferta más económica
+          precioUnitario = Math.min(...ofertasActivas.map(o => Number(o.precio)))
+        } else if (materialPorItem.material.precioBase) {
+          // Usar precio base si no hay ofertas
+          precioUnitario = Number(materialPorItem.material.precioBase)
+        } else if (materialPorItem.material.precio) {
+          // Usar precio personalizado como último recurso
+          precioUnitario = Number(materialPorItem.material.precio)
+        }
+
+        return {
+          ...materialPorItem,
+          material: {
+            ...materialPorItem.material,
+            precioUnitario
+          }
+        }
+      })
+
+      const itemProcesado = {
+        ...item,
+        materialesPorItem: materialesProcesados
+      }
+
       return reply.send({
         success: true,
-        data: item
+        data: itemProcesado
       })
     } catch (error) {
       console.error('Error fetching item:', error)

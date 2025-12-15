@@ -18,6 +18,7 @@ interface Material {
   categoria?: {
     nombre: string
   }
+  precioBase?: number
   ofertas?: Array<{
     id: string
     precio: number
@@ -27,6 +28,12 @@ interface Material {
     proveedor: {
       nombre: string
       logo?: string
+      ciudad?: string
+      departamento?: string
+      latitud?: number
+      longitud?: number
+      distancia?: number
+      distanciaFormateada?: string
     }
   }>
   precioPersonalizado?: number
@@ -233,7 +240,8 @@ export default function MaterialesPage() {
                       <tr key={material.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="w-10 h-10 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                            <div className="w-10 h-10 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center mr-3 cursor-pointer"
+                                 onClick={() => handleShowDetail(material)}>
                               {material.imagenUrl ? (
                                 <img
                                   src={material.imagenUrl}
@@ -398,12 +406,23 @@ export default function MaterialesPage() {
                     {selectedMaterial.ofertas.map((oferta) => (
                       <div key={oferta.id} className="border rounded-lg p-4 hover:border-blue-500 transition-colors">
                         <div className="flex justify-between items-start">
-                          <div>
+                          <div className="flex-1">
                             <div className="font-semibold text-gray-900">{oferta.proveedor.nombre}</div>
                             {oferta.marca && <div className="text-sm text-gray-500">{oferta.marca}</div>}
                             <div className="text-xs text-gray-400 mt-1">{oferta.tipoCalidad}</div>
+                            {oferta.proveedor.ciudad && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                📍 {oferta.proveedor.ciudad}
+                                {oferta.proveedor.departamento && `, ${oferta.proveedor.departamento}`}
+                              </div>
+                            )}
+                            {oferta.proveedor.distanciaFormateada && (
+                              <div className="text-xs text-blue-600 font-medium mt-1">
+                                📏 {oferta.proveedor.distanciaFormateada} de distancia
+                              </div>
+                            )}
                           </div>
-                          <div className="text-right">
+                          <div className="text-right ml-4">
                             <div className="text-2xl font-bold text-green-600">{formatPrice(oferta.precio)}</div>
                             <div className="text-xs text-gray-500">
                               {oferta.stock ? '✅ En stock' : '❌ Sin stock'}

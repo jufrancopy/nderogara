@@ -32,7 +32,13 @@ interface Material {
   id: string
   nombre: string
   unidad: string
-  precioUnitario: number
+  precioBase?: number
+  ofertas?: Array<{
+    precio: number
+    proveedor: {
+      nombre: string
+    }
+  }>
 }
 
 export default function MaterialesItemPage() {
@@ -43,7 +49,9 @@ export default function MaterialesItemPage() {
   const [materiales, setMateriales] = useState<Material[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
-  const [selectedMaterial, setSelectedMaterial] = useState('')
+  const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [showDropdown, setShowDropdown] = useState(false)
   const [cantidad, setCantidad] = useState('')
   const [observaciones, setObservaciones] = useState('')
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -56,6 +64,11 @@ export default function MaterialesItemPage() {
     cantidadPorUnidad: number
     observaciones: string
   } | null>(null)
+
+  // Detectar si viene desde proyecto
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
+  const fromProyecto = searchParams.get('from') === 'proyecto'
+  const proyectoId = searchParams.get('proyectoId')
 
   useEffect(() => {
     fetchItem()
@@ -89,14 +102,15 @@ export default function MaterialesItemPage() {
 
     try {
       await api.post(`/items/${itemId}/materiales`, {
-        materialId: selectedMaterial,
+        materialId: selectedMaterial.id,
         cantidadPorUnidad: Number(cantidad),
         observaciones: observaciones || undefined
       })
-      
+
       toast.success('Material agregado exitosamente')
       setShowAddForm(false)
-      setSelectedMaterial('')
+      setSelectedMaterial(null)
+      setSearchTerm('')
       setCantidad('')
       setObservaciones('')
       fetchItem() // Recargar item
@@ -196,7 +210,7 @@ export default function MaterialesItemPage() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center">
               <Link
-                href="/items"
+                href={fromProyecto && proyectoId ? `/proyectos/${proyectoId}` : "/items"}
                 className="mr-4 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md"
               >
                 <ArrowLeft className="h-5 w-5" />
@@ -220,25 +234,80 @@ export default function MaterialesItemPage() {
             <div className="bg-white shadow rounded-lg p-6 mb-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Agregar Material</h3>
               <form onSubmit={handleAddMaterial} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Material
                   </label>
-                  <select
-                    value={selectedMaterial}
-                    onChange={(e) => setSelectedMaterial(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  >
-                    <option value="">Seleccionar material</option>
-                    {materiales
-                      .filter(m => !item?.materialesPorItem.some(mpi => mpi.material.id === m.id))
-                      .map(material => (
-                        <option key={material.id} value={material.id}>
-                          {material.nombre} ({getUnidadLabel(material.unidad)})
-                        </option>
-                      ))}
-                  </select>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value)
+                        setShowDropdown(true)
+                      }}
+                      onFocus={() => setShowDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Buscar material..."
+                      required
+                    />
+                    {selectedMaterial && (
+                      <div className="absolute right-2 top-2 text-sm text-gray-600">
+                        ✓
+                      </div>
+                    )}
+                  </div>
+
+                  {showDropdown && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {materiales
+                        .filter(m =>
+                          !item?.materialesPorItem.some(mpi => mpi.material.id === m.id) &&
+                          m.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .map(material => (
+                          <div
+                            key={material.id}
+                            onClick={() => {
+                              setSelectedMaterial(material)
+                              setSearchTerm(material.nombre)
+                              setShowDropdown(false)
+                            }}
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {material.nombre}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {getUnidadLabel(material.unidad)}
+                                  {material.precioBase && (
+                                    <span className="ml-2 text-blue-600">
+                                      • ₲ {Number(material.precioBase).toLocaleString('es-PY')}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {material.precioBase && (
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                  📊 Base
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      {materiales.filter(m =>
+                        !item?.materialesPorItem.some(mpi => mpi.material.id === m.id) &&
+                        m.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+                      ).length === 0 && (
+                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                          No se encontraron materiales
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

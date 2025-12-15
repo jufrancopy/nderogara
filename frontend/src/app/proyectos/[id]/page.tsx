@@ -95,7 +95,9 @@ export default function ProyectoDetallePage() {
   const [loading, setLoading] = useState(true)
   const [items, setItems] = useState<Item[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
-  const [selectedItem, setSelectedItem] = useState('')
+  const [selectedItem, setSelectedItem] = useState<any>(null)
+  const [searchItemTerm, setSearchItemTerm] = useState('')
+  const [showItemDropdown, setShowItemDropdown] = useState(false)
   const [cantidad, setCantidad] = useState('')
   const [itemToDelete, setItemToDelete] = useState<string | null>(null)
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
@@ -675,25 +677,75 @@ export default function ProyectoDetallePage() {
                   <div className="bg-gray-50 p-4 rounded-lg mb-4">
                     <h4 className="text-sm font-medium text-gray-900 mb-3">Agregar Item al Presupuesto</h4>
                     <form onSubmit={handleAddItem} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
+                      <div className="relative">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Item
                         </label>
-                        <select
-                          value={selectedItem}
-                          onChange={(e) => setSelectedItem(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                          required
-                        >
-                          <option value="">Seleccionar item</option>
-                          {Array.isArray(items) && items
-                            .filter(item => !proyecto?.presupuestoItems?.some(pi => pi.item.id === item.id))
-                            .map(item => (
-                              <option key={item.id} value={item.id}>
-                                {item.nombre} ({getUnidadLabel(item.unidadMedida)})
-                              </option>
-                            ))}
-                        </select>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={searchItemTerm}
+                            onChange={(e) => {
+                              setSearchItemTerm(e.target.value)
+                              setShowItemDropdown(true)
+                            }}
+                            onFocus={() => setShowItemDropdown(true)}
+                            onBlur={() => setTimeout(() => setShowItemDropdown(false), 200)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            placeholder="Buscar item..."
+                            required
+                          />
+                          {selectedItem && (
+                            <div className="absolute right-2 top-2 text-sm text-gray-600">
+                              ✓
+                            </div>
+                          )}
+                        </div>
+
+                        {showItemDropdown && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {Array.isArray(items) && items
+                              .filter(item =>
+                                !proyecto?.presupuestoItems?.some(pi => pi.item.id === item.id) &&
+                                item.nombre.toLowerCase().includes(searchItemTerm.toLowerCase())
+                              )
+                              .map(item => (
+                                <div
+                                  key={item.id}
+                                  onClick={() => {
+                                    setSelectedItem(item)
+                                    setSearchItemTerm(item.nombre)
+                                    setShowItemDropdown(false)
+                                  }}
+                                  className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <div className="text-sm font-medium text-gray-900">
+                                        {item.nombre}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {getUnidadLabel(item.unidadMedida)}
+                                      </div>
+                                    </div>
+                                    {item.manoObraUnitaria && (
+                                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                        MO: ₲{Number(item.manoObraUnitaria).toLocaleString('es-PY')}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            {(Array.isArray(items) && items.filter(item =>
+                              !proyecto?.presupuestoItems?.some(pi => pi.item.id === item.id) &&
+                              item.nombre.toLowerCase().includes(searchItemTerm.toLowerCase())
+                            ).length === 0) && (
+                              <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                No se encontraron items
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -722,7 +774,12 @@ export default function ProyectoDetallePage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setShowAddForm(false)}
+                          onClick={() => {
+                            setShowAddForm(false)
+                            setSelectedItem(null)
+                            setSearchItemTerm('')
+                            setCantidad('')
+                          }}
                           className="bg-gray-300 text-gray-700 px-3 py-2 rounded text-sm hover:bg-gray-400 transition-colors"
                         >
                           Cancelar
@@ -785,15 +842,24 @@ export default function ProyectoDetallePage() {
                         {/* Contenido expandible - Materiales */}
                         {expandedItem === item.id && (
                           <div className="px-6 py-4 border-t border-gray-200 bg-white">
-                            <h5 className="text-sm font-medium text-gray-700 mb-3">Materiales utilizados:</h5>
+                            <div className="flex items-center justify-between mb-3">
+                              <h5 className="text-sm font-medium text-gray-700">Materiales utilizados:</h5>
+                              <Link
+                                href={`/items/${item.item.id}/materiales?from=proyecto&proyectoId=${proyectoId}`}
+                                className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+                              >
+                                <Package className="h-4 w-4 mr-1" />
+                                Gestionar Materiales
+                              </Link>
+                            </div>
                             {materialesPorItem[item.item.id]?.length > 0 ? (
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {materialesPorItem[item.item.id].map((materialItem: any) => (
                                   <div key={materialItem.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
                                     <div className="flex items-center space-x-3">
                                       {materialItem.material.imagenUrl && (
-                                        <img 
-                                          src={materialItem.material.imagenUrl} 
+                                        <img
+                                          src={materialItem.material.imagenUrl}
                                           alt={materialItem.material.nombre}
                                           className="w-8 h-8 object-cover rounded"
                                           onError={(e) => e.currentTarget.style.display = 'none'}
@@ -825,7 +891,20 @@ export default function ProyectoDetallePage() {
                                 ))}
                               </div>
                             ) : (
-                              <p className="text-sm text-gray-500 italic">No hay materiales asociados a este item</p>
+                              <div className="text-center py-4 bg-gray-50 rounded-lg">
+                                <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                                <p className="text-sm text-gray-500 italic mb-3">No hay materiales asociados a este item</p>
+                                <p className="text-xs text-gray-400 mb-3">
+                                  Agrega materiales del catálogo con precio base para estimaciones iniciales
+                                </p>
+                                <Link
+                                  href={`/items/${item.item.id}/materiales`}
+                                  className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                                >
+                                  <Plus className="h-4 w-4 mr-1" />
+                                  Agregar Materiales
+                                </Link>
+                              </div>
                             )}
                           </div>
                         )}
@@ -913,32 +992,46 @@ export default function ProyectoDetallePage() {
                   <DollarSign className="h-5 w-5 mr-2" />
                   Resumen Financiero
                 </h3>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Costo Total:</span>
-                    <span className="font-medium">{formatPrice(calcularCostoTotal())}</span>
+                    <span className="text-sm text-gray-600">Costo Total del Proyecto:</span>
+                    <span className="font-bold text-lg text-gray-900">{formatPrice(calcularCostoTotal())}</span>
                   </div>
-                  
-                  {proyecto.margenGanancia && (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Margen ({proyecto.margenGanancia}%):</span>
-                        <span className="font-medium">
-                          {formatPrice(calcularCostoTotal() * (proyecto.margenGanancia / 100))}
-                        </span>
-                      </div>
-                      
-                      <div className="border-t pt-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-900">Precio Final:</span>
-                          <span className="font-bold text-lg">
-                            {formatPrice(calcularCostoTotal() * (1 + (proyecto.margenGanancia / 100)))}
-                          </span>
-                        </div>
-                      </div>
-                    </>
-                  )}
+
+                  {/* Solo mostrar margen si el usuario NO es cliente */}
+                  {(() => {
+                    // Verificar si el usuario actual es cliente
+                    const userData = localStorage.getItem('user')
+                    const user = userData ? JSON.parse(userData) : null
+                    const isCliente = user?.rol === 'CLIENTE'
+
+                    if (!isCliente && proyecto.margenGanancia) {
+                      return (
+                        <>
+                          <div className="border-t pt-3 mt-3">
+                            <div className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">
+                              Información del Constructor
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-sm text-gray-600">Margen ({proyecto.margenGanancia}%):</span>
+                              <span className="font-medium">
+                                {formatPrice(calcularCostoTotal() * (proyecto.margenGanancia / 100))}
+                              </span>
+                            </div>
+
+                            <div className="flex justify-between mt-1">
+                              <span className="text-sm font-medium text-gray-900">Precio Final:</span>
+                              <span className="font-bold text-lg">
+                                {formatPrice(calcularCostoTotal() * (1 + (proyecto.margenGanancia / 100)))}
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      )
+                    }
+                    return null
+                  })()}
                 </div>
               </div>
 

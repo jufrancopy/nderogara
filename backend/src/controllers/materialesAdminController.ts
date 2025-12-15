@@ -10,6 +10,7 @@ interface CreateMaterialCatalogoBody {
   categoriaId: string;
   imagenUrl?: string;
   precioUnitario?: number;
+  precioBase?: number;
   observaciones?: string;
 }
 
@@ -25,6 +26,7 @@ export const createMaterialCatalogo = async (
       categoriaId,
       imagenUrl,
       precioUnitario,
+      precioBase,
       observaciones
     } = request.body as any;
 
@@ -36,6 +38,7 @@ export const createMaterialCatalogo = async (
         categoriaId,
         imagenUrl,
         precio: precioUnitario,
+        precioBase: precioBase ? parseFloat(precioBase) : null,
         usuarioId: null, // null = catálogo público
         esActivo: true
       },

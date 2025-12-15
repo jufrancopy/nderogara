@@ -12,7 +12,15 @@ export const getMaterialesBase = async (request: FastifyRequest, reply: FastifyR
         usuarioId: null, // Solo del catálogo
         esActivo: true   // Solo activos para proveedores
       },
-      include: { categoria: true },
+      select: {
+        id: true,
+        nombre: true,
+        descripcion: true,
+        unidad: true,
+        precioBase: true,
+        imagenUrl: true,
+        categoria: true
+      },
       orderBy: { createdAt: 'desc' }
     });
 

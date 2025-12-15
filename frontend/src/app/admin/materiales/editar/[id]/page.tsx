@@ -22,8 +22,10 @@ export default function EditarMaterialAdminPage() {
     descripcion: '',
     unidad: 'BOLSA',
     categoriaId: '',
-    imagenUrl: ''
+    imagenUrl: '',
+    precioBase: ''
   });
+  const [precioBaseDisplay, setPrecioBaseDisplay] = useState('');
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -48,13 +50,18 @@ export default function EditarMaterialAdminPage() {
         const data = await response.json();
         if (data.success) {
           const material = data.data;
+          const precioBaseValue = material.precioBase ? material.precioBase.toString() : '';
+          const precioBaseNum = material.precioBase ? Number(material.precioBase) : 0;
+
           setFormData({
             nombre: material.nombre,
             descripcion: material.descripcion || '',
             unidad: material.unidad,
             categoriaId: material.categoriaId,
-            imagenUrl: material.imagenUrl || ''
+            imagenUrl: material.imagenUrl || '',
+            precioBase: precioBaseValue
           });
+          setPrecioBaseDisplay(precioBaseNum.toLocaleString('es-PY'));
         } else {
           toast.error('Material no encontrado');
           router.push('/admin/materiales');
@@ -266,7 +273,7 @@ export default function EditarMaterialAdminPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Unidad *</label>
                   <select
@@ -299,11 +306,32 @@ export default function EditarMaterialAdminPage() {
                     ))}
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Precio Base de Mercado (₲)
+                  </label>
+                  <input
+                    type="text"
+                    value={precioBaseDisplay}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, '')
+                      const numValue = parseInt(value) || 0
+                      setPrecioBaseDisplay(numValue.toLocaleString('es-PY'))
+                      setFormData({ ...formData, precioBase: value })
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Referencia de mercado para cálculos
+                  </p>
+                </div>
               </div>
 
               <div className="p-4 rounded-md" style={{backgroundColor: '#f0f9f0'}}>
                 <p className="text-sm" style={{color: '#38603B'}}>
-                  💡 Este material base no tiene precio. Los proveedores podrán crear ofertas con sus precios.
+                  💡 El precio base es opcional. Si lo defines, servirá como referencia de mercado para cálculos aproximados. Los proveedores podrán crear ofertas competitivas sobre este precio.
                 </p>
               </div>
 

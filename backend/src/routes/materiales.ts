@@ -1,5 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { materialesController } from '../controllers/materialesController';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export async function materialesRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', async (request, reply) => {

@@ -123,6 +123,7 @@ model Material {
   imagenUrl           String?
   esActivo            Boolean             @default(true)
   precio              Decimal?            @db.Decimal(10, 2) // Precio personalizado del material
+  precioBase          Decimal?            @db.Decimal(10, 2) // Precio base de mercado (referencia)
   // usuarioId null = catálogo admin (referencia), con id = material de proveedor o personalizado
   usuarioId           String?
   categoria           CategoriaMaterial   @relation(fields: [categoriaId], references: [id])
@@ -144,6 +145,10 @@ model Proveedor {
   email             String            @unique
   telefono          String?
   direccion         String?
+  ciudad            String?           // Ciudad donde está ubicado el proveedor
+  departamento      String?           // Departamento/Estado
+  latitud           Decimal?          @db.Decimal(10, 8) // Coordenadas GPS
+  longitud          Decimal?          @db.Decimal(11, 8)
   sitioWeb          String?
   logo              String?
   esActivo          Boolean           @default(true)
@@ -154,6 +159,8 @@ model Proveedor {
   updatedAt         DateTime          @updatedAt
 
   @@index([nombre])
+  @@index([ciudad])
+  @@index([departamento])
 }
 
 // Ofertas de proveedores para materiales
@@ -233,6 +240,10 @@ model Proyecto {
   descripcion         String?
   superficieTotal     Decimal?          @db.Decimal(10, 2)
   direccion           String?
+  ciudad              String?           // Ciudad donde se ubica el proyecto
+  departamento        String?           // Departamento/Estado
+  latitud             Decimal?          @db.Decimal(10, 8) // Coordenadas GPS del proyecto
+  longitud            Decimal?          @db.Decimal(11, 8)
   fechaInicio         DateTime?
   fechaFinEstimada    DateTime?
   estado              EstadoProyecto    @default(PLANIFICACION)
@@ -258,6 +269,8 @@ model Proyecto {
   @@index([usuarioId])
   @@index([estado])
   @@index([esReferencia])
+  @@index([ciudad])
+  @@index([departamento])
 }
 
 model PresupuestoItem {

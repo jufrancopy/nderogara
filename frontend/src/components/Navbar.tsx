@@ -97,9 +97,14 @@ export default function Navbar() {
             </Link>
             <nav className="hidden lg:flex gap-4">
               {user?.rol === 'PROVEEDOR_MATERIALES' ? (
-                <Link href="/proveedor/materiales" className={`px-3 py-2 rounded ${pathname.startsWith('/proveedor') ? 'bg-purple-50 text-purple-600' : 'text-gray-600 hover:text-gray-900'}`}>
-                  Mis Materiales
-                </Link>
+                <>
+                  <Link href="/proveedor/perfil" className={`px-3 py-2 rounded ${pathname === '/proveedor/perfil' ? 'bg-purple-50 text-purple-600' : 'text-gray-600 hover:text-gray-900'}`}>
+                    Mi Perfil
+                  </Link>
+                  <Link href="/proveedor/materiales" className={`px-3 py-2 rounded ${pathname.startsWith('/proveedor/materiales') ? 'bg-purple-50 text-purple-600' : 'text-gray-600 hover:text-gray-900'}`}>
+                    Mis Materiales
+                  </Link>
+                </>
               ) : user?.rol === 'CONSTRUCTOR' ? (
                 <>
                   <Link href="/items" className={`px-3 py-2 rounded ${pathname.startsWith('/items') ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}>
@@ -183,9 +188,14 @@ export default function Navbar() {
           <div className="lg:hidden border-t bg-white">
             <div className="px-4 py-2 space-y-2">
               {user?.rol === 'PROVEEDOR_MATERIALES' ? (
-                <Link href="/proveedor/materiales" className="block py-2 text-gray-600">
-                  Mis Materiales
-                </Link>
+                <>
+                  <Link href="/proveedor/perfil" className="block py-2 text-gray-600">
+                    Mi Perfil
+                  </Link>
+                  <Link href="/proveedor/materiales" className="block py-2 text-gray-600">
+                    Mis Materiales
+                  </Link>
+                </>
               ) : user?.rol === 'CONSTRUCTOR' ? (
                 <>
                   <Link href="/items" className="block py-2 text-gray-600">

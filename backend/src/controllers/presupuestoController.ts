@@ -39,10 +39,30 @@ export const presupuestoController = {
       // Obtener el item con sus materiales para calcular costos
       const item = await prisma.item.findUnique({
         where: { id: validatedData.itemId },
-        include: {
+        select: {
+          id: true,
+          nombre: true,
+          manoObraUnitaria: true,
+          unidadMedida: true,
           materialesPorItem: {
-            include: {
-              material: true
+            select: {
+              id: true,
+              cantidadPorUnidad: true,
+              material: {
+                select: {
+                  id: true,
+                  nombre: true,
+                  precio: true,
+                  precioBase: true,
+                  ofertas: {
+                    select: {
+                      precio: true,
+                      stock: true
+                    },
+                    where: { stock: true }
+                  }
+                }
+              }
             }
           }
         }
@@ -58,17 +78,33 @@ export const presupuestoController = {
       // Calcular costos
       console.log('🧮 Calculando costos para item:', item.nombre)
       console.log('📦 Materiales encontrados:', item.materialesPorItem.length)
-      
+
       const costoMateriales = item.materialesPorItem.reduce((total, materialItem) => {
-        const precioUnitario = Number(materialItem.material.precio || 0)
+        // Prioridad: 1) Ofertas disponibles, 2) Precio base, 3) Precio personalizado
+        let precioUnitario = 0
+
+        // Buscar ofertas activas con stock
+        const ofertasActivas = materialItem.material.ofertas?.filter(oferta => oferta.stock === true) || []
+        if (ofertasActivas.length > 0) {
+          // Usar la oferta más económica
+          precioUnitario = Math.min(...ofertasActivas.map(o => Number(o.precio)))
+          console.log(`💰 Material: ${materialItem.material.nombre} - Usando oferta: ${precioUnitario}`)
+        } else if (materialItem.material.precioBase) {
+          // Usar precio base si no hay ofertas
+          precioUnitario = Number(materialItem.material.precioBase)
+          console.log(`💰 Material: ${materialItem.material.nombre} - Usando precio base: ${precioUnitario}`)
+        } else if (materialItem.material.precio) {
+          // Usar precio personalizado como último recurso
+          precioUnitario = Number(materialItem.material.precio)
+          console.log(`💰 Material: ${materialItem.material.nombre} - Usando precio personalizado: ${precioUnitario}`)
+        }
+
         const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad)
         const costoMaterial = precioUnitario * cantidadPorUnidad
-        
-        console.log(`💰 Material: ${materialItem.material.nombre}`);
-        console.log(`   - Precio unitario: ${precioUnitario}`);
+
         console.log(`   - Cantidad por unidad: ${cantidadPorUnidad}`);
         console.log(`   - Costo material: ${costoMaterial}`);
-        
+
         return total + costoMaterial
       }, 0) * validatedData.cantidadMedida
       

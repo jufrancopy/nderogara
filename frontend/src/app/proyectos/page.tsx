@@ -145,15 +145,13 @@ export default function ProyectosPage() {
           {/* Page Header */}
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Proyectos</h2>
-            {user?.rol !== 'CLIENTE' && (
-              <Link
-                href="/proyectos/nuevo"
-                className="bg-[#38603B] text-white px-4 py-2 rounded-md hover:bg-[#2d4a2f] transition-colors flex items-center"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Proyecto
-              </Link>
-            )}
+            <Link
+              href="/proyectos/nuevo"
+              className="bg-[#38603B] text-white px-4 py-2 rounded-md hover:bg-[#2d4a2f] transition-colors flex items-center"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nuevo Proyecto
+            </Link>
           </div>
 
           {/* Filters */}

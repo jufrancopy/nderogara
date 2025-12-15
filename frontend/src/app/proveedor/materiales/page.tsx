@@ -40,6 +40,7 @@ interface MaterialBase {
     nombre: string;
   };
   imagenUrl: string | null;
+  precioBase: number | null;
 }
 
 export default function MisMaterialesPage() {
@@ -402,6 +403,9 @@ export default function MisMaterialesPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Unidad
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Precio Base
+                      </th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Acción
                       </th>
@@ -430,6 +434,14 @@ export default function MisMaterialesPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{materialBase.unidad}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {materialBase.precioBase
+                              ? `₲ ${Number(materialBase.precioBase).toLocaleString('es-PY')}`
+                              : 'Sin precio base'
+                            }
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           <button
@@ -639,6 +651,23 @@ export default function MisMaterialesPage() {
                     <div className="ml-3">
                       <h2 className="text-xl font-bold text-gray-900">Crear Oferta</h2>
                       <p className="text-sm text-gray-600">Material base: {createOfferMaterial.nombre}</p>
+                      {createOfferMaterial.precioBase && (
+                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                              <span className="text-blue-600 text-sm">📊</span>
+                            </div>
+                            <div className="ml-3">
+                              <p className="text-xs text-blue-600 font-medium uppercase tracking-wide">
+                                Precio Base de Mercado
+                              </p>
+                              <p className="text-lg font-bold text-blue-800">
+                                ₲ {Number(createOfferMaterial.precioBase).toLocaleString('es-PY')}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <button

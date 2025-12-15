@@ -23,6 +23,10 @@ const proyectoSchema = z.object({
   descripcion: z.string().optional(),
   superficieTotal: z.number().positive('La superficie debe ser mayor a 0').optional(),
   direccion: z.string().optional(),
+  ciudad: z.string().optional(),
+  departamento: z.string().optional(),
+  latitud: z.number().optional(),
+  longitud: z.number().optional(),
   fechaInicio: z.string().optional(),
   fechaFinEstimada: z.string().optional(),
   estado: z.enum(['PLANIFICACION', 'EN_PROGRESO', 'PAUSADO', 'COMPLETADO', 'CANCELADO']),
@@ -110,6 +114,10 @@ export default function EditarProyectoPage() {
         descripcion: proyecto.descripcion || '',
         superficieTotal: proyecto.superficieTotal ? Number(proyecto.superficieTotal) : undefined,
         direccion: proyecto.direccion || '',
+        ciudad: proyecto.ciudad || '',
+        departamento: proyecto.departamento || '',
+        latitud: proyecto.latitud ? Number(proyecto.latitud) : undefined,
+        longitud: proyecto.longitud ? Number(proyecto.longitud) : undefined,
         fechaInicio: formatDateForInput(proyecto.fechaInicio),
         fechaFinEstimada: formatDateForInput(proyecto.fechaFinEstimada),
         estado: proyecto.estado,
@@ -366,6 +374,62 @@ export default function EditarProyectoPage() {
                       {...register('direccion')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ciudad
+                    </label>
+                    <input
+                      type="text"
+                      {...register('ciudad')}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Ej: Asunción, Luque"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Departamento
+                    </label>
+                    <input
+                      type="text"
+                      {...register('departamento')}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Ej: Central, Alto Paraná"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Latitud
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...register('latitud', { valueAsNumber: true })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="-25.2637"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Ejemplo: -25.2637 (para Asunción)
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Longitud
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...register('longitud', { valueAsNumber: true })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="-57.5759"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Ejemplo: -57.5759 (para Asunción)
+                    </p>
                   </div>
 
                   <div className="md:col-span-2">
