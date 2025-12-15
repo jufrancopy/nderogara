@@ -214,8 +214,21 @@ export default function AdminMaterialesPage() {
                             </Link>
                             <button
                               onClick={() => {
+                                console.log('=== ABRIENDO MODAL DE OFERTAS ===');
                                 console.log('Material seleccionado:', material);
+                                console.log('ID del material:', material.id);
                                 console.log('Ofertas del material:', material.ofertas);
+                                console.log('Número de ofertas:', material.ofertas?.length || 0);
+                                if (material.ofertas && material.ofertas.length > 0) {
+                                  material.ofertas.forEach((oferta: any, index: number) => {
+                                    console.log(`Oferta ${index + 1}:`, {
+                                      id: oferta.id,
+                                      precio: oferta.precio,
+                                      marca: oferta.marca,
+                                      proveedor: oferta.proveedor?.nombre
+                                    });
+                                  });
+                                }
                                 setSelectedMaterial(material);
                               }}
                               className="text-blue-600 hover:text-blue-900 px-2 py-1 rounded text-sm"
