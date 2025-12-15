@@ -16,6 +16,17 @@ export const getMaterialesBase = async (request: FastifyRequest, reply: FastifyR
     console.log('Materiales base encontrados:', materialesBase.length);
     materialesBase.forEach(m => console.log('Material base:', m.id, m.nombre));
 
+    // También contar todos los materiales para diagnóstico
+    const allMaterials = await prisma.material.findMany({
+      select: { id: true, nombre: true, usuarioId: true, esActivo: true }
+    });
+
+    console.log('Total materiales en BD:', allMaterials.length);
+    const baseMaterials = allMaterials.filter(m => m.usuarioId === null);
+    const providerMaterials = allMaterials.filter(m => m.usuarioId !== null);
+    console.log('Materiales base (usuarioId=null):', baseMaterials.length);
+    console.log('Materiales de proveedores:', providerMaterials.length);
+
     reply.send(materialesBase);
   } catch (error) {
     console.error('Error al obtener materiales base:', error);
