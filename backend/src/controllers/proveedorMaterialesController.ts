@@ -160,7 +160,9 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
     const userId = (request.user as any).id;
     const { materialBaseId, precio, marca, tipoCalidad, observaciones, imagenUrl } = request.body as any;
 
-    console.log('Creando oferta desde base:', { userId, materialBaseId, precio, marca });
+    console.log('Creando oferta desde base - Request body completo:', request.body);
+    console.log('ImagenUrl recibida:', imagenUrl);
+    console.log('Tipo de imagenUrl:', typeof imagenUrl);
 
     // Verificar que el material base existe y no tiene usuarioId
     const materialBase = await prisma.material.findFirst({
