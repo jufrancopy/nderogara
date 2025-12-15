@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import PageLoader from '@/components/PageLoader';
 import { API_BASE_URL } from '@/lib/api';
 
@@ -86,13 +87,13 @@ export default function AdminMaterialesPage() {
                         {material.ofertas?.length || 0} proveedores
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <button 
-                          onClick={() => setSelectedMaterial(material)}
+                        <Link
+                          href={`/admin/materiales/editar/${material.id}`}
                           className="hover:underline"
                           style={{color: '#38603B'}}
                         >
-                          Ver Detalle
-                        </button>
+                          ✏️ Editar
+                        </Link>
                       </td>
                     </tr>
                   ))}
