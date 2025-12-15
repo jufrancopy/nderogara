@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { createMaterialCatalogo, updateMaterialCatalogo, getMaterialesCatalogo, deleteMaterialCatalogo, getAdminDashboard } from '../controllers/materialesAdminController';
+import { createMaterialCatalogo, updateMaterialCatalogo, getMaterialCatalogoById, getMaterialesCatalogo, deleteMaterialCatalogo, getAdminDashboard } from '../controllers/materialesAdminController';
 import { isAdmin } from '../middleware/auth';
 
 export async function adminRoutes(fastify: FastifyInstance) {
