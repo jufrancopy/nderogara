@@ -11,6 +11,7 @@ export default function AdminMaterialesPage() {
   const [materiales, setMateriales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMaterial, setSelectedMaterial] = useState<any>(null);
+  const [deleteMaterialData, setDeleteMaterialData] = useState<any>(null);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -37,6 +38,58 @@ export default function AdminMaterialesPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleActivo = async (id: string, esActivo: boolean) => {
+    try {
+      const token = localStorage.getItem('token');
+      const material = materiales.find((m: any) => m.id === id);
+      if (!material) return;
+
+      await fetch(`${API_BASE_URL}/admin/materiales/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ ...material, esActivo: !esActivo })
+      });
+
+      fetchMateriales();
+    } catch (error) {
+      console.error('Error al actualizar material:', error);
+    }
+  };
+
+  const handleDeleteClick = (material: any) => {
+    setDeleteMaterialData(material);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteMaterialData) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/admin/materiales/${deleteMaterialData.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        fetchMateriales();
+        setDeleteMaterialData(null);
+      } else {
+        console.error('Error al eliminar el material');
+      }
+    } catch (error) {
+      console.error('Error al eliminar material:', error);
+    } finally {
+      setDeleteMaterialData(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteMaterialData(null);
   };
 
   if (loading) return <PageLoader />;
@@ -99,20 +152,36 @@ export default function AdminMaterialesPage() {
                       </span>
                     </div>
 
-                    <div className="flex gap-2">
-                      <Link
-                        href={`/admin/materiales/editar/${material.id}`}
-                        className="flex-1 bg-[#38603B] text-white px-4 py-2 rounded text-center hover:bg-[#2d4a2f] transition"
-                      >
-                        ✏️ Editar
-                      </Link>
-                      <button
-                        onClick={() => setSelectedMaterial(material)}
-                        className="flex-1 bg-gray-50 text-gray-600 px-4 py-2 rounded hover:bg-gray-100 transition text-sm"
-                        title="Ver ofertas"
-                      >
-                        👁️ Ver Ofertas
-                      </button>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/admin/materiales/editar/${material.id}`}
+                          className="flex-1 bg-[#38603B] text-white px-4 py-2 rounded text-center hover:bg-[#2d4a2f] transition"
+                        >
+                          ✏️ Editar
+                        </Link>
+                        <button
+                          onClick={() => setSelectedMaterial(material)}
+                          className="flex-1 bg-gray-50 text-gray-600 px-4 py-2 rounded hover:bg-gray-100 transition text-sm"
+                          title="Ver ofertas"
+                        >
+                          👁️ Ver Ofertas
+                        </button>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => toggleActivo(material.id, material.esActivo)}
+                          className="flex-1 bg-gray-50 text-gray-600 px-3 py-2 rounded hover:bg-gray-100 transition text-sm"
+                        >
+                          {material.esActivo ? 'Desactivar' : 'Activar'}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(material)}
+                          className="flex-1 bg-red-50 text-red-600 px-3 py-2 rounded hover:bg-red-100 transition text-sm"
+                        >
+                          🗑️ Eliminar
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -195,6 +264,49 @@ export default function AdminMaterialesPage() {
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
                 >
                   Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Eliminación */}
+      {deleteMaterialData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <span className="text-red-600 text-xl">⚠️</span>
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Confirmar Eliminación</h3>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-gray-700">
+                  ¿Estás seguro de que quieres eliminar el material <strong className="text-gray-900">"{deleteMaterialData.nombre}"</strong>?
+                </p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Esta acción no se puede deshacer. El material será eliminado permanentemente y todas sus ofertas asociadas.
+                </p>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                  onClick={handleDeleteCancel}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center"
+                  onClick={handleDeleteConfirm}
+                >
+                  <span className="mr-2">🗑️</span>
+                  Eliminar
                 </button>
               </div>
             </div>
