@@ -177,18 +177,27 @@ export default function NuevoMaterialProveedorPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Imagen</label>
               <div className="space-y-3">
                 <div className="flex gap-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                  />
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors text-gray-700 text-sm"
+                    >
+                      📎 Seleccionar imagen...
+                    </label>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setShowGallery(!showGallery)}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 whitespace-nowrap"
                   >
-                    Galería
+                    🖼️ Galería
                   </button>
                 </div>
                 {formData.imagenUrl && (
