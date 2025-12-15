@@ -41,7 +41,7 @@ npm run build
 
 # Copiar archivos estáticos para standalone
 echo "📁 Copiando archivos estáticos..."
-cd frontend
+# Ya estamos en frontend, no necesitamos cd frontend
 
 # Crear directorios necesarios
 mkdir -p .next/standalone/.next
