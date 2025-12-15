@@ -264,18 +264,44 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
     // Crear la oferta solo para PROVEEDOR_MATERIALES
     let oferta = null;
     if (user.rol === 'PROVEEDOR_MATERIALES' && proveedorRecord) {
-      oferta = await prisma.ofertaProveedor.create({
-        data: {
-          materialId: materialBase.id, // ← Vincular al material base original
-          proveedorId: proveedorRecord.id,
-          precio: precio,
-          tipoCalidad: tipoCalidad || 'COMUN',
-          marca: marca,
-          comisionPorcentaje: 10.00,
-          stock: true,
-          observaciones: observaciones
+      // Primero intentar actualizar una oferta existente para este material base
+      const ofertaExistente = await prisma.ofertaProveedor.findFirst({
+        where: {
+          materialId: materialBase.id,
+          proveedorId: proveedorRecord.id
         }
       });
+
+      if (ofertaExistente) {
+        // Actualizar oferta existente
+        oferta = await prisma.ofertaProveedor.update({
+          where: { id: ofertaExistente.id },
+          data: {
+            precio: precio,
+            tipoCalidad: tipoCalidad || 'COMUN',
+            marca: marca,
+            comisionPorcentaje: 10.00,
+            stock: true,
+            observaciones: observaciones
+          }
+        });
+        console.log('Oferta actualizada:', oferta.id);
+      } else {
+        // Crear nueva oferta
+        oferta = await prisma.ofertaProveedor.create({
+          data: {
+            materialId: materialBase.id, // ← Vincular al material base original
+            proveedorId: proveedorRecord.id,
+            precio: precio,
+            tipoCalidad: tipoCalidad || 'COMUN',
+            marca: marca,
+            comisionPorcentaje: 10.00,
+            stock: true,
+            observaciones: observaciones
+          }
+        });
+        console.log('Oferta creada:', oferta.id);
+      }
     }
 
     reply.status(201).send({
