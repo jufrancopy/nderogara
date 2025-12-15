@@ -8,7 +8,7 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3001
       },
-      instances: 'max',
+      instances: 1,
       exec_mode: 'cluster',
       watch: false,
       max_memory_restart: '1G',
