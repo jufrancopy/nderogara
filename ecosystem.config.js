@@ -8,7 +8,7 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3001
       },
-      instances: 1,
+      instances: 'max',
       exec_mode: 'cluster',
       watch: false,
       max_memory_restart: '1G',
@@ -19,20 +19,20 @@ module.exports = {
     },
     {
       name: 'nderogara-frontend',
-      cwd: './frontend',
+      cwd: './frontend/.next/standalone',
       script: 'server.js',
       env: {
         NODE_ENV: 'production',
         PORT: 3002,
         HOSTNAME: '0.0.0.0'
       },
-      instances: 1,
+      instances: 'max',
       exec_mode: 'cluster',
       watch: false,
       max_memory_restart: '1G',
-      error_file: './logs/frontend-error.log',
-      out_file: './logs/frontend-out.log',
-      log_file: './logs/frontend-combined.log',
+      error_file: '../../logs/frontend-error.log',
+      out_file: '../../logs/frontend-out.log',
+      log_file: '../../logs/frontend-combined.log',
       time: true
     }
   ]
