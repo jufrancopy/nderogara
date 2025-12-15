@@ -52,7 +52,7 @@ export const materialesController = {
         const materialesConDistancias = materiales.map(material => ({
           ...material,
           ofertas: (material as any).ofertas
-            .map(oferta => {
+            .map((oferta: any) => {
               let distancia = null;
               let distanciaFormateada = null;
 
@@ -73,7 +73,7 @@ export const materialesController = {
                 }
               };
             })
-            .sort((a, b) => {
+            .sort((a: any, b: any) => {
               // Primero proveedores con coordenadas (ordenados por distancia)
               const aDist = (a.proveedor as any).distancia;
               const bDist = (b.proveedor as any).distancia;

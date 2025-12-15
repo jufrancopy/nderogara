@@ -11,6 +11,8 @@ import toast from 'react-hot-toast'
 import api from '@/lib/api'
 import { API_BASE_URL } from '@/lib/api'
 
+export const dynamic = 'force-dynamic'
+
 const materialSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
   unidad: z.enum(['KG', 'BOLSA', 'M2', 'M3', 'ML', 'UNIDAD', 'LOTE', 'GLOBAL']),
