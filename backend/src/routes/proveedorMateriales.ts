@@ -8,11 +8,16 @@ export default async function proveedorMaterialesRoutes(fastify: FastifyInstance
       await request.jwtVerify();
       const user = request.user as any;
 
+      console.log('Usuario en middleware proveedorMateriales:', user);
+      console.log('Rol del usuario:', user.rol);
+
       // Verificar que sea proveedor de materiales, constructor o proveedor de servicios
       if (user.rol !== 'PROVEEDOR_MATERIALES' && user.rol !== 'CONSTRUCTOR' && user.rol !== 'PROVEEDOR_SERVICIOS') {
+        console.log('Acceso denegado - rol no autorizado:', user.rol);
         reply.status(403).send({ error: 'Acceso denegado. Solo proveedores autorizados.' });
       }
     } catch (err) {
+      console.log('Error de autenticación:', err);
       reply.status(401).send({ error: 'No autorizado' });
     }
   });
