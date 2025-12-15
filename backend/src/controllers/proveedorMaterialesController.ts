@@ -3,6 +3,23 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// Obtener materiales base disponibles para proveedores
+export const getMaterialesBase = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    // Materiales base son aquellos sin usuarioId (creados por admin)
+    const materialesBase = await prisma.material.findMany({
+      where: { usuarioId: null },
+      include: { categoria: true },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    reply.send(materialesBase);
+  } catch (error) {
+    console.error('Error al obtener materiales base:', error);
+    reply.status(500).send({ error: 'Error al obtener materiales base' });
+  }
+};
+
 // Obtener materiales del proveedor autenticado
 export const getMisMateriales = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
@@ -10,7 +27,14 @@ export const getMisMateriales = async (request: FastifyRequest, reply: FastifyRe
 
     const materiales = await prisma.material.findMany({
       where: { usuarioId: userId },
-      include: { categoria: true },
+      include: {
+        categoria: true,
+        ofertas: {
+          include: {
+            proveedor: true
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     });
 
@@ -124,6 +148,73 @@ export const actualizarMaterial = async (request: FastifyRequest, reply: Fastify
   } catch (error) {
     console.error('Error al actualizar material:', error);
     reply.status(500).send({ error: 'Error al actualizar material' });
+  }
+};
+
+// Crear oferta basada en material base
+export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const userId = (request.user as any).id;
+    const { materialBaseId, precio, marca, tipoCalidad, observaciones } = request.body as any;
+
+    // Verificar que el material base existe y no tiene usuarioId
+    const materialBase = await prisma.material.findFirst({
+      where: {
+        id: materialBaseId,
+        usuarioId: null // Solo materiales base
+      }
+    });
+
+    if (!materialBase) {
+      return reply.status(404).send({ error: 'Material base no encontrado' });
+    }
+
+    // Verificar que el usuario es proveedor
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { proveedor: true }
+    });
+
+    if (!user?.proveedor) {
+      return reply.status(403).send({ error: 'Solo proveedores pueden crear ofertas' });
+    }
+
+    // Crear el material del proveedor basado en el material base
+    const materialProveedor = await prisma.material.create({
+      data: {
+        nombre: materialBase.nombre,
+        descripcion: materialBase.descripcion,
+        unidad: materialBase.unidad,
+        categoriaId: materialBase.categoriaId,
+        imagenUrl: materialBase.imagenUrl,
+        precio: precio,
+        usuarioId: userId,
+        esActivo: true
+      },
+      include: { categoria: true }
+    });
+
+    // Crear la oferta del proveedor
+    const oferta = await prisma.ofertaProveedor.create({
+      data: {
+        materialId: materialProveedor.id,
+        proveedorId: user.proveedor.id,
+        precio: precio,
+        tipoCalidad: tipoCalidad || 'COMUN',
+        marca: marca,
+        comisionPorcentaje: 10.00,
+        stock: true,
+        observaciones: observaciones
+      }
+    });
+
+    reply.status(201).send({
+      material: materialProveedor,
+      oferta: oferta
+    });
+  } catch (error) {
+    console.error('Error al crear oferta desde base:', error);
+    reply.status(500).send({ error: 'Error al crear oferta' });
   }
 };
 

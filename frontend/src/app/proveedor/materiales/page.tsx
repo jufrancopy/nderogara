@@ -21,18 +21,55 @@ interface Material {
   };
 }
 
+interface MaterialBase {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  unidad: string;
+  categoria: {
+    id: string;
+    nombre: string;
+  };
+  imagenUrl: string | null;
+}
+
 export default function MisMaterialesPage() {
   const router = useRouter();
   const [materiales, setMateriales] = useState<Material[]>([]);
+  const [materialesBase, setMaterialesBase] = useState<MaterialBase[]>([]);
   const [loading, setLoading] = useState(true);
   const [priceUpdateMaterial, setPriceUpdateMaterial] = useState<Material | null>(null);
   const [newPrice, setNewPrice] = useState('');
   const [priceDisplay, setPriceDisplay] = useState('');
   const [deleteMaterialData, setDeleteMaterialData] = useState<Material | null>(null);
+  const [createOfferMaterial, setCreateOfferMaterial] = useState<MaterialBase | null>(null);
+  const [offerForm, setOfferForm] = useState({
+    precio: '',
+    marca: '',
+    tipoCalidad: 'COMUN' as 'COMUN' | 'PREMIUM' | 'ECONOMICO',
+    observaciones: ''
+  });
 
   useEffect(() => {
     fetchMateriales();
+    fetchMaterialesBase();
   }, []);
+
+  const fetchMaterialesBase = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/proveedor/materiales-base`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setMaterialesBase(data);
+      }
+    } catch (error) {
+      console.error('Error al cargar materiales base:', error);
+    }
+  };
 
   const fetchMateriales = async () => {
     try {
@@ -167,6 +204,49 @@ export default function MisMaterialesPage() {
     }
   };
 
+  const handleCreateOfferClick = (materialBase: MaterialBase) => {
+    setCreateOfferMaterial(materialBase);
+    setOfferForm({
+      precio: '',
+      marca: '',
+      tipoCalidad: 'COMUN',
+      observaciones: ''
+    });
+  };
+
+  const handleCreateOfferConfirm = async () => {
+    if (!createOfferMaterial || !offerForm.precio) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/proveedor/ofertas-desde-base`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          materialBaseId: createOfferMaterial.id,
+          precio: parseFloat(offerForm.precio),
+          marca: offerForm.marca,
+          tipoCalidad: offerForm.tipoCalidad,
+          observaciones: offerForm.observaciones
+        })
+      });
+
+      if (response.ok) {
+        toast.success('Oferta creada exitosamente');
+        fetchMateriales(); // Recargar materiales propios
+        setCreateOfferMaterial(null);
+      } else {
+        toast.error('Error al crear la oferta');
+      }
+    } catch (error) {
+      console.error('Error creating offer:', error);
+      toast.error('Error al crear la oferta');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -194,9 +274,72 @@ export default function MisMaterialesPage() {
           </Link>
         </div>
 
+        {/* Materiales Base Disponibles */}
+        {materialesBase.length > 0 && (
+          <div className="mb-12">
+            <div className="flex items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mr-4">📦 Materiales Base Disponibles</h2>
+              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                {materialesBase.length} materiales
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {materialesBase.map((materialBase) => (
+                <div key={materialBase.id} className="bg-white rounded-lg shadow-sm overflow-hidden border-2 border-blue-200">
+                  {materialBase.imagenUrl && (
+                    <img
+                      src={materialBase.imagenUrl}
+                      alt={materialBase.nombre}
+                      className="w-full h-48 object-cover"
+                    />
+                  )}
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="text-xl font-semibold text-gray-900">{materialBase.nombre}</h3>
+                      <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
+                        Base
+                      </span>
+                    </div>
+
+                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                      {materialBase.descripcion || 'Sin descripción'}
+                    </p>
+
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-sm text-gray-500">{materialBase.categoria.nombre}</span>
+                      <span className="text-sm text-gray-500">{materialBase.unidad}</span>
+                    </div>
+
+                    <div className="text-center">
+                      <button
+                        onClick={() => handleCreateOfferClick(materialBase)}
+                        className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                      >
+                        💰 Crear Oferta
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Mis Materiales */}
+        <div className="flex items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mr-4">🛒 Mis Materiales</h2>
+          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+            {materiales.length} materiales
+          </span>
+        </div>
+
         {materiales.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <p className="text-gray-500 text-lg mb-4">No tienes materiales registrados</p>
+            <p className="text-gray-400 text-sm mb-4">
+              Crea ofertas basadas en materiales base o materiales completamente nuevos
+            </p>
             <Link
               href="/proveedor/materiales/nuevo"
               className="text-blue-600 hover:text-blue-700 font-medium"
@@ -328,6 +471,107 @@ export default function MisMaterialesPage() {
                     disabled={!newPrice || parseFloat(newPrice) <= 0}
                   >
                     Actualizar Precio
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create Offer Modal */}
+        {createOfferMaterial && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 text-lg">💰</span>
+                    </div>
+                    <div className="ml-3">
+                      <h2 className="text-xl font-bold text-gray-900">Crear Oferta</h2>
+                      <p className="text-sm text-gray-600">Material base: {createOfferMaterial.nombre}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setCreateOfferMaterial(null)}
+                    className="text-gray-400 hover:text-gray-600 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Precio (₲) *
+                    </label>
+                    <input
+                      type="number"
+                      value={offerForm.precio}
+                      onChange={(e) => setOfferForm({ ...offerForm, precio: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="45000"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Marca
+                    </label>
+                    <input
+                      type="text"
+                      value={offerForm.marca}
+                      onChange={(e) => setOfferForm({ ...offerForm, marca: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Ej: Mi Marca"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Calidad
+                    </label>
+                    <select
+                      value={offerForm.tipoCalidad}
+                      onChange={(e) => setOfferForm({ ...offerForm, tipoCalidad: e.target.value as 'COMUN' | 'PREMIUM' | 'ECONOMICO' })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="COMUN">Común</option>
+                      <option value="PREMIUM">Premium</option>
+                      <option value="ECONOMICO">Económico</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Observaciones
+                    </label>
+                    <textarea
+                      value={offerForm.observaciones}
+                      onChange={(e) => setOfferForm({ ...offerForm, observaciones: e.target.value })}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Detalles adicionales..."
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    onClick={() => setCreateOfferMaterial(null)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleCreateOfferConfirm}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    disabled={!offerForm.precio || parseFloat(offerForm.precio) <= 0}
+                  >
+                    💰 Crear Oferta
                   </button>
                 </div>
               </div>

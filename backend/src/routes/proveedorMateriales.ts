@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { getMisMateriales, crearMaterial, actualizarMaterial, eliminarMaterial } from '../controllers/proveedorMaterialesController';
+import { getMaterialesBase, getMisMateriales, crearMaterial, crearOfertaDesdeBase, actualizarMaterial, eliminarMaterial } from '../controllers/proveedorMaterialesController';
 
 export default async function proveedorMaterialesRoutes(fastify: FastifyInstance) {
   // Todas las rutas requieren autenticación
@@ -17,8 +17,10 @@ export default async function proveedorMaterialesRoutes(fastify: FastifyInstance
     }
   });
 
+  fastify.get('/materiales-base', getMaterialesBase);
   fastify.get('/mis-materiales', getMisMateriales);
   fastify.post('/materiales', crearMaterial);
+  fastify.post('/ofertas-desde-base', crearOfertaDesdeBase);
   fastify.put('/materiales/:id', actualizarMaterial);
   fastify.delete('/materiales/:id', eliminarMaterial);
 }
