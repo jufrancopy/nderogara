@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Building2, ArrowLeft, Save } from 'lucide-react'
+import { Building2, ArrowLeft, Save, Upload } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
+import { API_BASE_URL } from '@/lib/api'
 
 const materialSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
@@ -34,8 +35,13 @@ interface Categoria {
 export default function NuevoMaterialPage() {
   const router = useRouter()
   const [categorias, setCategorias] = useState<Categoria[]>([])
+  const [galeria, setGaleria] = useState([])
+  const [showGallery, setShowGallery] = useState(false)
   const [loading, setLoading] = useState(false)
   const [precioDisplay, setPrecioDisplay] = useState('')
+  const [currentImageUrl, setCurrentImageUrl] = useState<string>('')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string>('')
 
   const {
     register,
@@ -53,7 +59,17 @@ export default function NuevoMaterialPage() {
 
   useEffect(() => {
     fetchCategorias()
+    fetchGaleria()
   }, [])
+
+  const fetchGaleria = async () => {
+    try {
+      const response = await api.get('/upload/galeria')
+      setGaleria(response.data.data || [])
+    } catch (error) {
+      console.error('Error al cargar galería:', error)
+    }
+  }
 
   const fetchCategorias = async () => {
     try {
@@ -70,9 +86,52 @@ export default function NuevoMaterialPage() {
     }
   }
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setSelectedFile(file)
+      const url = URL.createObjectURL(file)
+      setPreviewUrl(url)
+      setCurrentImageUrl('')
+      setValue('imagenUrl', '')
+    }
+  }
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!selectedFile) return currentImageUrl || ''
+
+    const formData = new FormData()
+    formData.append('file', selectedFile)
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${API_BASE_URL}/upload`, {
+        method: 'POST',
+        headers: { Authorization: token ? `Bearer ${token}` : '' },
+        body: formData
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        return data.url
+      } else {
+        throw new Error('Error al subir imagen')
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      throw error
+    }
+  }
+
   const onSubmit = async (data: MaterialForm) => {
     setLoading(true)
     try {
+      // Subir imagen si hay archivo seleccionado
+      let finalImageUrl = currentImageUrl || data.imagenUrl || ''
+      if (selectedFile) {
+        finalImageUrl = await uploadImage() || ''
+      }
+
       const userData = localStorage.getItem('user')
       const user = userData ? JSON.parse(userData) : null
 
@@ -82,7 +141,13 @@ export default function NuevoMaterialPage() {
         endpoint = '/admin/materiales'
       }
 
-      const response = await api.post(endpoint, data)
+      // Preparar datos con imagen final
+      const materialData = {
+        ...data,
+        imagenUrl: finalImageUrl
+      }
+
+      const response = await api.post(endpoint, materialData)
 
       toast.success('Material creado exitosamente')
       router.push('/materiales')
@@ -222,18 +287,84 @@ export default function NuevoMaterialPage() {
                     />
                   </div>
 
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Imagen (URL)
+                      Imagen del Material
                     </label>
-                    <input
-                      type="url"
-                      {...register('imagenUrl')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="https://ejemplo.com/imagen.jpg"
-                    />
-                    {errors.imagenUrl && (
-                      <p className="mt-1 text-sm text-red-600">{errors.imagenUrl.message}</p>
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                            id="image-upload"
+                          />
+                          <label
+                            htmlFor="image-upload"
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors text-gray-700 text-sm"
+                          >
+                            📎 Seleccionar imagen...
+                          </label>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowGallery(!showGallery)}
+                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 whitespace-nowrap"
+                        >
+                          🖼️ Galería
+                        </button>
+                      </div>
+                      {previewUrl || currentImageUrl ? (
+                        <img src={previewUrl || currentImageUrl} alt="Preview" className="w-32 h-32 object-cover rounded-md" />
+                      ) : null}
+
+                      {/* Campo URL como opción adicional */}
+                      <div className="border-t pt-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          O especificar URL
+                        </label>
+                        <input
+                          type="url"
+                          {...register('imagenUrl')}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="https://ejemplo.com/imagen.jpg"
+                        />
+                        {errors.imagenUrl && (
+                          <p className="mt-1 text-sm text-red-600">{errors.imagenUrl.message}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {showGallery && (
+                      <div className="border rounded-lg p-4 bg-gray-50 max-h-64 overflow-y-auto">
+                        <h4 className="font-medium mb-3">Seleccionar de Galería</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          {galeria.map((img: any) => (
+                            <div
+                              key={img.filename}
+                              onClick={() => {
+                                // Usar imagen de galería
+                                const fullUrl = img.url.startsWith('http')
+                                  ? img.url
+                                  : `${API_BASE_URL}${img.url}`;
+                                setCurrentImageUrl(fullUrl);
+                                setPreviewUrl('');
+                                setSelectedFile(null);
+                                setValue('imagenUrl', fullUrl);
+                                setShowGallery(false);
+                              }}
+                              className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden transition-colors"
+                            >
+                              <img src={`${API_BASE_URL}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                        {galeria.length === 0 && (
+                          <p className="text-gray-500 text-sm text-center py-4">No hay imágenes en la galería</p>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
