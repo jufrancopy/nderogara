@@ -10,6 +10,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
   fastify.get('/dashboard', getAdminDashboard);
   fastify.post('/materiales', createMaterialCatalogo);
+  fastify.get('/materiales/:id', getMaterialCatalogoById);
   fastify.put('/materiales/:id', updateMaterialCatalogo);
   fastify.delete('/materiales/:id', deleteMaterialCatalogo);
   fastify.get('/materiales', getMaterialesCatalogo);

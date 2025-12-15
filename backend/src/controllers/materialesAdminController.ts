@@ -88,6 +88,39 @@ export const updateMaterialCatalogo = async (
   }
 };
 
+export const getMaterialCatalogoById = async (
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) => {
+  try {
+    const { id } = request.params;
+
+    const material = await prisma.material.findFirst({
+      where: {
+        id,
+        usuarioId: null // Solo materiales del catálogo público
+      },
+      include: {
+        categoria: true,
+        ofertas: {
+          include: {
+            proveedor: true
+          }
+        }
+      }
+    });
+
+    if (!material) {
+      return reply.status(404).send({ success: false, error: 'Material del catálogo no encontrado' });
+    }
+
+    reply.send({ success: true, data: material });
+  } catch (error) {
+    console.error('Error al obtener material del catálogo:', error);
+    reply.status(500).send({ success: false, error: 'Error al obtener material' });
+  }
+};
+
 export const getMaterialesCatalogo = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const materiales = await prisma.material.findMany({
