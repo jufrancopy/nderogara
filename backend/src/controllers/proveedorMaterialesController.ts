@@ -246,7 +246,7 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
     if (user.rol === 'PROVEEDOR_MATERIALES' && proveedorRecord) {
       oferta = await prisma.ofertaProveedor.create({
         data: {
-          materialId: materialProveedor.id,
+          materialId: materialBase.id, // ← Vincular al material base original
           proveedorId: proveedorRecord.id,
           precio: precio,
           tipoCalidad: tipoCalidad || 'COMUN',
