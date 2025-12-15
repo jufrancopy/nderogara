@@ -186,7 +186,11 @@ export default function NuevoMaterialBasePage() {
                       <div
                         key={img.filename}
                         onClick={() => {
-                          setFormData({ ...formData, imagenUrl: img.url });
+                          // Convertir URL relativa a completa para la vista previa
+                          const fullUrl = img.url.startsWith('http')
+                            ? img.url
+                            : `${API_BASE_URL}${img.url}`;
+                          setFormData({ ...formData, imagenUrl: fullUrl });
                           setShowGallery(false);
                         }}
                         className="cursor-pointer border-2 border-transparent rounded-md overflow-hidden"

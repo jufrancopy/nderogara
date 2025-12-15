@@ -205,7 +205,11 @@ export default function NuevoMaterialProveedorPage() {
                     <div
                       key={img.filename}
                       onClick={() => {
-                        setFormData({ ...formData, imagenUrl: img.url });
+                        // Convertir URL relativa a completa para la vista previa
+                        const fullUrl = img.url.startsWith('http')
+                          ? img.url
+                          : `${API_BASE_URL}${img.url}`;
+                        setFormData({ ...formData, imagenUrl: fullUrl });
                         setShowGallery(false);
                       }}
                       className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden"
