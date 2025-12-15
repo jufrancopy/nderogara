@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-
 export const dynamic = 'force-dynamic'
+
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Building2, ArrowLeft, Save, Upload } from 'lucide-react'
