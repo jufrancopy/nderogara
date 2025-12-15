@@ -154,7 +154,7 @@ export default function EditarMaterialProveedorPage() {
             descripcion: material.descripcion || '',
             unidad: material.unidad,
             precio: Number(material.precio),
-            marca: material.marca || '',
+            marca: material.ofertas?.[0]?.marca || '',
             categoriaId: material.categoria.id,
             esActivo: material.esActivo
           })
