@@ -24,7 +24,16 @@ cd ..
 # Instalar dependencias del frontend
 echo "📦 Instalando dependencias del frontend..."
 cd frontend
-sudo -u jucfra npm install
+
+# Cambiar permisos temporales para npm install
+echo "🔧 Ajustando permisos para npm install..."
+chmod 666 package-lock.json 2>/dev/null || true
+
+npm install
+
+# Restaurar permisos
+echo "🔧 Restaurando permisos..."
+chmod 664 package-lock.json 2>/dev/null || true
 
 # Build del frontend
 echo "📦 Haciendo build del frontend..."
