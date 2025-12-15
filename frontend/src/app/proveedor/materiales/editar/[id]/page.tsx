@@ -33,6 +33,8 @@ export default function EditarMaterialProveedorPage() {
   const materialId = params.id as string
 
   const [categorias, setCategorias] = useState<Categoria[]>([])
+  const [galeria, setGaleria] = useState([])
+  const [showGallery, setShowGallery] = useState(false)
   const [loading, setLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
   const [currentImageUrl, setCurrentImageUrl] = useState<string>('')
@@ -87,8 +89,24 @@ export default function EditarMaterialProveedorPage() {
 
   useEffect(() => {
     fetchCategorias()
+    fetchGaleria()
     fetchMaterial()
   }, [materialId])
+
+  const fetchGaleria = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${API_BASE_URL}/upload/galeria`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await response.json()
+      if (data.success) {
+        setGaleria(data.data)
+      }
+    } catch (error) {
+      console.error('Error al cargar galería:', error)
+    }
+  }
 
   const fetchCategorias = async () => {
     try {
@@ -401,38 +419,62 @@ export default function EditarMaterialProveedorPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Imagen del Material
                 </label>
-                <div className="flex items-center space-x-4">
-                  <div className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden">
-                    {previewUrl || currentImageUrl ? (
-                      <img
-                        src={previewUrl || currentImageUrl}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        id="image-upload"
                       />
-                    ) : (
-                      <Upload className="h-8 w-8 text-gray-400" />
-                    )}
-                  </div>
-                  <div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      id="image-upload"
-                    />
-                    <label
-                      htmlFor="image-upload"
-                      className="cursor-pointer bg-gray-50 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100 transition-colors"
+                      <label
+                        htmlFor="image-upload"
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors text-gray-700 text-sm"
+                      >
+                        📎 Seleccionar imagen...
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowGallery(!showGallery)}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 whitespace-nowrap"
                     >
-                      Seleccionar Imagen
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Formatos: JPG, PNG, WEBP. Máx 5MB
-                    </p>
+                      🖼️ Galería
+                    </button>
                   </div>
+                  {previewUrl || currentImageUrl ? (
+                    <img src={previewUrl || currentImageUrl} alt="Preview" className="w-32 h-32 object-cover rounded-md" />
+                  ) : null}
                 </div>
               </div>
+
+              {showGallery && (
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  <h4 className="font-medium mb-3">Galería de Imágenes</h4>
+                  <div className="grid grid-cols-4 gap-3 max-h-64 overflow-y-auto">
+                    {galeria.map((img: any) => (
+                      <div
+                        key={img.filename}
+                        onClick={() => {
+                          // Convertir URL relativa a completa para la vista previa
+                          const fullUrl = img.url.startsWith('http')
+                            ? img.url
+                            : `${API_BASE_URL}${img.url}`;
+                          setCurrentImageUrl(fullUrl);
+                          setPreviewUrl(''); // Limpiar preview si había uno
+                          setSelectedFile(null); // Limpiar archivo seleccionado
+                          setShowGallery(false);
+                        }}
+                        className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden"
+                      >
+                        <img src={`${API_BASE_URL}${img.url}`} alt={img.filename} className="w-full h-24 object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Botones */}
               <div className="flex justify-end space-x-4 pt-6 border-t">
