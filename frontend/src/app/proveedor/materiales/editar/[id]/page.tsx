@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
+import { API_BASE_URL } from '@/lib/api'
 
 const materialSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
@@ -92,7 +93,7 @@ export default function EditarMaterialProveedorPage() {
   const fetchCategorias = async () => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch(`${API_BASE_URL}/${1}`, {
+      const response = await fetch(`${API_BASE_URL}/categorias`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (response.ok) {
@@ -113,7 +114,7 @@ export default function EditarMaterialProveedorPage() {
   const fetchMaterial = async () => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch(`${API_BASE_URL}/${1}`, {
+      const response = await fetch(`${API_BASE_URL}/proveedor/mis-materiales`, {
         headers: { Authorization: `Bearer ${token}` }
       })
 
@@ -178,7 +179,7 @@ export default function EditarMaterialProveedorPage() {
 
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch(`${API_BASE_URL}/${1}`, {
+      const response = await fetch(`${API_BASE_URL}/upload`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -207,7 +208,7 @@ export default function EditarMaterialProveedorPage() {
 
       // Get the current material data first
       const token = localStorage.getItem('token')
-      const listResponse = await fetch(`${API_BASE_URL}/${1}`, {
+      const listResponse = await fetch(`${API_BASE_URL}/proveedor/mis-materiales`, {
         headers: { Authorization: `Bearer ${token}` }
       })
 
