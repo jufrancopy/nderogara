@@ -40,20 +40,18 @@ echo "📦 Haciendo build del frontend..."
 npm run build
 
 # Copiar archivos estáticos para standalone
-echo "📁 Copiando archivos estáticos..."
-# Ya estamos en frontend, no necesitamos cd frontend
+echo "📁 Preparando archivos para producción..."
 
-# Crear directorios necesarios
-mkdir -p .next/standalone/.next
-
-# Copiar archivos estáticos y del servidor
-cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
-cp -r .next/server .next/standalone/.next/ 2>/dev/null || true
-cp -r public .next/standalone/ 2>/dev/null || true
-
-# Copiar archivos específicos que necesita standalone
-cp next.config.ts .next/standalone/ 2>/dev/null || true
-cp package.json .next/standalone/ 2>/dev/null || true
+# Copiar static y public al standalone (Next.js los necesita al mismo nivel)
+if [ -d ".next/standalone" ]; then
+    echo "✓ Copiando archivos estáticos..."
+    cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
+    cp -r public .next/standalone/ 2>/dev/null || true
+    echo "✓ Archivos copiados correctamente"
+else
+    echo "⚠️  Advertencia: No se encontró el directorio .next/standalone"
+    echo "   Verifica que output: 'standalone' esté en next.config"
+fi
 
 cd ..
 
