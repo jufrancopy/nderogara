@@ -98,8 +98,23 @@ export default function MaterialesPage() {
 
   const handleDeleteConfirm = async () => {
     try {
-      // Determinar el endpoint correcto basado en el rol del usuario
-      const endpoint = user?.rol === 'ADMIN' ? `/admin/materiales/${deleteDialog.materialId}` : `/proveedor/materiales/${deleteDialog.materialId}`
+      // Encontrar el material para determinar su propiedad
+      const materialToDelete = materiales.find(m => m.id === deleteDialog.materialId)
+
+      if (!materialToDelete) {
+        toast.error('Material no encontrado')
+        return
+      }
+
+      // Determinar el endpoint correcto basado en la propiedad del material
+      // Si usuarioId es null = material del catálogo (admin)
+      // Si usuarioId tiene valor = material de proveedor
+      const endpoint = materialToDelete.usuarioId === null
+        ? `/admin/materiales/${deleteDialog.materialId}`
+        : `/proveedor/materiales/${deleteDialog.materialId}`
+
+      console.log('Material usuarioId:', materialToDelete.usuarioId)
+      console.log('Using endpoint:', endpoint)
 
       await api.delete(endpoint)
       toast.success('Material eliminado exitosamente')

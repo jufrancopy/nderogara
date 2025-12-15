@@ -173,7 +173,7 @@ export default function NuevoMaterialBasePage() {
                     </button>
                   </div>
                   {formData.imagenUrl && (
-                    <img src={`${API_BASE_URL}${formData.imagenUrl}`} alt="Preview" className="w-32 h-32 object-cover rounded-md" />
+                    <img src={formData.imagenUrl} alt="Preview" className="w-32 h-32 object-cover rounded-md" />
                   )}
                 </div>
               </div>

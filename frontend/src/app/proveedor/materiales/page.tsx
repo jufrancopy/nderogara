@@ -210,7 +210,7 @@ export default function MisMaterialesPage() {
               <div key={material.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
                 {material.imagenUrl && (
                   <img
-                    src={`${API_BASE_URL}${material.imagenUrl}`}
+                    src={material.imagenUrl}
                     alt={material.nombre}
                     className="w-full h-48 object-cover"
                   />

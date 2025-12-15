@@ -640,10 +640,10 @@ export default function ProyectoDetallePage() {
                     <div className="bg-white shadow rounded-lg p-6">
                       <h3 className="text-lg font-medium text-gray-900 mb-4">Imagen del Proyecto</h3>
                       <img
-                        src={`${API_BASE_URL}${proyecto.imagenUrl}`}
+                        src={proyecto.imagenUrl}
                         alt={proyecto.nombre}
                         className="w-full h-64 object-cover rounded-lg cursor-pointer"
-                        onClick={() => setModalImage(`${API_BASE_URL}${proyecto.imagenUrl}`)}
+                        onClick={() => setModalImage(proyecto.imagenUrl || null)}
                       />
                     </div>
                   );

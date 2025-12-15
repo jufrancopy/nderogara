@@ -121,7 +121,7 @@ export default function AdminMaterialesPage() {
               {selectedMaterial.imagenUrl && (
                 <div className="mb-6">
                   <img 
-                    src={`${API_BASE_URL}${selectedMaterial.imagenUrl}`}
+                    src={selectedMaterial.imagenUrl}
                     alt={selectedMaterial.nombre}
                     className="w-full h-48 object-cover rounded-lg"
                   />
