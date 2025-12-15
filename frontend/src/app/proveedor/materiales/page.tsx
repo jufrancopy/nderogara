@@ -336,44 +336,62 @@ export default function MisMaterialesPage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {materialesBase.map((materialBase) => (
-                <div key={materialBase.id} className="bg-white rounded-lg shadow-sm overflow-hidden border-2 border-blue-200">
-                  {materialBase.imagenUrl && (
-                    <img
-                      src={materialBase.imagenUrl}
-                      alt={materialBase.nombre}
-                      className="w-full h-48 object-cover"
-                    />
-                  )}
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-semibold text-gray-900">{materialBase.nombre}</h3>
-                      <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
-                        Base
-                      </span>
-                    </div>
-
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                      {materialBase.descripcion || 'Sin descripción'}
-                    </p>
-
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-sm text-gray-500">{materialBase.categoria.nombre}</span>
-                      <span className="text-sm text-gray-500">{materialBase.unidad}</span>
-                    </div>
-
-                    <div className="text-center">
-                      <button
-                        onClick={() => handleCreateOfferClick(materialBase)}
-                        className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-                      >
-                        💰 Crear Oferta
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Material Base
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Categoría
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Unidad
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Acción
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {materialesBase.map((materialBase) => (
+                      <tr key={materialBase.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            {materialBase.imagenUrl && (
+                              <img
+                                src={materialBase.imagenUrl}
+                                alt={materialBase.nombre}
+                                className="w-10 h-10 rounded-lg object-cover mr-3"
+                              />
+                            )}
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{materialBase.nombre}</div>
+                              <div className="text-sm text-gray-500">{materialBase.descripcion || 'Sin descripción'}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{materialBase.categoria.nombre}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{materialBase.unidad}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <button
+                            onClick={() => handleCreateOfferClick(materialBase)}
+                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm"
+                          >
+                            💰 Crear Oferta
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
