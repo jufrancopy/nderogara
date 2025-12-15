@@ -178,6 +178,8 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
     const { materialBaseId, precio, marca, tipoCalidad, observaciones, imagenUrl } = request.body as any;
 
     console.log('Creando oferta desde base - Request body completo:', request.body);
+    console.log('Marca recibida:', marca);
+    console.log('Tipo de marca:', typeof marca);
     console.log('ImagenUrl recibida:', imagenUrl);
     console.log('Tipo de imagenUrl:', typeof imagenUrl);
 
