@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from '@/lib/api';
 
 interface Material {
   id: string;
@@ -35,7 +36,7 @@ export default function MisMaterialesPage() {
   const fetchMateriales = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/${1}`, {
+      const res = await fetch(`${API_BASE_URL}/proveedor/mis-materiales`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
