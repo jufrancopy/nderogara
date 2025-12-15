@@ -65,7 +65,7 @@ export default function MisMaterialesPage() {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/upload/galeria`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: token ? `Bearer ${token}` : '' }
       });
       const data = await response.json();
       if (data.success) {
@@ -80,7 +80,7 @@ export default function MisMaterialesPage() {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE_URL}/proveedor/materiales-base`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: token ? `Bearer ${token}` : '' }
       });
 
       if (res.ok) {
@@ -96,7 +96,7 @@ export default function MisMaterialesPage() {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE_URL}/proveedor/mis-materiales`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: token ? `Bearer ${token}` : '' }
       });
 
       if (res.ok) {
@@ -249,9 +249,12 @@ export default function MisMaterialesPage() {
         const formData = new FormData();
         formData.append('file', offerImageFile);
 
+        const token = localStorage.getItem('token');
         const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
           method: 'POST',
-          headers: { Authorization: localStorage.getItem('token') || '' },
+          headers: {
+            Authorization: token ? `Bearer ${token}` : ''
+          },
           body: formData
         });
 
