@@ -37,6 +37,7 @@ export default function MisMaterialesPage() {
   const router = useRouter();
   const [materiales, setMateriales] = useState<Material[]>([]);
   const [materialesBase, setMaterialesBase] = useState<MaterialBase[]>([]);
+  const [galeria, setGaleria] = useState([]);
   const [loading, setLoading] = useState(true);
   const [priceUpdateMaterial, setPriceUpdateMaterial] = useState<Material | null>(null);
   const [newPrice, setNewPrice] = useState('');
@@ -52,11 +53,28 @@ export default function MisMaterialesPage() {
   });
   const [offerImageFile, setOfferImageFile] = useState<File | null>(null);
   const [offerImagePreview, setOfferImagePreview] = useState<string>('');
+  const [showOfferGallery, setShowOfferGallery] = useState(false);
 
   useEffect(() => {
     fetchMateriales();
     fetchMaterialesBase();
+    fetchGaleria();
   }, []);
+
+  const fetchGaleria = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/upload/galeria`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setGaleria(data.data);
+      }
+    } catch (error) {
+      console.error('Error al cargar galería:', error);
+    }
+  };
 
   const fetchMaterialesBase = async () => {
     try {
@@ -607,10 +625,7 @@ export default function MisMaterialesPage() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => {
-                            // Aquí podríamos abrir la galería, pero por simplicidad usaremos la funcionalidad básica
-                            // setShowGallery(!showGallery); // Esto necesitaría más lógica
-                          }}
+                          onClick={() => setShowOfferGallery(!showOfferGallery)}
                           className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 whitespace-nowrap"
                         >
                           🖼️ Galería
@@ -620,6 +635,35 @@ export default function MisMaterialesPage() {
                         <img src={offerImagePreview} alt="Preview" className="w-32 h-32 object-cover rounded-md" />
                       )}
                     </div>
+
+                    {showOfferGallery && (
+                      <div className="border rounded-lg p-4 bg-gray-50 max-h-64 overflow-y-auto">
+                        <h4 className="font-medium mb-3">Seleccionar de Galería</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          {galeria.map((img: any) => (
+                            <div
+                              key={img.filename}
+                              onClick={() => {
+                                // Usar imagen de galería
+                                const fullUrl = img.url.startsWith('http')
+                                  ? img.url
+                                  : `${API_BASE_URL}${img.url}`;
+                                setOfferForm({ ...offerForm, imagenUrl: fullUrl });
+                                setOfferImageFile(null); // Limpiar archivo subido
+                                setOfferImagePreview(fullUrl);
+                                setShowOfferGallery(false);
+                              }}
+                              className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden transition-colors"
+                            >
+                              <img src={`${API_BASE_URL}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                        {galeria.length === 0 && (
+                          <p className="text-gray-500 text-sm text-center py-4">No hay imágenes en la galería</p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div>
