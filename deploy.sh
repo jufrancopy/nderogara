@@ -24,7 +24,7 @@ cd ..
 # Instalar dependencias del frontend
 echo "📦 Instalando dependencias del frontend..."
 cd frontend
-npm install
+sudo -u jucfra npm install
 
 # Build del frontend
 echo "📦 Haciendo build del frontend..."
