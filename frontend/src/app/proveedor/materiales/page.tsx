@@ -337,28 +337,42 @@ export default function MisMaterialesPage() {
 
         {/* Delete Confirmation Modal */}
         {deleteMaterialData && (
-          <div className="modal modal-open">
-            <div className="modal-box">
-              <h3 className="font-bold text-lg text-red-600">⚠️ Confirmar Eliminación</h3>
-              <p className="py-4">
-                ¿Estás seguro de que quieres eliminar el material <strong>"{deleteMaterialData.nombre}"</strong>?
-              </p>
-              <p className="text-sm text-gray-600 mb-4">
-                Esta acción no se puede deshacer. El material será eliminado permanentemente.
-              </p>
-              <div className="modal-action">
-                <button
-                  className="btn btn-ghost"
-                  onClick={handleDeleteCancel}
-                >
-                  Cancelar
-                </button>
-                <button
-                  className="btn btn-error"
-                  onClick={handleDeleteConfirm}
-                >
-                  🗑️ Eliminar
-                </button>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="p-6">
+                <div className="flex items-center mb-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <span className="text-red-600 text-xl">⚠️</span>
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Confirmar Eliminación</h3>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <p className="text-gray-700">
+                    ¿Estás seguro de que quieres eliminar el material <strong className="text-gray-900">"{deleteMaterialData.nombre}"</strong>?
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Esta acción no se puede deshacer. El material será eliminado permanentemente.
+                  </p>
+                </div>
+
+                <div className="flex justify-end space-x-3">
+                  <button
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                    onClick={handleDeleteCancel}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center"
+                    onClick={handleDeleteConfirm}
+                  >
+                    <span className="mr-2">🗑️</span>
+                    Eliminar
+                  </button>
+                </div>
               </div>
             </div>
           </div>
