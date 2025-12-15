@@ -453,7 +453,7 @@ export default function MisMaterialesPage() {
                         <div className="flex items-center">
                           {material.imagenUrl && (
                             <img
-                              src={material.imagenUrl}
+                              src={material.imagenUrl.startsWith('http') ? material.imagenUrl : `${API_BASE_URL}${material.imagenUrl}`}
                               alt={material.nombre}
                               className="w-10 h-10 rounded-lg object-cover mr-3"
                             />
