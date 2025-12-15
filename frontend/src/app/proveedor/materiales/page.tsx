@@ -252,7 +252,7 @@ export default function MisMaterialesPage() {
         formData.append('file', offerImageFile);
 
         const token = localStorage.getItem('token');
-        const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
+        const uploadResponse = await fetch(`${API_BASE_URL}/upload/imagen`, {
           method: 'POST',
           headers: {
             Authorization: token ? `Bearer ${token}` : ''
@@ -262,7 +262,7 @@ export default function MisMaterialesPage() {
 
         if (uploadResponse.ok) {
           const uploadData = await uploadResponse.json();
-          finalImageUrl = uploadData.url;
+          finalImageUrl = uploadData.data.url;
           console.log('Imagen subida exitosamente:', finalImageUrl);
         } else {
           console.log('Error en subida de imagen:', uploadResponse.status);
