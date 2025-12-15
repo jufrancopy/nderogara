@@ -199,7 +199,11 @@ export default function AdminMaterialesPage() {
                               ✏️
                             </Link>
                             <button
-                              onClick={() => setSelectedMaterial(material)}
+                              onClick={() => {
+                                console.log('Material seleccionado:', material);
+                                console.log('Ofertas del material:', material.ofertas);
+                                setSelectedMaterial(material);
+                              }}
                               className="text-blue-600 hover:text-blue-900 px-2 py-1 rounded text-sm"
                               title="Ver ofertas"
                             >
