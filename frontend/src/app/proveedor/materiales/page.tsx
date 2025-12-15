@@ -63,6 +63,7 @@ export default function MisMaterialesPage() {
   const [offerImageFile, setOfferImageFile] = useState<File | null>(null);
   const [offerImagePreview, setOfferImagePreview] = useState<string>('');
   const [showOfferGallery, setShowOfferGallery] = useState(false);
+  const [offerPriceDisplay, setOfferPriceDisplay] = useState<string>('');
 
   useEffect(() => {
     fetchMateriales();
@@ -245,6 +246,35 @@ export default function MisMaterialesPage() {
     });
     setOfferImageFile(null);
     setOfferImagePreview('');
+    setOfferPriceDisplay('');
+  };
+
+  const handleOfferPrecioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    let value = event.target.value;
+
+    // Si el campo está vacío, mostrar vacío
+    if (!value) {
+      setOfferPriceDisplay('');
+      setOfferForm({ ...offerForm, precio: '' });
+      return;
+    }
+
+    // Permitir solo números
+    value = value.replace(/[^\d]/g, '');
+
+    // Si después de limpiar no hay valor, mostrar vacío
+    if (!value) {
+      setOfferPriceDisplay('');
+      setOfferForm({ ...offerForm, precio: '' });
+      return;
+    }
+
+    // Convertir a número y formatear
+    const numericValue = parseInt(value, 10);
+    const formattedValue = numericValue.toLocaleString('es-PY');
+
+    setOfferPriceDisplay(formattedValue);
+    setOfferForm({ ...offerForm, precio: value });
   };
 
   const handleCreateOfferConfirm = async () => {
@@ -625,13 +655,11 @@ export default function MisMaterialesPage() {
                       Precio (₲) *
                     </label>
                     <input
-                      type="number"
-                      value={offerForm.precio}
-                      onChange={(e) => setOfferForm({ ...offerForm, precio: e.target.value })}
+                      type="text"
+                      value={offerPriceDisplay}
+                      onChange={handleOfferPrecioChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="45000"
-                      min="0"
-                      step="0.01"
+                      placeholder="45,000"
                     />
                   </div>
 
