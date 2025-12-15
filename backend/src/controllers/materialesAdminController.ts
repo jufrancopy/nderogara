@@ -92,8 +92,7 @@ export const getMaterialesCatalogo = async (request: FastifyRequest, reply: Fast
   try {
     const materiales = await prisma.material.findMany({
       where: {
-        usuarioId: null, // Solo materiales del catálogo público
-        esActivo: true
+        usuarioId: null // Solo materiales del catálogo público (sin filtrar por esActivo)
       },
       include: {
         categoria: true,
