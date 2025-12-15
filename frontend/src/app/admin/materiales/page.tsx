@@ -43,7 +43,7 @@ export default function AdminMaterialesPage() {
   const toggleActivo = async (id: string, esActivo: boolean) => {
     try {
       const token = localStorage.getItem('token');
-      const material = materiales.find((m: any) => m.id === id);
+      const material = materiales.find((m: any) => m.id === id) as any;
       if (!material) return;
 
       await fetch(`${API_BASE_URL}/admin/materiales/${id}`, {
@@ -52,7 +52,14 @@ export default function AdminMaterialesPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ ...material, esActivo: !esActivo })
+        body: JSON.stringify({
+          nombre: material.nombre,
+          descripcion: material.descripcion,
+          unidad: material.unidad,
+          categoriaId: material.categoria?.id || material.categoriaId,
+          imagenUrl: material.imagenUrl,
+          esActivo: !esActivo
+        })
       });
 
       fetchMateriales();
@@ -119,73 +126,110 @@ export default function AdminMaterialesPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {materiales.map((material: any) => (
-                <div key={material.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
-                  {material.imagenUrl && (
-                    <img
-                      src={material.imagenUrl}
-                      alt={material.nombre}
-                      className="w-full h-48 object-cover"
-                    />
-                  )}
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-semibold text-gray-900">{material.nombre}</h3>
-                      <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
-                        Base
-                      </span>
-                    </div>
-
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                      {material.descripcion || 'Sin descripción'}
-                    </p>
-
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-sm text-gray-500">{material.categoria?.nombre}</span>
-                      <span className="text-sm text-gray-500">{material.unidad}</span>
-                    </div>
-
-                    <div className="mb-4">
-                      <span className="text-lg font-medium text-gray-600">
-                        {material.ofertas?.length || 0} oferta{material.ofertas?.length !== 1 ? 's' : ''} disponible{material.ofertas?.length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <Link
-                          href={`/admin/materiales/editar/${material.id}`}
-                          className="flex-1 bg-[#38603B] text-white px-4 py-2 rounded text-center hover:bg-[#2d4a2f] transition"
-                        >
-                          ✏️ Editar
-                        </Link>
-                        <button
-                          onClick={() => setSelectedMaterial(material)}
-                          className="flex-1 bg-gray-50 text-gray-600 px-4 py-2 rounded hover:bg-gray-100 transition text-sm"
-                          title="Ver ofertas"
-                        >
-                          👁️ Ver Ofertas
-                        </button>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => toggleActivo(material.id, material.esActivo)}
-                          className="flex-1 bg-gray-50 text-gray-600 px-3 py-2 rounded hover:bg-gray-100 transition text-sm"
-                        >
-                          {material.esActivo ? 'Desactivar' : 'Activar'}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(material)}
-                          className="flex-1 bg-red-50 text-red-600 px-3 py-2 rounded hover:bg-red-100 transition text-sm"
-                        >
-                          🗑️ Eliminar
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Material Base
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Categoría
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Unidad
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ofertas
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Estado
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {materiales.map((material: any) => (
+                      <tr key={material.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            {material.imagenUrl && (
+                              <img
+                                src={material.imagenUrl.startsWith('http') ? material.imagenUrl : `${API_BASE_URL}${material.imagenUrl}`}
+                                alt={material.nombre}
+                                className="w-10 h-10 rounded-lg object-cover mr-3"
+                              />
+                            )}
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{material.nombre}</div>
+                              <div className="text-sm text-gray-500">{material.descripcion || 'Sin descripción'}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{material.categoria?.nombre}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{material.unidad}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {material.ofertas?.length || 0} oferta{material.ofertas?.length !== 1 ? 's' : ''}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            material.esActivo
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {material.esActivo ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex justify-end space-x-2">
+                            <Link
+                              href={`/admin/materiales/editar/${material.id}`}
+                              className="text-purple-600 hover:text-purple-900 px-2 py-1 rounded text-sm"
+                              title="Editar material"
+                            >
+                              ✏️
+                            </Link>
+                            <button
+                              onClick={() => setSelectedMaterial(material)}
+                              className="text-blue-600 hover:text-blue-900 px-2 py-1 rounded text-sm"
+                              title="Ver ofertas"
+                            >
+                              👁️
+                            </button>
+                            <button
+                              onClick={() => toggleActivo(material.id, material.esActivo)}
+                              className={`px-2 py-1 rounded text-sm ${
+                                material.esActivo
+                                  ? 'text-gray-600 hover:text-gray-900'
+                                  : 'text-green-600 hover:text-green-900'
+                              }`}
+                              title={material.esActivo ? 'Desactivar' : 'Activar'}
+                            >
+                              {material.esActivo ? '🚫' : '✅'}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(material)}
+                              className="text-red-600 hover:text-red-900 px-2 py-1 rounded text-sm"
+                              title="Eliminar"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
