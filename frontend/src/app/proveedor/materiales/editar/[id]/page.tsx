@@ -405,7 +405,7 @@ export default function EditarMaterialProveedorPage() {
                   <div className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden">
                     {previewUrl || currentImageUrl ? (
                       <img
-                        src={previewUrl || `${API_BASE_URL}${currentImageUrl}`}
+                        src={previewUrl || currentImageUrl}
                         alt="Preview"
                         className="w-full h-full object-cover"
                       />
