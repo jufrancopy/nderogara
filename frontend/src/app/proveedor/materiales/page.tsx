@@ -251,8 +251,9 @@ export default function MisMaterialesPage() {
     if (!createOfferMaterial || !offerForm.precio) return;
 
     try {
-      let finalImageUrl = createOfferMaterial.imagenUrl; // Usar imagen del material base por defecto
+      let finalImageUrl = offerForm.imagenUrl || createOfferMaterial.imagenUrl; // Priorizar imagen de galería, luego base
       console.log('Imagen base del material:', createOfferMaterial.imagenUrl);
+      console.log('Imagen de formulario (galería):', offerForm.imagenUrl);
       console.log('¿Hay archivo subido?', !!offerImageFile);
 
       // Si el proveedor subió una imagen personalizada, subirla primero
