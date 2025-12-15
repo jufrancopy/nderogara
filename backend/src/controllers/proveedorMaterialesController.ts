@@ -191,7 +191,8 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
       }
     });
 
-    console.log('Material base encontrado:', materialBase ? 'Sí' : 'No');
+    console.log('Material base encontrado:', materialBase ? `Sí - ID: ${materialBase.id}` : 'No');
+    console.log('Buscando material base con ID:', materialBaseId);
 
     if (!materialBase) {
       return reply.status(404).send({ error: 'Material base no encontrado' });
