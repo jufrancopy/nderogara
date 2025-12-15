@@ -169,14 +169,24 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
       return reply.status(404).send({ error: 'Material base no encontrado' });
     }
 
-    // Verificar que el usuario es proveedor
+    // Verificar que el usuario tiene rol de proveedor
     const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { proveedor: true }
+      where: { id: userId }
     });
 
-    if (!user?.proveedor) {
+    if (!user || (user.rol !== 'PROVEEDOR_MATERIALES' && user.rol !== 'CONSTRUCTOR' && user.rol !== 'PROVEEDOR_SERVICIOS')) {
       return reply.status(403).send({ error: 'Solo proveedores pueden crear ofertas' });
+    }
+
+    // Solo PROVEEDOR_MATERIALES necesitan registro en tabla proveedor y oferta
+    let proveedorRecord = null;
+    if (user.rol === 'PROVEEDOR_MATERIALES') {
+      proveedorRecord = await prisma.proveedor.findFirst({
+        where: { usuarioId: userId }
+      });
+      if (!proveedorRecord) {
+        return reply.status(403).send({ error: 'Proveedor no registrado correctamente' });
+      }
     }
 
     // Crear el material del proveedor basado en el material base
@@ -194,19 +204,22 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
       include: { categoria: true }
     });
 
-    // Crear la oferta del proveedor
-    const oferta = await prisma.ofertaProveedor.create({
-      data: {
-        materialId: materialProveedor.id,
-        proveedorId: user.proveedor.id,
-        precio: precio,
-        tipoCalidad: tipoCalidad || 'COMUN',
-        marca: marca,
-        comisionPorcentaje: 10.00,
-        stock: true,
-        observaciones: observaciones
-      }
-    });
+    // Crear la oferta solo para PROVEEDOR_MATERIALES
+    let oferta = null;
+    if (user.rol === 'PROVEEDOR_MATERIALES' && proveedorRecord) {
+      oferta = await prisma.ofertaProveedor.create({
+        data: {
+          materialId: materialProveedor.id,
+          proveedorId: proveedorRecord.id,
+          precio: precio,
+          tipoCalidad: tipoCalidad || 'COMUN',
+          marca: marca,
+          comisionPorcentaje: 10.00,
+          stock: true,
+          observaciones: observaciones
+        }
+      });
+    }
 
     reply.status(201).send({
       material: materialProveedor,
