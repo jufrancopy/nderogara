@@ -274,6 +274,8 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
 
       if (ofertaExistente) {
         // Actualizar oferta existente
+        console.log('Actualizando oferta existente:', ofertaExistente.id);
+        console.log('Nueva marca:', marca);
         oferta = await prisma.ofertaProveedor.update({
           where: { id: ofertaExistente.id },
           data: {
@@ -285,7 +287,7 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
             observaciones: observaciones
           }
         });
-        console.log('Oferta actualizada:', oferta.id);
+        console.log('Oferta actualizada con marca:', oferta.marca);
       } else {
         // Crear nueva oferta
         oferta = await prisma.ofertaProveedor.create({
