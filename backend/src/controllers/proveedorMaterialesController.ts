@@ -157,6 +157,8 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
     const userId = (request.user as any).id;
     const { materialBaseId, precio, marca, tipoCalidad, observaciones } = request.body as any;
 
+    console.log('Creando oferta desde base:', { userId, materialBaseId, precio, marca });
+
     // Verificar que el material base existe y no tiene usuarioId
     const materialBase = await prisma.material.findFirst({
       where: {
@@ -164,6 +166,8 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
         usuarioId: null // Solo materiales base
       }
     });
+
+    console.log('Material base encontrado:', materialBase ? 'Sí' : 'No');
 
     if (!materialBase) {
       return reply.status(404).send({ error: 'Material base no encontrado' });
@@ -174,17 +178,24 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
       where: { id: userId }
     });
 
+    console.log('Usuario encontrado:', user ? { rol: user.rol, email: user.email } : 'No');
+
     if (!user || (user.rol !== 'PROVEEDOR_MATERIALES' && user.rol !== 'CONSTRUCTOR' && user.rol !== 'PROVEEDOR_SERVICIOS')) {
+      console.log('Usuario no autorizado para crear ofertas');
       return reply.status(403).send({ error: 'Solo proveedores pueden crear ofertas' });
     }
 
     // Solo PROVEEDOR_MATERIALES necesitan registro en tabla proveedor y oferta
     let proveedorRecord = null;
     if (user.rol === 'PROVEEDOR_MATERIALES') {
+      console.log('Verificando registro en tabla Proveedor...');
       proveedorRecord = await prisma.proveedor.findFirst({
         where: { usuarioId: userId }
       });
+      console.log('Registro en Proveedor encontrado:', proveedorRecord ? 'Sí' : 'No');
+
       if (!proveedorRecord) {
+        console.log('Proveedor no registrado correctamente en tabla Proveedor');
         return reply.status(403).send({ error: 'Proveedor no registrado correctamente' });
       }
     }
