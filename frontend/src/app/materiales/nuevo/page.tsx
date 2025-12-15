@@ -107,7 +107,7 @@ export default function NuevoMaterialPage() {
     formData.append('file', selectedFile)
 
     try {
-      const token = localStorage.getItem('token')
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
       const response = await fetch(`${API_BASE_URL}/upload`, {
         method: 'POST',
         headers: { Authorization: token ? `Bearer ${token}` : '' },
@@ -135,7 +135,7 @@ export default function NuevoMaterialPage() {
         finalImageUrl = await uploadImage() || ''
       }
 
-      const userData = localStorage.getItem('user')
+      const userData = typeof window !== 'undefined' ? localStorage.getItem('user') : null
       const user = userData ? JSON.parse(userData) : null
 
       // Determinar el endpoint correcto basado en el rol del usuario
@@ -264,7 +264,7 @@ export default function NuevoMaterialPage() {
                   </div>
 
                   {(() => {
-                    const userData = localStorage.getItem('user')
+                    const userData = typeof window !== 'undefined' ? localStorage.getItem('user') : null
                     const user = userData ? JSON.parse(userData) : null
                     const isAdmin = user?.rol === 'ADMIN'
 
