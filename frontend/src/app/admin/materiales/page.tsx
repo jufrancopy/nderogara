@@ -44,9 +44,17 @@ export default function AdminMaterialesPage() {
     try {
       const token = localStorage.getItem('token');
       const material = materiales.find((m: any) => m.id === id) as any;
-      if (!material) return;
+      if (!material) {
+        console.error('Material no encontrado:', id);
+        return;
+      }
 
-      await fetch(`${API_BASE_URL}/admin/materiales/${id}`, {
+      console.log('Cambiando estado de material:', material.nombre, 'de', esActivo, 'a', !esActivo);
+
+      const categoriaId = material.categoria?.id || material.categoriaId;
+      console.log('CategoriaId:', categoriaId);
+
+      const response = await fetch(`${API_BASE_URL}/admin/materiales/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -56,13 +64,19 @@ export default function AdminMaterialesPage() {
           nombre: material.nombre,
           descripcion: material.descripcion,
           unidad: material.unidad,
-          categoriaId: material.categoria?.id || material.categoriaId,
+          categoriaId: categoriaId,
           imagenUrl: material.imagenUrl,
           esActivo: !esActivo
         })
       });
 
-      fetchMateriales();
+      if (response.ok) {
+        console.log('Material actualizado exitosamente');
+        fetchMateriales();
+      } else {
+        const errorText = await response.text();
+        console.error('Error del servidor:', response.status, errorText);
+      }
     } catch (error) {
       console.error('Error al actualizar material:', error);
     }
