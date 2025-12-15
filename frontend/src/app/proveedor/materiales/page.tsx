@@ -47,8 +47,11 @@ export default function MisMaterialesPage() {
     precio: '',
     marca: '',
     tipoCalidad: 'COMUN' as 'COMUN' | 'PREMIUM' | 'ECONOMICO',
-    observaciones: ''
+    observaciones: '',
+    imagenUrl: ''
   });
+  const [offerImageFile, setOfferImageFile] = useState<File | null>(null);
+  const [offerImagePreview, setOfferImagePreview] = useState<string>('');
 
   useEffect(() => {
     fetchMateriales();
@@ -210,14 +213,39 @@ export default function MisMaterialesPage() {
       precio: '',
       marca: '',
       tipoCalidad: 'COMUN',
-      observaciones: ''
+      observaciones: '',
+      imagenUrl: ''
     });
+    setOfferImageFile(null);
+    setOfferImagePreview('');
   };
 
   const handleCreateOfferConfirm = async () => {
     if (!createOfferMaterial || !offerForm.precio) return;
 
     try {
+      let finalImageUrl = createOfferMaterial.imagenUrl; // Usar imagen del material base por defecto
+
+      // Si el proveedor subió una imagen personalizada, subirla primero
+      if (offerImageFile) {
+        const formData = new FormData();
+        formData.append('file', offerImageFile);
+
+        const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
+          method: 'POST',
+          headers: { Authorization: localStorage.getItem('token') || '' },
+          body: formData
+        });
+
+        if (uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          finalImageUrl = uploadData.url;
+        } else {
+          toast.error('Error al subir la imagen');
+          return;
+        }
+      }
+
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/proveedor/ofertas-desde-base`, {
         method: 'POST',
@@ -230,7 +258,8 @@ export default function MisMaterialesPage() {
           precio: parseFloat(offerForm.precio),
           marca: offerForm.marca,
           tipoCalidad: offerForm.tipoCalidad,
-          observaciones: offerForm.observaciones
+          observaciones: offerForm.observaciones,
+          imagenUrl: finalImageUrl
         })
       });
 
@@ -238,6 +267,8 @@ export default function MisMaterialesPage() {
         toast.success('Oferta creada exitosamente');
         fetchMateriales(); // Recargar materiales propios
         setCreateOfferMaterial(null);
+        setOfferImageFile(null);
+        setOfferImagePreview('');
       } else {
         toast.error('Error al crear la oferta');
       }
@@ -543,6 +574,52 @@ export default function MisMaterialesPage() {
                       <option value="PREMIUM">Premium</option>
                       <option value="ECONOMICO">Económico</option>
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Imagen del Material
+                    </label>
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setOfferImageFile(file);
+                                const preview = URL.createObjectURL(file);
+                                setOfferImagePreview(preview);
+                                setOfferForm({ ...offerForm, imagenUrl: preview });
+                              }
+                            }}
+                            className="hidden"
+                            id="offer-image-upload"
+                          />
+                          <label
+                            htmlFor="offer-image-upload"
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors text-gray-700 text-sm"
+                          >
+                            📎 Seleccionar imagen...
+                          </label>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Aquí podríamos abrir la galería, pero por simplicidad usaremos la funcionalidad básica
+                            // setShowGallery(!showGallery); // Esto necesitaría más lógica
+                          }}
+                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 whitespace-nowrap"
+                        >
+                          🖼️ Galería
+                        </button>
+                      </div>
+                      {offerImagePreview && (
+                        <img src={offerImagePreview} alt="Preview" className="w-32 h-32 object-cover rounded-md" />
+                      )}
+                    </div>
                   </div>
 
                   <div>

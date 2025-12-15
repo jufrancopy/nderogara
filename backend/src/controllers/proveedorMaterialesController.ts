@@ -155,7 +155,7 @@ export const actualizarMaterial = async (request: FastifyRequest, reply: Fastify
 export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const userId = (request.user as any).id;
-    const { materialBaseId, precio, marca, tipoCalidad, observaciones } = request.body as any;
+    const { materialBaseId, precio, marca, tipoCalidad, observaciones, imagenUrl } = request.body as any;
 
     console.log('Creando oferta desde base:', { userId, materialBaseId, precio, marca });
 
@@ -223,7 +223,7 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
         descripcion: materialBase.descripcion,
         unidad: materialBase.unidad,
         categoriaId: materialBase.categoriaId,
-        imagenUrl: materialBase.imagenUrl,
+        imagenUrl: imagenUrl || materialBase.imagenUrl, // Usar imagen personalizada si se proporciona
         precio: precio,
         usuarioId: userId,
         esActivo: true
