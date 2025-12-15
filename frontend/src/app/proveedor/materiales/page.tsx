@@ -19,6 +19,15 @@ interface Material {
     id: string;
     nombre: string;
   };
+  ofertas?: Array<{
+    id: string;
+    marca: string | null;
+    precio: number;
+    proveedor: {
+      id: string;
+      nombre: string;
+    };
+  }>;
 }
 
 interface MaterialBase {
@@ -47,7 +56,7 @@ export default function MisMaterialesPage() {
   const [offerForm, setOfferForm] = useState({
     precio: '',
     marca: '',
-    tipoCalidad: 'COMUN' as 'COMUN' | 'PREMIUM' | 'ECONOMICO',
+    tipoCalidad: 'COMUN' as 'COMUN' | 'PREMIUM' | 'INDUSTRIAL' | 'ARTESANAL',
     observaciones: '',
     imagenUrl: ''
   });
@@ -465,7 +474,7 @@ export default function MisMaterialesPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{material.marca || '-'}</div>
+                        <div className="text-sm text-gray-900">{material.ofertas?.[0]?.marca || '-'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-blue-600">
@@ -638,12 +647,13 @@ export default function MisMaterialesPage() {
                     </label>
                     <select
                       value={offerForm.tipoCalidad}
-                      onChange={(e) => setOfferForm({ ...offerForm, tipoCalidad: e.target.value as 'COMUN' | 'PREMIUM' | 'ECONOMICO' })}
+                      onChange={(e) => setOfferForm({ ...offerForm, tipoCalidad: e.target.value as 'COMUN' | 'PREMIUM' | 'INDUSTRIAL' | 'ARTESANAL' })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="COMUN">Común</option>
                       <option value="PREMIUM">Premium</option>
-                      <option value="ECONOMICO">Económico</option>
+                      <option value="INDUSTRIAL">Industrial</option>
+                      <option value="ARTESANAL">Artesanal</option>
                     </select>
                   </div>
 
