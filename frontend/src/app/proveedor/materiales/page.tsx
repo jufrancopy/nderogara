@@ -282,6 +282,12 @@ export default function MisMaterialesPage() {
 
       console.log('ImagenUrl final a enviar:', finalImageUrl);
 
+      console.log('Enviando datos al backend:');
+      console.log('- materialBaseId:', createOfferMaterial.id);
+      console.log('- precio:', parseFloat(offerForm.precio));
+      console.log('- marca:', offerForm.marca);
+      console.log('- tipoCalidad:', offerForm.tipoCalidad);
+
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/proveedor/ofertas-desde-base`, {
         method: 'POST',
