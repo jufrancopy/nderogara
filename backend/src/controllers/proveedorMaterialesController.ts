@@ -6,9 +6,12 @@ const prisma = new PrismaClient();
 // Obtener materiales base disponibles para proveedores
 export const getMaterialesBase = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    // Materiales base son aquellos sin usuarioId (creados por admin)
+    // Materiales base son aquellos sin usuarioId (creados por admin) Y activos
     const materialesBase = await prisma.material.findMany({
-      where: { usuarioId: null },
+      where: {
+        usuarioId: null, // Solo del catálogo
+        esActivo: true   // Solo activos para proveedores
+      },
       include: { categoria: true },
       orderBy: { createdAt: 'desc' }
     });
