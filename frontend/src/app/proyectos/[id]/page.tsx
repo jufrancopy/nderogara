@@ -507,8 +507,8 @@ export default function ProyectoDetallePage() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           {/* Page Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center">
+          <div className="mb-6">
+            <div className="flex items-center mb-3">
               <Link
                 href="/proyectos"
                 className="mr-4 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md"
@@ -516,57 +516,63 @@ export default function ProyectoDetallePage() {
                 <ArrowLeft className="h-5 w-5" />
               </Link>
               <div>
-                <div className="flex items-center">
-                  <h2 className="text-2xl font-bold text-gray-900 mr-3">{proyecto.nombre}</h2>
+                <div className="flex items-center flex-wrap gap-2">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{proyecto.nombre}</h2>
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${estadoColors[proyecto.estado as keyof typeof estadoColors]}`}>
                     {estadoLabels[proyecto.estado as keyof typeof estadoLabels]}
                   </span>
                 </div>
                 {proyecto.descripcion && (
-                  <p className="text-gray-600 mt-1">{proyecto.descripcion}</p>
+                  <p className="text-gray-600 mt-1 text-sm sm:text-base">{proyecto.descripcion}</p>
                 )}
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 sm:gap-3">
+
+            {/* Botones - Siempre debajo en móvil, al lado en desktop */}
+            <div className="flex flex-wrap gap-2 sm:justify-end sm:mt-0">
               <Link
                 href={`/proyectos/${proyecto.id}/obra`}
-                className="text-white px-3 sm:px-4 py-2 rounded-md transition-colors flex items-center text-sm"
+                className="text-white px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-md transition-colors flex items-center text-xs sm:text-sm"
                 style={{backgroundColor: '#38603B'}}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#633722'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#38603B'}
                 title="Monitoreo de Obra"
               >
-                <Building2 className="h-4 w-4 mr-1 sm:mr-2" />
-                <span className="hidden xs:inline">Monitoreo</span>
+                <Building2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                <span className="hidden sm:inline">Monitoreo</span>
+                <span className="sm:hidden">Obra</span>
               </Link>
               <button
                 onClick={() => abrirModalPagosProyecto()}
-                className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center text-sm"
+                className="bg-blue-600 text-white px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center text-xs sm:text-sm"
                 title="Histórico de Pagos"
               >
-                💰<span className="hidden xs:inline ml-2">Pagos</span>
+                <span className="text-sm">💰</span>
+                <span className="hidden sm:inline ml-1 sm:ml-2">Pagos</span>
               </button>
               <button
                 onClick={generarPDFCostos}
-                className="text-white px-3 sm:px-4 py-2 rounded-md transition-colors flex items-center text-sm"
+                className="text-white px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-md transition-colors flex items-center text-xs sm:text-sm"
                 style={{backgroundColor: '#B99742'}}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#7D4C3A'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#B99742'}
                 title="Descargar Costos PDF"
               >
-                <FileText className="h-4 w-4 mr-1 sm:mr-2" />
-                <span className="hidden xs:inline">Costos</span>
+                <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                <span className="hidden sm:inline">Costos</span>
+                <span className="sm:hidden">PDF</span>
               </button>
               <Link
                 href={`/proyectos/editar/${proyecto.id}`}
-                className="text-white px-3 sm:px-4 py-2 rounded-md transition-colors flex items-center text-sm"
+                className="text-white px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-md transition-colors flex items-center text-xs sm:text-sm"
                 style={{backgroundColor: '#633722'}}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#38603B'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#633722'}
                 title="Editar Proyecto"
               >
-                <Edit className="h-4 w-4 mr-1 sm:mr-2" />
-                <span className="hidden xs:inline">Editar</span>
+                <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                <span className="hidden sm:inline">Editar</span>
+                <span className="sm:hidden">Edit</span>
               </Link>
             </div>
           </div>
