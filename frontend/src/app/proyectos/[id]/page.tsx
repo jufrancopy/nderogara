@@ -527,46 +527,46 @@ export default function ProyectoDetallePage() {
                 )}
               </div>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               <Link
                 href={`/proyectos/${proyecto.id}/obra`}
-                className="text-white px-4 py-2 rounded-md transition-colors flex items-center"
+                className="text-white px-3 sm:px-4 py-2 rounded-md transition-colors flex items-center text-sm"
                 style={{backgroundColor: '#38603B'}}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#633722'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#38603B'}
                 title="Monitoreo de Obra"
               >
-                <Building2 className="h-4 w-4 mr-2" />
-                Monitoreo
+                <Building2 className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Monitoreo</span>
               </Link>
               <button
                 onClick={() => abrirModalPagosProyecto()}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center"
+                className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center text-sm"
                 title="Histórico de Pagos"
               >
-                💰 Pagos
+                💰<span className="hidden xs:inline ml-2">Pagos</span>
               </button>
               <button
                 onClick={generarPDFCostos}
-                className="text-white px-4 py-2 rounded-md transition-colors flex items-center"
+                className="text-white px-3 sm:px-4 py-2 rounded-md transition-colors flex items-center text-sm"
                 style={{backgroundColor: '#B99742'}}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#7D4C3A'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#B99742'}
                 title="Descargar Costos PDF"
               >
-                <FileText className="h-4 w-4 mr-2" />
-                Costos
+                <FileText className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Costos</span>
               </button>
               <Link
                 href={`/proyectos/editar/${proyecto.id}`}
-                className="text-white px-4 py-2 rounded-md transition-colors flex items-center"
+                className="text-white px-3 sm:px-4 py-2 rounded-md transition-colors flex items-center text-sm"
                 style={{backgroundColor: '#633722'}}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#38603B'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#633722'}
                 title="Editar Proyecto"
               >
-                <Edit className="h-4 w-4 mr-2" />
-                Editar
+                <Edit className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Editar</span>
               </Link>
             </div>
           </div>
