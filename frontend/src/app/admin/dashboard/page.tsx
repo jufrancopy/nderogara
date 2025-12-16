@@ -60,6 +60,8 @@ export default function AdminDashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [selectedMaterial, setSelectedMaterial] = useState<any>(null);
+  const [showOffersModal, setShowOffersModal] = useState(false);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -290,7 +292,6 @@ export default function AdminDashboardPage() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ofertas</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Propietario</th>
                       </tr>
@@ -316,11 +317,20 @@ export default function AdminDashboardPage() {
                               {material.usuarioId ? 'Proveedor' : 'Catálogo'}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {material.precio ? `₲${Number(material.precio).toLocaleString('es-PY')}` : '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {material.ofertas.length}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {material.ofertas.length > 0 ? (
+                              <button
+                                onClick={() => {
+                                  setSelectedMaterial(material);
+                                  setShowOffersModal(true);
+                                }}
+                                className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
+                              >
+                                {material.ofertas.length} oferta{material.ofertas.length !== 1 ? 's' : ''}
+                              </button>
+                            ) : (
+                              <span className="text-sm text-gray-500">Sin ofertas</span>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {material.usuarioId ? material.usuario?.name : 'Sistema'}
@@ -408,6 +418,79 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* Modal de Ofertas */}
+      {showOffersModal && selectedMaterial && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Ofertas para {selectedMaterial.nombre}</h3>
+                <p className="text-sm text-gray-500">{selectedMaterial.categoria.nombre}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowOffersModal(false);
+                  setSelectedMaterial(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="px-6 py-4 max-h-96 overflow-y-auto">
+              {selectedMaterial.ofertas && selectedMaterial.ofertas.length > 0 ? (
+                <div className="space-y-3">
+                  {selectedMaterial.ofertas.map((oferta: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-medium text-blue-600">#{index + 1}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{formatPrice(oferta.precio)}</p>
+                          <p className="text-xs text-gray-500">Oferta de precio</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-900">Proveedor</p>
+                        <p className="text-xs text-gray-500">{selectedMaterial.usuario?.name || 'Sistema'}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No hay ofertas disponibles para este material</p>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-600">
+                  Total de ofertas: <span className="font-medium">{selectedMaterial.ofertas?.length || 0}</span>
+                </p>
+                <button
+                  onClick={() => {
+                    setShowOffersModal(false);
+                    setSelectedMaterial(null);
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
