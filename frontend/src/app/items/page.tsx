@@ -191,10 +191,11 @@ export default function ItemsPage() {
             {user?.rol !== 'CLIENTE' && (
               <Link
                 href="/items/nuevo"
-                className="bg-[#38603B] text-white px-4 py-2 rounded-md hover:bg-[#2d4a2f] transition-colors flex items-center"
+                className="bg-[#38603B] text-white px-3 py-1 rounded text-sm transition-colors flex items-center hover:bg-[#2d4a2f] sm:px-4 sm:py-2 lg:px-4 lg:py-2"
+                title="Nuevo Item"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Item
+                <Plus className="h-4 w-4 sm:h-4 sm:w-4 lg:h-4 lg:w-4" />
+                <span className="hidden sm:inline ml-2">Nuevo Item</span>
               </Link>
             )}
           </div>
