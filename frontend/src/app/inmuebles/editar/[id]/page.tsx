@@ -189,7 +189,7 @@ export default function EditarInmueblePage() {
       };
 
       Object.entries(updateData).forEach(([key, value]) => {
-        if (value !== undefined && value !== '') {
+        if (value !== undefined && value !== null && value !== '') {
           formDataToSend.append(key, value.toString());
         }
       });
