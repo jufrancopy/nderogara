@@ -464,6 +464,18 @@ export default function ProyectoDetallePage() {
     setFinanciacionForm({...financiacionForm, monto: formattedValue})
   }
 
+  const handleDeleteFinanciacion = async (financiacionId: string) => {
+    try {
+      await api.delete(`/financiaciones/${financiacionId}`)
+      toast.success('Financiación eliminada exitosamente')
+      fetchFinanciaciones()
+    } catch (error: any) {
+      console.error('Error deleting financiacion:', error)
+      const errorMessage = error.response?.data?.error || 'Error al eliminar financiación'
+      toast.error(errorMessage)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -1171,8 +1183,23 @@ export default function ProyectoDetallePage() {
                                 <p className="text-sm text-gray-600">{financiacion.descripcion}</p>
                               )}
                             </div>
-                            <div className="text-right">
-                              <p className="text-lg font-bold text-green-600">{formatPrice(financiacion.monto)}</p>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <p className="text-lg font-bold text-green-600">{formatPrice(financiacion.monto)}</p>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  if (window.confirm(`¿Estás seguro de eliminar esta financiación de ${financiacion.fuente}?`)) {
+                                    handleDeleteFinanciacion(financiacion.id);
+                                  }
+                                }}
+                                className="text-red-600 hover:text-red-900 transition-colors p-1"
+                                title="Eliminar financiación"
+                              >
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
                             </div>
                           </div>
                         </div>
