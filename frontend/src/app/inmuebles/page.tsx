@@ -225,7 +225,7 @@ export default function InmueblesPage() {
                           }
                           // Si ya es una URL completa, usar tal cual
 
-                          console.log('DEBUG - Image URL for inmueble:', inmueble.titulo, 'Path:', imagePath, 'Final URL:', imageUrl);
+
 
                           return (
                             <img
