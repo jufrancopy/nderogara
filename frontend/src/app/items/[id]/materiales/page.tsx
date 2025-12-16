@@ -65,6 +65,11 @@ export default function MaterialesItemPage() {
     observaciones: string
   } | null>(null)
 
+  // Estados para búsqueda y paginación
+  const [materialSearchTerm, setMaterialSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
   // Detectar si viene desde proyecto
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const fromProyecto = searchParams.get('from') === 'proyecto'
@@ -74,6 +79,28 @@ export default function MaterialesItemPage() {
     fetchItem()
     fetchMateriales()
   }, [itemId])
+
+  // Efecto para resetear página cuando se busca
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [materialSearchTerm])
+
+  // Filtrar materiales del item
+  const filteredMaterialesPorItem = item?.materialesPorItem.filter(materialItem =>
+    materialItem.material.nombre.toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
+    materialItem.observaciones?.toLowerCase().includes(materialSearchTerm.toLowerCase())
+  ) || []
+
+  // Paginación
+  const totalPages = Math.ceil(filteredMaterialesPorItem.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentMaterialesPorItem = filteredMaterialesPorItem.slice(startIndex, endIndex)
+
+  // Funciones de paginación
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)))
+  }
 
   const fetchItem = async () => {
     try {
@@ -355,6 +382,26 @@ export default function MaterialesItemPage() {
             </div>
           )}
 
+          {/* Search Bar */}
+          {item?.materialesPorItem && item.materialesPorItem.length > 0 && (
+            <div className="mb-6">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar materiales en este item..."
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  value={materialSearchTerm}
+                  onChange={(e) => setMaterialSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Materials List */}
           <div className="bg-white shadow rounded-lg">
             {!item?.materialesPorItem.length ? (
@@ -391,7 +438,7 @@ export default function MaterialesItemPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {item?.materialesPorItem.map((materialItem) => (
+                    {currentMaterialesPorItem.map((materialItem) => (
                       <tr key={materialItem.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
@@ -483,6 +530,85 @@ export default function MaterialesItemPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Paginación - Footer de la tabla */}
+              {filteredMaterialesPorItem.length > itemsPerPage && (
+                <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                  <div className="flex-1 flex justify-between sm:hidden">
+                    <button
+                      onClick={() => goToPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Anterior
+                    </button>
+                    <button
+                      onClick={() => goToPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm text-gray-700">
+                        Mostrando{' '}
+                        <span className="font-medium">{startIndex + 1}</span>
+                        {' '}a{' '}
+                        <span className="font-medium">{Math.min(endIndex, filteredMaterialesPorItem.length)}</span>
+                        {' '}de{' '}
+                        <span className="font-medium">{filteredMaterialesPorItem.length}</span>
+                        {' '}resultados
+                      </p>
+                    </div>
+                    <div>
+                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <button
+                          onClick={() => goToPage(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span className="sr-only">Anterior</span>
+                          <
+                        </button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter(page => {
+                            const distance = Math.abs(page - currentPage);
+                            return distance === 0 || distance === 1 || page === 1 || page === totalPages;
+                          })
+                          .map((page, index, array) => (
+                            <div key={page} className="flex items-center">
+                              {index > 0 && array[index - 1] !== page - 1 && (
+                                <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                  ...
+                                </span>
+                              )}
+                              <button
+                                onClick={() => goToPage(page)}
+                                className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                  page === currentPage
+                                    ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            </div>
+                          ))}
+                        <button
+                          onClick={() => goToPage(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span className="sr-only">Siguiente</span>
+                          >
+                        </button>
+                      </nav>
+                    </div>
+                  </div>
+                </div>
+              )}
             )}
           </div>
         </div>
