@@ -23,6 +23,28 @@ export default function ProfilePage() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Determinar página anterior para navegación inteligente
+  const getPreviousPage = () => {
+    if (typeof window !== 'undefined') {
+      const referrer = document.referrer
+      // Si viene de cualquier página de la app (no externa), usar referrer
+      if (referrer && referrer.includes(window.location.origin)) {
+        return referrer
+      }
+    }
+    // Fallback a proyectos
+    return '/proyectos'
+  }
+
+  const handleGoBack = () => {
+    const previousPage = getPreviousPage()
+    if (previousPage !== window.location.href) {
+      window.location.href = previousPage
+    } else {
+      router.push('/proyectos')
+    }
+  }
+
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -154,12 +176,12 @@ export default function ProfilePage() {
         <div className="text-center">
           <User className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500 text-lg">No se pudo cargar el perfil</p>
-          <Link
-            href="/"
+          <button
+            onClick={handleGoBack}
             className="text-blue-600 hover:text-blue-700 mt-4 inline-block"
           >
-            Volver al inicio
-          </Link>
+            Volver atrás
+          </button>
         </div>
       </div>
     )
@@ -173,12 +195,13 @@ export default function ProfilePage() {
           {/* Page Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center">
-              <Link
-                href="/"
+              <button
+                onClick={handleGoBack}
                 className="mr-4 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md"
+                title="Volver"
               >
                 <ArrowLeft className="h-5 w-5" />
-              </Link>
+              </button>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">Mi Perfil</h2>
                 <p className="text-gray-600">Gestiona tu información personal</p>
