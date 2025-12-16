@@ -199,19 +199,32 @@ export const actualizarInmueble = async (request: FastifyRequest, reply: Fastify
     const user = request.user as any;
     const { id } = request.params as any;
 
+    console.log('🔍 Usuario intentando editar inmueble:', { userId: user.id, rol: user.rol, email: user.email });
+    console.log('🏠 ID del inmueble:', id);
+
     // Verificar permisos: propietario o administrador
     const whereClause: any = { id };
     if (user.rol !== 'ADMIN') {
       whereClause.usuarioId = user.id;
+      console.log('👤 Usuario NO es admin, verificando propiedad del inmueble');
+    } else {
+      console.log('👑 Usuario ES admin, puede editar cualquier inmueble');
     }
+
+    console.log('🔍 Cláusula WHERE para buscar inmueble:', whereClause);
 
     const inmuebleExistente = await prisma.inmueble.findFirst({
       where: whereClause
     });
 
+    console.log('🏠 Inmueble encontrado:', inmuebleExistente ? 'SÍ' : 'NO');
+
     if (!inmuebleExistente) {
+      console.log('❌ Permisos denegados o inmueble no encontrado');
       return reply.status(404).send({ success: false, error: 'Inmueble no encontrado o sin permisos' });
     }
+
+    console.log('✅ Permisos verificados correctamente');
 
     const isMultipart = request.headers['content-type']?.includes('multipart/form-data');
     let data: any = {};
