@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import PageLoader from '@/components/PageLoader';
 import { API_BASE_URL } from '@/lib/api';
+import { formatPrice } from '@/lib/formatters';
 import {
   Building2,
   Users,
@@ -219,7 +220,7 @@ export default function AdminDashboardPage() {
                       <p className="text-sm font-medium text-gray-900">{oferta.material.nombre}</p>
                       <p className="text-xs text-gray-500">{oferta.proveedor.usuario.name}</p>
                     </div>
-                    <span className="text-sm font-bold text-green-600">₲{oferta.precio.toLocaleString('es-PY')}</span>
+                    <span className="text-sm font-bold text-green-600">₲{formatPrice(oferta.precio)}</span>
                   </div>
                 ))}
                 {data.ofertasRecientes.length === 0 && (
