@@ -87,6 +87,7 @@ export default function MaterialesPage() {
 
   const totalPages = Math.ceil(filteredMateriales.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
   const paginatedMateriales = filteredMateriales.slice(startIndex, startIndex + itemsPerPage)
 
   useEffect(() => {
@@ -175,10 +176,11 @@ export default function MaterialesPage() {
             {user?.rol !== 'CLIENTE' && (
               <Link
                 href="/materiales/nuevo"
-                className="bg-[#38603B] text-white px-4 py-2 rounded-md hover:bg-[#2d4a2f] transition-colors flex items-center"
+                className="bg-[#38603B] text-white px-3 py-1 rounded text-sm transition-colors flex items-center hover:bg-[#2d4a2f] sm:px-4 sm:py-2 lg:px-4 lg:py-2"
+                title="Nuevo Material"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Material
+                <Plus className="h-4 w-4 sm:h-4 sm:w-4 lg:h-4 lg:w-4" />
+                <span className="hidden sm:inline ml-2">Nuevo Material</span>
               </Link>
             )}
           </div>
@@ -324,39 +326,84 @@ export default function MaterialesPage() {
               </div>
             )}
             
+            {/* Paginación - Footer de la tabla */}
             {filteredMateriales.length > itemsPerPage && (
-              <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                <div className="text-sm text-gray-500">
-                  Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, filteredMateriales.length)} de {filteredMateriales.length} materiales
-                </div>
-                <div className="flex gap-2">
+              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div className="flex-1 flex justify-between sm:hidden">
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Anterior
                   </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-1 border rounded ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white'
-                          : 'hover:bg-gray-50'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Siguiente
                   </button>
+                </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Mostrando{' '}
+                      <span className="font-medium">{startIndex + 1}</span>
+                      {' '}a{' '}
+                      <span className="font-medium">{Math.min(endIndex, filteredMateriales.length)}</span>
+                      {' '}de{' '}
+                      <span className="font-medium">{filteredMateriales.length}</span>
+                      {' '}resultados
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">Anterior</span>
+                        ‹
+                      </button>
+
+                      {/* Páginas */}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(page => {
+                          const distance = Math.abs(page - currentPage);
+                          return distance === 0 || distance === 1 || page === 1 || page === totalPages;
+                        })
+                        .map((page, index, array) => (
+                          <div key={page} className="flex items-center">
+                            {index > 0 && array[index - 1] !== page - 1 && (
+                              <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                ...
+                              </span>
+                            )}
+                            <button
+                              onClick={() => setCurrentPage(page)}
+                              className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                page === currentPage
+                                  ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                                  : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          </div>
+                        ))}
+
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">Siguiente</span>
+                        ›
+                      </button>
+                    </nav>
+                  </div>
                 </div>
               </div>
             )}
