@@ -33,8 +33,26 @@ export const proyectosController = {
         })
       }
 
+      const user = request.user as any
+      let whereClause = {}
+
+      // Administradores ven todos los proyectos
+      if (user.rol === 'ADMIN') {
+        whereClause = {}
+      }
+      // Clientes ven proyectos donde son el cliente (por email)
+      else if (user.rol === 'CLIENTE') {
+        whereClause = {
+          clienteEmail: user.email
+        }
+      }
+      // Otros roles ven solo sus proyectos creados
+      else {
+        whereClause = { usuarioId: user.id }
+      }
+
       const proyectos = await prisma.proyecto.findMany({
-        where: { usuarioId: (request.user as any).id },
+        where: whereClause,
         include: {
           usuario: {
             select: { id: true, name: true, email: true }
@@ -70,12 +88,30 @@ export const proyectosController = {
       }
 
       const { id } = request.params
+      const user = request.user as any
+      let whereClause: any = { id }
+
+      // Administradores pueden ver cualquier proyecto
+      if (user.rol === 'ADMIN') {
+        whereClause = { id }
+      }
+      // Clientes pueden ver proyectos donde son el cliente
+      else if (user.rol === 'CLIENTE') {
+        whereClause = {
+          id,
+          clienteEmail: user.email
+        }
+      }
+      // Otros roles solo ven sus proyectos creados
+      else {
+        whereClause = {
+          id,
+          usuarioId: user.id
+        }
+      }
 
       const proyecto = await prisma.proyecto.findFirst({
-        where: { 
-          id,
-          usuarioId: (request.user as any).id
-        },
+        where: whereClause,
         include: {
           usuario: {
             select: { id: true, name: true, email: true }
@@ -206,16 +242,28 @@ export const proyectosController = {
       }
 
       const { id } = request.params
+      const user = request.user as any
       const validatedData = createProyectoSchema.partial().parse(request.body)
 
+      // Verificar permisos según el rol
+      let whereClause: any = { id }
+
+      if (user.rol === 'ADMIN') {
+        whereClause = { id }
+      } else if (user.rol === 'CLIENTE') {
+        whereClause = { id, clienteEmail: user.email }
+      } else {
+        whereClause = { id, usuarioId: user.id }
+      }
+
       const existing = await prisma.proyecto.findFirst({
-        where: { id, usuarioId: request.user.id }
+        where: whereClause
       })
 
       if (!existing) {
         return reply.status(404).send({
           success: false,
-          error: 'Proyecto no encontrado'
+          error: 'Proyecto no encontrado o sin permisos'
         })
       }
 
@@ -266,15 +314,27 @@ export const proyectosController = {
       }
 
       const { id } = request.params
+      const user = request.user as any
+
+      // Verificar permisos según el rol
+      let whereClause: any = { id }
+
+      if (user.rol === 'ADMIN') {
+        whereClause = { id }
+      } else if (user.rol === 'CLIENTE') {
+        whereClause = { id, clienteEmail: user.email }
+      } else {
+        whereClause = { id, usuarioId: user.id }
+      }
 
       const existing = await prisma.proyecto.findFirst({
-        where: { id, usuarioId: (request.user as any).id }
+        where: whereClause
       })
 
       if (!existing) {
         return reply.status(404).send({
           success: false,
-          error: 'Proyecto no encontrado'
+          error: 'Proyecto no encontrado o sin permisos'
         })
       }
 
