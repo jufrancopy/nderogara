@@ -798,13 +798,52 @@ export default function MaterialesItemPage() {
               </div>
 
               {selectedMaterialForPago && (
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm font-medium text-blue-900">
-                    Material: {selectedMaterialForPago.material.nombre}
-                  </p>
-                  <p className="text-sm text-blue-700">
-                    Costo total: {formatPrice(selectedMaterialForPago.material.precioUnitario * selectedMaterialForPago.cantidadPorUnidad)}
-                  </p>
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-3">Resumen de Pago</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <p className="text-sm text-blue-600 font-medium">Monto Total</p>
+                      <p className="text-xl font-bold text-blue-900">
+                        {formatPrice(selectedMaterialForPago.material.precioUnitario * selectedMaterialForPago.cantidadPorUnidad)}
+                      </p>
+                    </div>
+
+                    {(() => {
+                      const estadoPago = estadoPagos[selectedMaterialForPago.id]
+                      if (estadoPago) {
+                        return (
+                          <>
+                            <div className="text-center">
+                              <p className="text-sm text-green-600 font-medium">Pagado</p>
+                              <p className="text-xl font-bold text-green-900">
+                                {formatPrice(estadoPago.totalPagado)}
+                              </p>
+                            </div>
+
+                            <div className="text-center">
+                              <p className="text-sm text-orange-600 font-medium">Pendiente</p>
+                              <p className={`text-xl font-bold ${
+                                estadoPago.pendiente > 0 ? 'text-orange-900' :
+                                estadoPago.pendiente < 0 ? 'text-red-900' : 'text-green-900'
+                              }`}>
+                                {estadoPago.pendiente !== 0 ? formatPrice(Math.abs(estadoPago.pendiente)) : '₲0'}
+                                {estadoPago.pendiente < 0 && (
+                                  <span className="text-xs text-red-600 block">(Sobre-pago)</span>
+                                )}
+                              </p>
+                            </div>
+                          </>
+                        )
+                      }
+                      return null
+                    })()}
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <p className="text-sm text-blue-800">
+                      <strong>Material:</strong> {selectedMaterialForPago.material.nombre}
+                    </p>
+                  </div>
                 </div>
               )}
 
