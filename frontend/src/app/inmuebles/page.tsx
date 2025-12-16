@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { MapPin, Home, Bath, Car, Waves, Trees, Search, Filter } from 'lucide-react';
+import { formatPrice } from '@/lib/formatters';
 
 interface Inmueble {
   id: string;
@@ -275,7 +276,7 @@ export default function InmueblesPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <span className="text-2xl font-bold" style={{color: '#38603B'}}>
-                            ₲ {inmueble.precio.toLocaleString()}
+                            ₲ {formatPrice(inmueble.precio)}
                           </span>
                           {inmueble.tipo === 'ALQUILER' && (
                             <span className="text-sm text-gray-500">/mes</span>
