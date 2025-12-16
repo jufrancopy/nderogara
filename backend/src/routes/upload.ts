@@ -64,12 +64,8 @@ export async function uploadRoutes(fastify: FastifyInstance) {
       const buffer = await data.toBuffer();
       await writeFile(filepath, buffer);
 
-      // Construir URL completa para producción
-      // En producción, los archivos estáticos se sirven desde el dominio del backend
-      const baseUrl = process.env.NODE_ENV === 'production'
-        ? 'https://apinderogara.thepydeveloper.dev'
-        : 'http://localhost:3001';
-      const url = `${baseUrl}/uploads/${filename}`;
+      // Devolver ruta relativa (los archivos estáticos se sirven desde el mismo dominio)
+      const url = `/uploads/${filename}`;
 
       console.log('🔗 URL generada:', url);
 
