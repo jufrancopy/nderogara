@@ -169,15 +169,11 @@ export default function InmuebleDetallePage() {
 
     // Función para obtener la URL correcta de la imagen
     const getImageUrl = (imagePath: string) => {
-      console.log('getImageUrl - Input:', imagePath);
       if (!imagePath.startsWith('http')) {
         // Es una ruta relativa, agregar el dominio
-        const fullUrl = `${process.env.NEXT_PUBLIC_API_URL}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
-        console.log('getImageUrl - Generated URL:', fullUrl);
-        return fullUrl;
+        return `${process.env.NEXT_PUBLIC_API_URL}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
       }
       // Si ya es una URL completa, usar tal cual
-      console.log('getImageUrl - Using as-is:', imagePath);
       return imagePath;
     };
 
@@ -185,7 +181,7 @@ export default function InmuebleDetallePage() {
 
     return (
       <div className="relative">
-        <div className="aspect-[16/9] bg-gray-200 overflow-hidden rounded-lg group relative">
+        <div className="aspect-[16/9] bg-gray-300 overflow-hidden rounded-lg group relative">
           <img
             src={currentImageUrl}
             alt={`${inmueble.titulo} - Imagen ${currentImageIndex + 1}`}
