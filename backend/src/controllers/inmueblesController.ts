@@ -101,11 +101,30 @@ export const crearInmueble = async (request: FastifyRequest, reply: FastifyReply
 
           // Crear directorio si no existe
           const inmueblesDir = path.join(process.cwd(), 'public', 'uploads', 'inmuebles');
+          console.log('📁 Verificando/creando directorio:', inmueblesDir);
           if (!fs.existsSync(inmueblesDir)) {
             fs.mkdirSync(inmueblesDir, { recursive: true });
+            console.log('✅ Directorio creado');
+          } else {
+            console.log('✅ Directorio ya existe');
           }
 
-          await pipeline(part.file, fs.createWriteStream(filepath));
+          console.log('💾 Iniciando guardado de archivo:', filepath);
+          try {
+            await pipeline(part.file, fs.createWriteStream(filepath));
+            console.log('✅ Archivo guardado exitosamente');
+
+            // Verificar que el archivo existe
+            if (fs.existsSync(filepath)) {
+              const stats = fs.statSync(filepath);
+              console.log('📊 Archivo verificado - Tamaño:', stats.size, 'bytes');
+            } else {
+              console.log('❌ ERROR: Archivo no existe después del guardado');
+            }
+          } catch (pipelineError) {
+            console.error('❌ ERROR en pipeline:', pipelineError);
+            throw pipelineError;
+          }
           imagenes.push(`/uploads/inmuebles/${filename}`);
         }
       }
