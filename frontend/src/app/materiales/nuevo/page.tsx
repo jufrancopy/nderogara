@@ -92,7 +92,17 @@ export default function NuevoMaterialPage() {
         { id: '1', nombre: 'Estructural' },
         { id: '2', nombre: 'Mampostería' },
         { id: '3', nombre: 'Acabados' },
-        { id: '4', nombre: 'Instalaciones' }
+        { id: '4', nombre: 'Instalaciones Eléctricas' },
+        { id: '5', nombre: 'Instalaciones Sanitarias' },
+        { id: '6', nombre: 'Herramientas' },
+        { id: '7', nombre: 'Construcción General' },
+        { id: '8', nombre: 'Aislantes' },
+        { id: '9', nombre: 'Fijaciones' },
+        { id: '10', nombre: 'Adhesivos y Selladores' },
+        { id: '11', nombre: 'Cubierta y Techos' },
+        { id: '12', nombre: 'Carpintería' },
+        { id: '13', nombre: 'Jardinería' },
+        { id: '14', nombre: 'Seguridad' }
       ])
     }
   }
