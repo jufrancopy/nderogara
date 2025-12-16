@@ -71,19 +71,25 @@ export default function InmuebleDetallePage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/inmuebles/${params.id}`);
       const data = await response.json();
-      
+
       if (data.success) {
         setInmueble(data.data);
-        
-        // Verificar si el usuario actual es el propietario
-        const token = localStorage.getItem('token');
-        if (token) {
+
+        // Verificar si el usuario puede editar/eliminar
+        const userData = localStorage.getItem('user');
+        if (userData) {
           try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            setIsOwner(payload.id === data.data.usuarioId);
-    } catch (error) {
-      console.error('Error al cargar inmueble:', error);
-    }
+            const user = JSON.parse(userData);
+            // Los administradores pueden editar cualquier inmueble
+            // Los propietarios pueden editar sus propios inmuebles
+            const canEdit = user.rol === 'ADMIN' || user.id === data.data.usuarioId;
+            setIsOwner(canEdit);
+          } catch (error) {
+            console.error('Error al verificar permisos:', error);
+            setIsOwner(false);
+          }
+        } else {
+          setIsOwner(false);
         }
       }
     } catch (error) {

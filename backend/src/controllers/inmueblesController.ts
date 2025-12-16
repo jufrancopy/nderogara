@@ -196,16 +196,21 @@ export const getMisInmuebles = async (request: FastifyRequest, reply: FastifyRep
 // Actualizar inmueble (autenticado)
 export const actualizarInmueble = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = (request.user as any).id;
+    const user = request.user as any;
     const { id } = request.params as any;
 
-    // Verificar que el inmueble pertenece al usuario
+    // Verificar permisos: propietario o administrador
+    const whereClause: any = { id };
+    if (user.rol !== 'ADMIN') {
+      whereClause.usuarioId = user.id;
+    }
+
     const inmuebleExistente = await prisma.inmueble.findFirst({
-      where: { id, usuarioId: userId }
+      where: whereClause
     });
 
     if (!inmuebleExistente) {
-      return reply.status(404).send({ success: false, error: 'Inmueble no encontrado' });
+      return reply.status(404).send({ success: false, error: 'Inmueble no encontrado o sin permisos' });
     }
 
     const isMultipart = request.headers['content-type']?.includes('multipart/form-data');
@@ -291,16 +296,21 @@ export const actualizarInmueble = async (request: FastifyRequest, reply: Fastify
 // Eliminar inmueble (autenticado)
 export const eliminarInmueble = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = (request.user as any).id;
+    const user = request.user as any;
     const { id } = request.params as any;
 
-    // Verificar que el inmueble pertenece al usuario
+    // Verificar permisos: propietario o administrador
+    const whereClause: any = { id };
+    if (user.rol !== 'ADMIN') {
+      whereClause.usuarioId = user.id;
+    }
+
     const inmuebleExistente = await prisma.inmueble.findFirst({
-      where: { id, usuarioId: userId }
+      where: whereClause
     });
 
     if (!inmuebleExistente) {
-      return reply.status(404).send({ success: false, error: 'Inmueble no encontrado' });
+      return reply.status(404).send({ success: false, error: 'Inmueble no encontrado o sin permisos' });
     }
 
     // Eliminar imágenes del disco si existen
