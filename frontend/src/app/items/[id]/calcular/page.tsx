@@ -117,7 +117,7 @@ export default function CalcularCostoPage() {
                   <button
                     onClick={calcularCosto}
                     disabled={loading || cantidad <= 0}
-                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center"
+                    className="w-full bg-[#38603B] text-white px-4 py-2 rounded-md hover:bg-[#2d4a2f] transition-colors disabled:opacity-50 flex items-center justify-center"
                   >
                     {loading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
