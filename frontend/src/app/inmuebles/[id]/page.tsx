@@ -7,6 +7,7 @@ import { ArrowLeft, MapPin, Home, Bath, Car, Waves, Trees, Phone, Mail, User, Bu
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
+import { formatPrice } from '@/lib/formatters';
 
 interface Inmueble {
   id: string;
@@ -162,14 +163,31 @@ export default function InmuebleDetallePage() {
       setCurrentImageIndex((prev) => (prev - 1 + imagenes.length) % imagenes.length);
     };
 
+    // Función para obtener la URL correcta de la imagen
+    const getImageUrl = (imagePath: string) => {
+      if (!imagePath.startsWith('http')) {
+        // Es una ruta relativa, agregar el dominio
+        return `${process.env.NEXT_PUBLIC_API_URL}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+      }
+      // Si ya es una URL completa, usar tal cual
+      return imagePath;
+    };
+
+    const currentImageUrl = getImageUrl(imagenes[currentImageIndex]);
+
     return (
       <div className="relative">
         <div className="aspect-[16/9] bg-gray-200 overflow-hidden rounded-lg">
-          <img 
-            src={`${process.env.NEXT_PUBLIC_API_URL}${imagenes[currentImageIndex]}`}
+          <img
+            src={currentImageUrl}
             alt={`${inmueble.titulo} - Imagen ${currentImageIndex + 1}`}
             className="w-full h-full object-cover cursor-pointer"
-            onClick={() => setModalImage(`${process.env.NEXT_PUBLIC_API_URL}${imagenes[currentImageIndex]}`)}
+            onClick={() => setModalImage(currentImageUrl)}
+            onError={(e) => {
+              console.error('Error loading image:', currentImageUrl);
+              // Fallback si la imagen no carga
+              (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjE4QzE0IDE5LjEgMTMuMSAyMCAxMiAyMEMxMC45IDIwIDEwIDE5LjEgMTAgMThWNFMxMC45IDIgMTIgMlpNMTIgNUEuNS41IDAgMCAxIDExLjUgNUMxMS41IDQuNSAxMiA0LjUgMTIgNFoiIGZpbGw9IiM5Q0E0QUYiLz4KPC9zdmc+';
+            }}
           />
         </div>
         
@@ -331,7 +349,7 @@ export default function InmuebleDetallePage() {
                   <div>
                     <h3 className="font-semibold mb-2">Costo de Construcción</h3>
                     <p className="text-2xl font-bold" style={{color: '#38603B'}}>
-                      ₲ {calcularCostoTotal().toLocaleString()}
+                      ₲ {formatPrice(calcularCostoTotal())}
                     </p>
                     <p className="text-sm text-gray-500">Costo real de construcción</p>
                   </div>
@@ -344,7 +362,7 @@ export default function InmuebleDetallePage() {
                       {inmueble.proyecto.presupuestoItems.slice(0, 5).map((item) => (
                         <div key={item.id} className="flex justify-between items-center py-2 border-b border-gray-100">
                           <span className="text-sm text-gray-600">{item.item.nombre}</span>
-                          <span className="text-sm font-medium">₲ {Number(item.costoTotal).toLocaleString()}</span>
+                          <span className="text-sm font-medium">₲ {formatPrice(Number(item.costoTotal))}</span>
                         </div>
                       ))}
                       {inmueble.proyecto.presupuestoItems.length > 5 && (
@@ -371,7 +389,7 @@ export default function InmuebleDetallePage() {
                   {inmueble.tipo}
                 </span>
                 <div className="text-3xl font-bold mb-2" style={{color: '#38603B'}}>
-                  ₲ {inmueble.precio.toLocaleString()}
+                  ₲ {formatPrice(inmueble.precio)}
                 </div>
                 {inmueble.tipo === 'ALQUILER' && (
                   <p className="text-gray-500">por mes</p>
