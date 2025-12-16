@@ -173,6 +173,20 @@ export default function NuevoProyectoPage() {
     }
   }
 
+  const formatMontoInput = (value: string) => {
+    // Remover todos los caracteres no numéricos excepto punto y coma
+    const numericValue = value.replace(/[^\d.,]/g, '')
+
+    // Convertir a número y formatear con separadores de miles
+    const number = parseFloat(numericValue.replace(/\./g, '').replace(',', '.'))
+    if (isNaN(number)) return ''
+
+    return number.toLocaleString('es-PY', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    })
+  }
+
   const onSubmit = async (data: ProyectoForm) => {
     setLoading(true)
     try {
@@ -195,10 +209,11 @@ export default function NuevoProyectoPage() {
       const proyectoCreado = response.data.data
 
       // Si se especificó financiación inicial, crearla
-      if (financiacionInicial.monto && parseFloat(financiacionInicial.monto) > 0) {
+      if (financiacionInicial.monto && parseFloat(financiacionInicial.monto.replace(/\./g, '').replace(',', '.')) > 0) {
         try {
+          const montoLimpio = financiacionInicial.monto.replace(/\./g, '').replace(',', '.')
           await api.post(`/proyectos/${proyectoCreado.id}/financiaciones`, {
-            monto: financiacionInicial.monto,
+            monto: montoLimpio,
             fuente: financiacionInicial.fuente,
             descripcion: financiacionInicial.descripcion
           })
@@ -461,14 +476,18 @@ export default function NuevoProyectoPage() {
                         Monto Inicial (Gs)
                       </label>
                       <input
-                        type="number"
-                        min="0.01"
-                        step="0.01"
+                        type="text"
                         value={financiacionInicial.monto}
-                        onChange={(e) => setFinanciacionInicial({...financiacionInicial, monto: e.target.value})}
+                        onChange={(e) => {
+                          const formattedValue = formatMontoInput(e.target.value)
+                          setFinanciacionInicial({...financiacionInicial, monto: formattedValue})
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="50000000"
+                        placeholder="50.000.000"
                       />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Ingresa el monto con separadores de miles
+                      </p>
                     </div>
 
                     <div className="md:col-span-2">
