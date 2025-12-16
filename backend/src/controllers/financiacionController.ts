@@ -23,12 +23,20 @@ export const getFinanciaciones = async (request: FastifyRequest, reply: FastifyR
 // Crear nueva financiación
 export const createFinanciacion = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const { proyectoId, monto, fuente, descripcion } = request.body as any;
+    const { proyectoId } = request.params as { proyectoId: string };
+    const { monto, fuente, descripcion, proyectoId: bodyProyectoId } = request.body as any;
+
+    // Si proyectoId viene en el body (por compatibilidad), usarlo
+    const finalProyectoId = proyectoId || bodyProyectoId;
+
+    if (!finalProyectoId) {
+      return reply.status(400).send({ success: false, error: 'ProyectoId es requerido' });
+    }
 
     // Verificar que el proyecto existe y pertenece al usuario
     const proyecto = await prisma.proyecto.findFirst({
       where: {
-        id: proyectoId,
+        id: finalProyectoId,
         usuarioId: (request.user as any).id
       }
     });
@@ -39,7 +47,7 @@ export const createFinanciacion = async (request: FastifyRequest, reply: Fastify
 
     const financiacion = await prisma.financiacion.create({
       data: {
-        proyectoId,
+        proyectoId: finalProyectoId,
         monto: parseFloat(monto),
         fuente,
         descripcion
