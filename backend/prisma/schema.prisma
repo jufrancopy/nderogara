@@ -464,3 +464,26 @@ enum TipoNotificacion {
   WARNING
   ERROR
 }
+
+// Sistema de Pagos por Material
+model PagoMaterial {
+  id              String   @id @default(cuid())
+  materialPorItemId String  // ID de la relación material-item específica
+  materialId      String   // ID del material
+  itemId          String   // ID del item
+  proyectoId      String   // ID del proyecto
+  montoPagado     Decimal  @db.Decimal(12, 2) // Monto pagado en este comprobante
+  comprobanteUrl  String   // URL de la imagen del comprobante
+  fechaPago       DateTime @default(now())
+  notas           String?  // Notas adicionales sobre el pago
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relaciones (por ahora sin foreign keys para evitar complejidad)
+  // materialPorItem MaterialPorItem @relation(fields: [materialPorItemId], references: [id], onDelete: Cascade)
+
+  @@index([materialPorItemId])
+  @@index([materialId])
+  @@index([itemId])
+  @@index([proyectoId])
+}
