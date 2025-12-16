@@ -49,6 +49,11 @@ export default function NuevoProyectoPage() {
   const [clientes, setClientes] = useState<User[]>([])
   const [constructores, setConstructores] = useState<User[]>([])
   const [loadingUsers, setLoadingUsers] = useState(false)
+  const [financiacionInicial, setFinanciacionInicial] = useState({
+    fuente: 'Capital propio',
+    monto: '',
+    descripcion: 'Financiación inicial del proyecto'
+  })
 
   const {
     register,
@@ -186,7 +191,25 @@ export default function NuevoProyectoPage() {
       console.log('🖼️ Imágenes a enviar:', imagenes)
       console.log('📄 imagenUrl serializada:', cleanData.imagenUrl)
 
-      await api.post('/proyectos', cleanData)
+      const response = await api.post('/proyectos', cleanData)
+      const proyectoCreado = response.data.data
+
+      // Si se especificó financiación inicial, crearla
+      if (financiacionInicial.monto && parseFloat(financiacionInicial.monto) > 0) {
+        try {
+          await api.post(`/proyectos/${proyectoCreado.id}/financiaciones`, {
+            monto: financiacionInicial.monto,
+            fuente: financiacionInicial.fuente,
+            descripcion: financiacionInicial.descripcion
+          })
+          console.log('💰 Financiación inicial creada')
+        } catch (financiacionError) {
+          console.error('Error creando financiación inicial:', financiacionError)
+          // No fallar el proceso completo por error en financiación
+          toast.error('Proyecto creado pero error al registrar financiación inicial')
+        }
+      }
+
       toast.success('Proyecto creado exitosamente')
       router.push('/proyectos')
     } catch (error: any) {
@@ -404,6 +427,62 @@ export default function NuevoProyectoPage() {
                       {...register('fechaFinEstimada')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     />
+                  </div>
+                </div>
+              </div>
+
+              {/* Financiación Inicial */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Financiación Inicial</h3>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-green-800 mb-4">
+                    Especifica la financiación inicial para este proyecto. Podrás agregar más financiaciones posteriormente.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Fuente de Financiamiento
+                      </label>
+                      <select
+                        value={financiacionInicial.fuente}
+                        onChange={(e) => setFinanciacionInicial({...financiacionInicial, fuente: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="Capital propio">Capital propio</option>
+                        <option value="Préstamo bancario">Préstamo bancario</option>
+                        <option value="Venta de activos">Venta de activos</option>
+                        <option value="Inversión externa">Inversión externa</option>
+                        <option value="Otros">Otros</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Monto Inicial (Gs)
+                      </label>
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={financiacionInicial.monto}
+                        onChange={(e) => setFinanciacionInicial({...financiacionInicial, monto: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="50000000"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Descripción (opcional)
+                      </label>
+                      <textarea
+                        value={financiacionInicial.descripcion}
+                        onChange={(e) => setFinanciacionInicial({...financiacionInicial, descripcion: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Detalles adicionales sobre esta financiación..."
+                        rows={2}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
