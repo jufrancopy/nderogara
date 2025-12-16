@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, Home, Bath, Car, Waves, Trees, Phone, Mail, User, Building2, Calculator, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Home, Bath, Car, Waves, Trees, Phone, Mail, User, Building2, Calculator, ChevronLeft, ChevronRight, Trash2, Edit, Save, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -60,6 +60,27 @@ export default function InmuebleDetallePage() {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Estados para edición
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editData, setEditData] = useState({
+    titulo: '',
+    descripcion: '',
+    tipo: 'VENTA' as 'VENTA' | 'ALQUILER',
+    precio: '',
+    precioFormateado: '',
+    direccion: '',
+    ciudad: '',
+    superficie: '',
+    habitaciones: '',
+    banos: '',
+    garaje: false,
+    piscina: false,
+    jardin: false,
+    contactoNombre: '',
+    contactoTelefono: ''
+  });
+
   useEffect(() => {
     if (params.id) {
       fetchInmueble();
@@ -104,6 +125,64 @@ export default function InmuebleDetallePage() {
   const calcularCostoTotal = () => {
     if (!inmueble?.proyecto?.presupuestoItems) return 0;
     return inmueble.proyecto.presupuestoItems.reduce((total, item) => total + Number(item.costoTotal), 0);
+  };
+
+  const formatMontoInput = (value: string) => {
+    // Remover todos los caracteres no numéricos excepto punto y coma
+    const numericValue = value.replace(/[^\d.,]/g, '')
+
+    // Convertir a número y formatear con separadores de miles
+    const number = parseFloat(numericValue.replace(/\./g, '').replace(',', '.'))
+    if (isNaN(number)) return ''
+
+    return number.toLocaleString('es-PY', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    })
+  }
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    try {
+      // Convertir precio formateado a número
+      const precioLimpio = editData.precioFormateado.replace(/\./g, '').replace(',', '.');
+      const precioNumerico = parseFloat(precioLimpio);
+
+      if (isNaN(precioNumerico) || precioNumerico <= 0) {
+        toast.error('Por favor ingresa un precio válido');
+        return;
+      }
+
+      const updateData = {
+        titulo: editData.titulo,
+        descripcion: editData.descripcion || null,
+        tipo: editData.tipo,
+        precio: precioNumerico,
+        direccion: editData.direccion,
+        ciudad: editData.ciudad,
+        superficie: editData.superficie ? parseFloat(editData.superficie) : null,
+        habitaciones: editData.habitaciones ? parseInt(editData.habitaciones) : null,
+        banos: editData.banos ? parseInt(editData.banos) : null,
+        garaje: editData.garaje,
+        piscina: editData.piscina,
+        jardin: editData.jardin,
+        contactoNombre: editData.contactoNombre,
+        contactoTelefono: editData.contactoTelefono
+      };
+
+      await api.put(`/inmuebles/${params.id}`, updateData);
+
+      // Actualizar el inmueble localmente
+      setInmueble(prev => prev ? { ...prev, ...updateData } : null);
+      setIsEditing(false);
+      toast.success('Inmueble actualizado exitosamente');
+    } catch (error: any) {
+      console.error('Error al actualizar inmueble:', error);
+      const errorMessage = error.response?.data?.error || 'Error al actualizar el inmueble';
+      toast.error(errorMessage);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDeleteClick = () => {
@@ -237,23 +316,104 @@ export default function InmuebleDetallePage() {
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{inmueble.titulo}</h1>
-              <div className="flex items-center text-gray-600 mt-2">
-                <MapPin className="h-4 w-4 mr-1" />
-                {inmueble.direccion}, {inmueble.ciudad}
-              </div>
+              {isEditing ? (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={editData.titulo}
+                    onChange={(e) => setEditData({...editData, titulo: e.target.value})}
+                    className="text-3xl font-bold text-gray-900 border border-gray-300 rounded px-2 py-1 w-full"
+                    placeholder="Título del inmueble"
+                  />
+                  <div className="flex items-center text-gray-600">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    <input
+                      type="text"
+                      value={editData.direccion}
+                      onChange={(e) => setEditData({...editData, direccion: e.target.value})}
+                      className="border border-gray-300 rounded px-2 py-1 mr-2"
+                      placeholder="Dirección"
+                    />
+                    <input
+                      type="text"
+                      value={editData.ciudad}
+                      onChange={(e) => setEditData({...editData, ciudad: e.target.value})}
+                      className="border border-gray-300 rounded px-2 py-1"
+                      placeholder="Ciudad"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h1 className="text-3xl font-bold text-gray-900">{inmueble.titulo}</h1>
+                  <div className="flex items-center text-gray-600 mt-2">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    {inmueble.direccion}, {inmueble.ciudad}
+                  </div>
+                </>
+              )}
             </div>
           </div>
           
           {isOwner && (
-            <button
-              onClick={handleDeleteClick}
-              disabled={deleting}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-            >
-              <Trash2 className="h-4 w-4" />
-              Eliminar
-            </button>
+            <div className="flex gap-3">
+              {!isEditing ? (
+                <button
+                  onClick={() => {
+                    // Inicializar datos de edición
+                    setEditData({
+                      titulo: inmueble.titulo,
+                      descripcion: inmueble.descripcion || '',
+                      tipo: inmueble.tipo,
+                      precio: inmueble.precio.toString(),
+                      precioFormateado: formatPrice(inmueble.precio),
+                      direccion: inmueble.direccion,
+                      ciudad: inmueble.ciudad,
+                      superficie: inmueble.superficie?.toString() || '',
+                      habitaciones: inmueble.habitaciones?.toString() || '',
+                      banos: inmueble.banos?.toString() || '',
+                      garaje: inmueble.garaje,
+                      piscina: inmueble.piscina,
+                      jardin: inmueble.jardin,
+                      contactoNombre: inmueble.contactoNombre,
+                      contactoTelefono: inmueble.contactoTelefono
+                    });
+                    setIsEditing(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Edit className="h-4 w-4" />
+                  Editar
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    <Save className="h-4 w-4" />
+                    {saving ? 'Guardando...' : 'Guardar'}
+                  </button>
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+                  >
+                    <X className="h-4 w-4" />
+                    Cancelar
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={handleDeleteClick}
+                disabled={deleting || saving}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                Eliminar
+              </button>
+            </div>
           )}
         </div>
 
@@ -269,9 +429,19 @@ export default function InmuebleDetallePage() {
             {/* Descripción */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-xl font-semibold mb-4">Descripción</h2>
-              <p className="text-gray-600 leading-relaxed">
-                {inmueble.descripcion || 'Sin descripción disponible'}
-              </p>
+              {isEditing ? (
+                <textarea
+                  value={editData.descripcion}
+                  onChange={(e) => setEditData({...editData, descripcion: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  rows={4}
+                  placeholder="Describe las características del inmueble..."
+                />
+              ) : (
+                <p className="text-gray-600 leading-relaxed">
+                  {inmueble.descripcion || 'Sin descripción disponible'}
+                </p>
+              )}
             </div>
 
             {/* Características */}
@@ -382,17 +552,49 @@ export default function InmuebleDetallePage() {
             {/* Precio y tipo */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="text-center">
-                <span 
-                  className="inline-block px-3 py-1 text-sm rounded text-white mb-3"
-                  style={{backgroundColor: inmueble.tipo === 'VENTA' ? '#38603B' : '#B99742'}}
-                >
-                  {inmueble.tipo}
-                </span>
-                <div className="text-3xl font-bold mb-2" style={{color: '#38603B'}}>
-                  ₲ {formatPrice(inmueble.precio)}
-                </div>
-                {inmueble.tipo === 'ALQUILER' && (
-                  <p className="text-gray-500">por mes</p>
+                {isEditing ? (
+                  <div className="space-y-4">
+                    <select
+                      value={editData.tipo}
+                      onChange={(e) => setEditData({...editData, tipo: e.target.value as 'VENTA' | 'ALQUILER'})}
+                      className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="VENTA">Venta</option>
+                      <option value="ALQUILER">Alquiler</option>
+                    </select>
+                    <div>
+                      <input
+                        type="text"
+                        value={editData.precioFormateado}
+                        onChange={(e) => {
+                          const formattedValue = formatMontoInput(e.target.value)
+                          setEditData({...editData, precioFormateado: formattedValue})
+                        }}
+                        className="text-3xl font-bold text-center border border-gray-300 rounded px-2 py-1 w-full"
+                        style={{color: '#38603B'}}
+                        placeholder="150.000.000"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Ingresa el precio con separadores de miles</p>
+                    </div>
+                    {editData.tipo === 'ALQUILER' && (
+                      <p className="text-gray-500">por mes</p>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <span
+                      className="inline-block px-3 py-1 text-sm rounded text-white mb-3"
+                      style={{backgroundColor: inmueble.tipo === 'VENTA' ? '#38603B' : '#B99742'}}
+                    >
+                      {inmueble.tipo}
+                    </span>
+                    <div className="text-3xl font-bold mb-2" style={{color: '#38603B'}}>
+                      ₲ {formatPrice(inmueble.precio)}
+                    </div>
+                    {inmueble.tipo === 'ALQUILER' && (
+                      <p className="text-gray-500">por mes</p>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -403,38 +605,68 @@ export default function InmuebleDetallePage() {
                 <User className="h-5 w-5 mr-2" />
                 Contacto
               </h3>
-              
+
               <div className="space-y-3">
-                <div>
-                  <p className="font-medium">{inmueble.contactoNombre}</p>
-                </div>
-                
-                <div className="flex items-center">
-                  <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                  <a href={`tel:${inmueble.contactoTelefono}`} className="text-blue-600 hover:text-blue-800">
-                    {inmueble.contactoTelefono}
-                  </a>
-                </div>
-                
-                {inmueble.contactoEmail && (
-                  <div className="flex items-center">
-                    <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                    <a href={`mailto:${inmueble.contactoEmail}`} className="text-blue-600 hover:text-blue-800">
-                      {inmueble.contactoEmail}
-                    </a>
-                  </div>
+                {isEditing ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                      <input
+                        type="text"
+                        value={editData.contactoNombre}
+                        onChange={(e) => setEditData({...editData, contactoNombre: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Nombre del contacto"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                      <input
+                        type="text"
+                        value={editData.contactoTelefono}
+                        onChange={(e) => setEditData({...editData, contactoTelefono: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="0981123456"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <p className="font-medium">{inmueble.contactoNombre}</p>
+                    </div>
+
+                    <div className="flex items-center">
+                      <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                      <a href={`tel:${inmueble.contactoTelefono}`} className="text-blue-600 hover:text-blue-800">
+                        {inmueble.contactoTelefono}
+                      </a>
+                    </div>
+
+                    {inmueble.contactoEmail && (
+                      <div className="flex items-center">
+                        <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                        <a href={`mailto:${inmueble.contactoEmail}`} className="text-blue-600 hover:text-blue-800">
+                          {inmueble.contactoEmail}
+                        </a>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
-              <button
-                className="w-full mt-4 text-white py-3 rounded-lg transition-colors"
-                style={{backgroundColor: '#38603B'}}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#633722'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#38603B'}
-                onClick={() => window.open(`https://wa.me/595${inmueble.contactoTelefono.replace(/\D/g, '')}?text=Hola, me interesa el inmueble: ${inmueble.titulo}`, '_blank')}
-              >
-                Contactar por WhatsApp
-              </button>
+              {!isEditing && (
+                <button
+                  className="w-full mt-4 text-white py-3 rounded-lg transition-colors"
+                  style={{backgroundColor: '#38603B'}}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#633722'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#38603B'}
+                  onClick={() => window.open(`https://wa.me/595${inmueble.contactoTelefono.replace(/\D/g, '')}?text=Hola, me interesa el inmueble: ${inmueble.titulo}`, '_blank')}
+                >
+                  Contactar por WhatsApp
+                </button>
+              )}
             </div>
 
             {/* Publicado por */}
