@@ -76,6 +76,12 @@ export default function MaterialesItemPage() {
   const [estadoPagos, setEstadoPagos] = useState<Record<string, any>>({})
   const [uploadingComprobante, setUploadingComprobante] = useState(false)
 
+  // Estados para ver detalles de pago
+  const [showPagoDetalleModal, setShowPagoDetalleModal] = useState(false)
+  const [selectedMaterialForDetalle, setSelectedMaterialForDetalle] = useState<MaterialPorItem | null>(null)
+  const [pagosMaterial, setPagosMaterial] = useState<any[]>([])
+  const [loadingPagos, setLoadingPagos] = useState(false)
+
   // Estados para búsqueda y paginación
   const [materialSearchTerm, setMaterialSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -200,14 +206,30 @@ export default function MaterialesItemPage() {
 
   const getEstadoPagoLabel = (materialItemId: string) => {
     const estado = estadoPagos[materialItemId]
-    if (!estado) return { label: 'Pendiente', color: 'bg-gray-100 text-gray-800' }
+    if (!estado) return { label: 'Pendiente', color: 'bg-gray-100 text-gray-800', clickable: false }
 
     if (estado.estado === 'COMPLETO') {
-      return { label: 'Pagado', color: 'bg-green-100 text-green-800' }
+      return { label: 'Pagado', color: 'bg-green-100 text-green-800', clickable: true }
     } else if (estado.estado === 'PARCIAL') {
-      return { label: `Parcial (${formatPrice(estado.totalPagado)}/${formatPrice(estado.costoTotal)})`, color: 'bg-yellow-100 text-yellow-800' }
+      return { label: `Parcial (${formatPrice(estado.totalPagado)}/${formatPrice(estado.costoTotal)})`, color: 'bg-yellow-100 text-yellow-800', clickable: true }
     }
-    return { label: 'Pendiente', color: 'bg-gray-100 text-gray-800' }
+    return { label: 'Pendiente', color: 'bg-gray-100 text-gray-800', clickable: true }
+  }
+
+  const handleVerDetallesPago = async (materialItem: MaterialPorItem) => {
+    setSelectedMaterialForDetalle(materialItem)
+    setLoadingPagos(true)
+    setShowPagoDetalleModal(true)
+
+    try {
+      const response = await api.get(`/materiales/${materialItem.id}/pagos`)
+      setPagosMaterial(response.data.data || [])
+    } catch (error) {
+      console.error('Error fetching pagos:', error)
+      setPagosMaterial([])
+    } finally {
+      setLoadingPagos(false)
+    }
   }
 
   const fetchItem = async () => {
@@ -586,9 +608,17 @@ export default function MaterialesItemPage() {
                           {formatPrice(materialItem.material.precioUnitario * materialItem.cantidadPorUnidad)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${getEstadoPagoLabel(materialItem.id).color}`}>
+                          <button
+                            onClick={() => getEstadoPagoLabel(materialItem.id).clickable && handleVerDetallesPago(materialItem)}
+                            className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                              getEstadoPagoLabel(materialItem.id).clickable
+                                ? `${getEstadoPagoLabel(materialItem.id).color} hover:opacity-80 cursor-pointer`
+                                : getEstadoPagoLabel(materialItem.id).color
+                            }`}
+                            title={getEstadoPagoLabel(materialItem.id).clickable ? "Ver detalles de pago" : "Sin pagos registrados"}
+                          >
                             {getEstadoPagoLabel(materialItem.id).label}
-                          </span>
+                          </button>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {editingMaterial?.id === materialItem.material.id ? (
@@ -855,6 +885,162 @@ export default function MaterialesItemPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de detalles de pago */}
+      {showPagoDetalleModal && selectedMaterialForDetalle && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Detalles de Pago</h2>
+                  <p className="text-gray-600 mt-1">
+                    Material: {selectedMaterialForDetalle.material.nombre}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowPagoDetalleModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Resumen de pago */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-blue-900 mb-2">Costo Total</h3>
+                  <p className="text-2xl font-bold text-blue-900">
+                    {formatPrice(selectedMaterialForDetalle.material.precioUnitario * selectedMaterialForDetalle.cantidadPorUnidad)}
+                  </p>
+                </div>
+
+                {(() => {
+                  const estado = estadoPagos[selectedMaterialForDetalle.id]
+                  if (!estado) return null
+
+                  return (
+                    <>
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h3 className="text-sm font-medium text-green-900 mb-2">Total Pagado</h3>
+                        <p className="text-2xl font-bold text-green-900">
+                          {formatPrice(estado.totalPagado)}
+                        </p>
+                      </div>
+
+                      <div className={`border rounded-lg p-4 ${
+                        estado.estado === 'COMPLETO'
+                          ? 'bg-green-50 border-green-200'
+                          : estado.estado === 'PARCIAL'
+                          ? 'bg-yellow-50 border-yellow-200'
+                          : 'bg-gray-50 border-gray-200'
+                      }`}>
+                        <h3 className={`text-sm font-medium mb-2 ${
+                          estado.estado === 'COMPLETO'
+                            ? 'text-green-900'
+                            : estado.estado === 'PARCIAL'
+                            ? 'text-yellow-900'
+                            : 'text-gray-900'
+                        }`}>
+                          Estado de Pago
+                        </h3>
+                        <p className={`text-xl font-bold ${
+                          estado.estado === 'COMPLETO'
+                            ? 'text-green-900'
+                            : estado.estado === 'PARCIAL'
+                            ? 'text-yellow-900'
+                            : 'text-gray-900'
+                        }`}>
+                          {estado.estado === 'COMPLETO' ? 'Pagado' :
+                           estado.estado === 'PARCIAL' ? 'Parcial' : 'Pendiente'}
+                        </p>
+                        {estado.pendiente > 0 && (
+                          <p className="text-sm mt-1">
+                            Pendiente: {formatPrice(estado.pendiente)}
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  )
+                })()}
+              </div>
+
+              {/* Historial de pagos */}
+              <div className="bg-white border border-gray-200 rounded-lg">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Historial de Pagos ({pagosMaterial.length})
+                  </h3>
+                </div>
+
+                <div className="p-6">
+                  {loadingPagos ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="mt-2 text-gray-500">Cargando pagos...</p>
+                    </div>
+                  ) : pagosMaterial.length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className="text-gray-400">
+                        <svg className="h-12 w-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p className="text-gray-500">No hay comprobantes de pago registrados</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {pagosMaterial.map((pago: any) => (
+                        <div key={pago.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h4 className="text-lg font-semibold text-gray-900">
+                                  {formatPrice(pago.montoPagado)}
+                                </h4>
+                                <span className="text-sm text-gray-500">
+                                  {new Date(pago.fechaPago).toLocaleDateString('es-PY')}
+                                </span>
+                              </div>
+                              {pago.notas && (
+                                <p className="text-sm text-gray-600">{pago.notas}</p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Imagen del comprobante */}
+                          {pago.comprobanteUrl && (
+                            <div className="mt-3">
+                              <p className="text-sm font-medium text-gray-700 mb-2">Comprobante:</p>
+                              <div className="bg-white border border-gray-200 rounded-lg p-2 inline-block">
+                                <img
+                                  src={`${process.env.NEXT_PUBLIC_API_URL}${pago.comprobanteUrl}`}
+                                  alt="Comprobante de pago"
+                                  className="max-w-xs max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}${pago.comprobanteUrl}`, '_blank')}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setShowPagoDetalleModal(false)}
+                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
         </div>
