@@ -218,13 +218,13 @@ export default function InmuebleDetallePage() {
               <ChevronRight className="h-5 w-5 text-gray-800" />
             </button>
             
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
               {imagenes.map((_: string, idx: number) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentImageIndex(idx)}
-                  className={`h-2 rounded-full transition-all ${
-                    idx === currentImageIndex ? 'w-8 bg-white' : 'w-2 bg-white/60'
+                  className={`h-2 w-2 rounded-full transition-all ${
+                    idx === currentImageIndex ? 'bg-white' : 'bg-white/50'
                   }`}
                 />
               ))}
