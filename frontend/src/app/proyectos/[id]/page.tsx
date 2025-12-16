@@ -427,7 +427,13 @@ export default function ProyectoDetallePage() {
     if (!financiacionForm.monto || !financiacionForm.fuente) return
 
     try {
-      await api.post(`/proyectos/${proyectoId}/financiaciones`, financiacionForm)
+      // Limpiar el monto formateado antes de enviar
+      const montoLimpio = financiacionForm.monto.replace(/\./g, '').replace(',', '.')
+
+      await api.post(`/proyectos/${proyectoId}/financiaciones`, {
+        ...financiacionForm,
+        monto: montoLimpio
+      })
       toast.success('Financiación agregada exitosamente')
       setShowFinanciacionForm(false)
       setFinanciacionForm({ monto: '', fuente: '', descripcion: '' })
@@ -437,6 +443,25 @@ export default function ProyectoDetallePage() {
       const errorMessage = error.response?.data?.error || 'Error al agregar financiación'
       toast.error(errorMessage)
     }
+  }
+
+  const formatMontoInput = (value: string) => {
+    // Remover todos los caracteres no numéricos excepto punto y coma
+    const numericValue = value.replace(/[^\d.,]/g, '')
+
+    // Convertir a número y formatear con separadores de miles
+    const number = parseFloat(numericValue.replace(/\./g, '').replace(',', '.'))
+    if (isNaN(number)) return ''
+
+    return number.toLocaleString('es-PY', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    })
+  }
+
+  const handleMontoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedValue = formatMontoInput(e.target.value)
+    setFinanciacionForm({...financiacionForm, monto: formattedValue})
   }
 
   if (loading) {
@@ -1308,15 +1333,16 @@ export default function ProyectoDetallePage() {
                     Monto *
                   </label>
                   <input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
+                    type="text"
                     value={financiacionForm.monto}
-                    onChange={(e) => setFinanciacionForm({...financiacionForm, monto: e.target.value})}
+                    onChange={handleMontoChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0.00"
+                    placeholder="50.000.000"
                     required
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Ingresa el monto con separadores de miles (ej: 50.000.000)
+                  </p>
                 </div>
 
                 <div>
