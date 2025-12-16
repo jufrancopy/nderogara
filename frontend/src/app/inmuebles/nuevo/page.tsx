@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
+import { formatPrice } from '@/lib/formatters';
 
 const inmuebleSchema = z.object({
   titulo: z.string().min(1, 'El título es requerido'),
@@ -40,6 +41,7 @@ export default function NuevoInmueblePage() {
   const [loading, setLoading] = useState(false);
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [imagenes, setImagenes] = useState<File[]>([]);
+  const [precioFormateado, setPrecioFormateado] = useState('');
 
   const {
     register,
@@ -79,13 +81,41 @@ export default function NuevoInmueblePage() {
     setImagenes(prev => prev.filter((_, i) => i !== index));
   };
 
+  const formatMontoInput = (value: string) => {
+    // Remover todos los caracteres no numéricos excepto punto y coma
+    const numericValue = value.replace(/[^\d.,]/g, '')
+
+    // Convertir a número y formatear con separadores de miles
+    const number = parseFloat(numericValue.replace(/\./g, '').replace(',', '.'))
+    if (isNaN(number)) return ''
+
+    return number.toLocaleString('es-PY', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    })
+  }
+
   const onSubmit = async (data: InmuebleForm) => {
     setLoading(true);
     try {
       const formData = new FormData();
-      
+
+      // Convertir precio formateado a número
+      const precioLimpio = precioFormateado.replace(/\./g, '').replace(',', '.');
+      const precioNumerico = parseFloat(precioLimpio);
+
+      if (isNaN(precioNumerico) || precioNumerico <= 0) {
+        toast.error('Por favor ingresa un precio válido');
+        return;
+      }
+
       // Agregar datos del formulario
-      Object.entries(data).forEach(([key, value]) => {
+      const formDataObj = {
+        ...data,
+        precio: precioNumerico
+      };
+
+      Object.entries(formDataObj).forEach(([key, value]) => {
         if (value !== undefined && value !== '') {
           formData.append(key, value.toString());
         }
@@ -164,11 +194,23 @@ export default function NuevoInmueblePage() {
                       Precio (₲) *
                     </label>
                     <input
-                      type="number"
-                      {...register('precio', { valueAsNumber: true })}
+                      type="text"
+                      value={precioFormateado}
+                      onChange={(e) => {
+                        const formattedValue = formatMontoInput(e.target.value)
+                        setPrecioFormateado(formattedValue)
+                        // Limpiar el valor del formulario para evitar conflictos
+                        const numericValue = parseFloat(formattedValue.replace(/\./g, '').replace(',', '.'))
+                        if (!isNaN(numericValue)) {
+                          // No usar setValue aquí para evitar conflictos con react-hook-form
+                        }
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
-                      placeholder="150000000"
+                      placeholder="150.000.000"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Ingresa el precio con separadores de miles
+                    </p>
                     {errors.precio && (
                       <p className="mt-1 text-sm text-red-600">{errors.precio.message}</p>
                     )}
