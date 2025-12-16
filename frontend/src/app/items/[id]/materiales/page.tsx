@@ -1017,12 +1017,29 @@ export default function MaterialesItemPage() {
                             <div className="mt-3">
                               <p className="text-sm font-medium text-gray-700 mb-2">Comprobante:</p>
                               <div className="bg-white border border-gray-200 rounded-lg p-2 inline-block">
-                                <img
-                                  src={`${process.env.NEXT_PUBLIC_API_URL}${pago.comprobanteUrl}`}
-                                  alt="Comprobante de pago"
-                                  className="max-w-xs max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                                  onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}${pago.comprobanteUrl}`, '_blank')}
-                                />
+                                {(() => {
+                                  // Determinar la URL correcta
+                                  let imageUrl = pago.comprobanteUrl;
+                                  if (!imageUrl.startsWith('http')) {
+                                    // Es una ruta relativa, agregar el dominio
+                                    imageUrl = `${process.env.NEXT_PUBLIC_API_URL}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+                                  }
+                                  // Si ya es una URL completa, usar tal cual
+
+                                  return (
+                                    <img
+                                      src={imageUrl}
+                                      alt="Comprobante de pago"
+                                      className="max-w-xs max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                                      onClick={() => window.open(imageUrl, '_blank')}
+                                      onError={(e) => {
+                                        console.error('Error loading image:', imageUrl);
+                                        // Fallback si la imagen no carga
+                                        (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjE4QzE0IDE5LjEgMTMuMSAyMCAxMiAyMEMxMC45IDIwIDEwIDE5LjEgMTAgMThWNFMxMC45IDIgMTIgMlpNMTIgNUEuNS41IDAgMCAxIDExLjUgNUMxMS41IDQuNSAxMiA0LjUgMTIgNFoiIGZpbGw9IiM5Q0E0QUYiLz4KPC9zdmc+';
+                                      }}
+                                    />
+                                  );
+                                })()}
                               </div>
                             </div>
                           )}

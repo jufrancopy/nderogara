@@ -13,6 +13,8 @@ export const getPagosMaterial = async (request: FastifyRequest, reply: FastifyRe
       orderBy: { fechaPago: 'desc' }
     });
 
+
+
     reply.send({ success: true, data: pagos });
   } catch (error) {
     console.error('Error al obtener pagos de material:', error);
