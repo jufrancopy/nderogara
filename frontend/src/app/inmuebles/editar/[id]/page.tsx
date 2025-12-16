@@ -84,7 +84,8 @@ export default function EditarInmueblePage() {
         proyectoId: inmueble.proyecto?.id || ''
       });
 
-      setPrecioFormateado(formatPrice(inmueble?.precio || 0));
+      // Solo el número formateado sin "Gs."
+      setPrecioFormateado(new Intl.NumberFormat('es-PY').format(inmueble.precio || 0));
 
       // Cargar imágenes existentes
       if (inmueble.imagenes) {
