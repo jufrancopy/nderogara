@@ -140,34 +140,21 @@ export const getEstadoPagoMaterial = async (request: FastifyRequest, reply: Fast
     const precioUnitario = Number(materialPorItem.material.precio || materialPorItem.material.precioBase || 0);
     const costoTotal = precioUnitario * Number(materialPorItem.cantidadPorUnidad);
 
-    console.log('DEBUG - Cálculo para materialPorItemId:', materialPorItemId);
-    console.log('DEBUG - precioUnitario:', precioUnitario);
-    console.log('DEBUG - cantidadPorUnidad:', materialPorItem.cantidadPorUnidad);
-    console.log('DEBUG - costoTotal:', costoTotal);
-
     // Obtener suma de todos los pagos para este material
     const pagos = await prisma.pagoMaterial.findMany({
       where: { materialPorItemId }
     });
 
-    console.log('DEBUG - Pagos encontrados:', pagos.length);
-    pagos.forEach(p => console.log('DEBUG - Pago:', p.montoPagado));
-
     const totalPagado = pagos.reduce((sum: number, pago: any) => sum + Number(pago.montoPagado), 0);
     const pendiente = costoTotal - totalPagado;
 
-    console.log('DEBUG - totalPagado:', totalPagado);
-    console.log('DEBUG - pendiente:', pendiente);
-
-    // Determinar estado - debe ser exactamente igual al costo total para estar completo
+    // Determinar estado - completo si se pagó al menos el costo total
     let estado = 'PENDIENTE';
-    if (totalPagado === costoTotal) {
+    if (totalPagado >= costoTotal) {
       estado = 'COMPLETO';
     } else if (totalPagado > 0) {
       estado = 'PARCIAL';
     }
-
-    console.log('DEBUG - estado final:', estado);
 
     reply.send({
       success: true,
