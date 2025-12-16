@@ -215,11 +215,31 @@ export default function InmueblesPage() {
                     {/* Imagen */}
                     <div className="h-48 bg-gray-200 overflow-hidden">
                       {imagenes.length > 0 ? (
-                        <img
-                          src={`${process.env.NEXT_PUBLIC_API_URL}${imagenes[0]}`}
-                          alt={inmueble.titulo}
-                          className="w-full h-full object-cover"
-                        />
+                        (() => {
+                          // Determinar la URL correcta de la imagen
+                          const imagePath = imagenes[0];
+                          let imageUrl = imagePath;
+                          if (!imagePath.startsWith('http')) {
+                            // Es una ruta relativa, agregar el dominio
+                            imageUrl = `${process.env.NEXT_PUBLIC_API_URL}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+                          }
+                          // Si ya es una URL completa, usar tal cual
+
+                          console.log('DEBUG - Image URL for inmueble:', inmueble.titulo, 'Path:', imagePath, 'Final URL:', imageUrl);
+
+                          return (
+                            <img
+                              src={imageUrl}
+                              alt={inmueble.titulo}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.error('Error loading image:', imageUrl);
+                                // Fallback si la imagen no carga
+                                (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjE4QzE0IDE5LjEgMTMuMSAyMCAxMiAyMEMxMC45IDIwIDEwIDE5LjEgMTAgMThWNFMxMC45IDIgMTIgMlpNMTIgNUEuNS41IDAgMCAxIDExLjUgNUMxMS41IDQuNSAxMiA0LjUgMTIgNFoiIGZpbGw9IiM5Q0E0QUYiLz4KPC9zdmc+';
+                              }}
+                            />
+                          );
+                        })()
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <Home className="h-12 w-12 text-gray-400" />
