@@ -36,7 +36,7 @@ export default function InmueblesPage() {
     precioMin: '',
     precioMax: ''
   });
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
 
   useEffect(() => {
     fetchInmuebles();
