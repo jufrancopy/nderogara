@@ -262,6 +262,7 @@ model Proyecto {
   cotizaciones        Cotizacion[]
   etapasObra          EtapaObra[]
   inmuebles           Inmueble[]        // Inmuebles basados en este proyecto
+  financiaciones      Financiacion[]    // Fuentes de financiamiento del proyecto
   notificaciones      Notificacion[]    // Notificaciones relacionadas con este proyecto
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
@@ -271,6 +272,20 @@ model Proyecto {
   @@index([esReferencia])
   @@index([ciudad])
   @@index([departamento])
+}
+
+model Financiacion {
+  id            String   @id @default(cuid())
+  proyectoId    String
+  proyecto      Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  monto         Decimal  @db.Decimal(12, 2) // Monto de esta financiación
+  fecha         DateTime @default(now())    // Fecha en que se agregó esta financiación
+  fuente        String   // Ej: "Capital propio", "Préstamo bancario", "Venta de activos", etc.
+  descripcion   String?  // Descripción detallada de esta financiación
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([proyectoId])
 }
 
 model PresupuestoItem {
