@@ -105,10 +105,8 @@ export const crearInmueble = async (request: FastifyRequest, reply: FastifyReply
             fs.mkdirSync(inmueblesDir, { recursive: true });
           }
 
-          console.log('Guardando imagen de inmueble:', filepath);
           await pipeline(part.file, fs.createWriteStream(filepath));
           imagenes.push(`/uploads/inmuebles/${filename}`);
-          console.log('Imagen guardada correctamente:', `/uploads/inmuebles/${filename}`);
         }
       }
     } else {
