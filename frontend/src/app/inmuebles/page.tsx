@@ -102,22 +102,26 @@ export default function InmueblesPage() {
             return token ? (
               <Link
                 href="/inmuebles/nuevo"
-                className="text-white px-6 py-3 rounded-lg transition-colors"
+                className="text-white px-3 py-1 rounded text-sm transition-colors flex items-center sm:px-6 sm:py-3 lg:px-6 lg:py-3"
                 style={{backgroundColor: '#38603B'}}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#633722'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#38603B'}
+                title="Publicar Inmueble"
               >
-                + Publicar Inmueble
+                <span className="text-lg sm:text-base">+</span>
+                <span className="hidden sm:inline ml-2">Publicar Inmueble</span>
               </Link>
             ) : (
               <Link
                 href="/login"
-                className="text-white px-6 py-3 rounded-lg transition-colors"
+                className="text-white px-3 py-1 rounded text-sm transition-colors flex items-center sm:px-6 sm:py-3 lg:px-6 lg:py-3"
                 style={{backgroundColor: '#38603B'}}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#633722'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#38603B'}
+                title="Publicar Inmueble"
               >
-                + Publicar Inmueble
+                <span className="text-lg sm:text-base">+</span>
+                <span className="hidden sm:inline ml-2">Publicar Inmueble</span>
               </Link>
             );
           })()}
