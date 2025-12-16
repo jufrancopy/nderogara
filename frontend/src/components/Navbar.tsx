@@ -238,8 +238,8 @@ export default function Navbar() {
                       <div className="text-xs text-green-600 font-semibold">🔧 Servicios</div>
                     )}
                   </div>
-                  <Link href="/proveedor/perfil" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={closeDropdown}>
-                    👤 Perfil
+                  <Link href="/perfil" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={closeDropdown}>
+                    👤 Mi Perfil
                   </Link>
                   <button
                     onClick={() => {
@@ -373,8 +373,8 @@ export default function Navbar() {
                     <LogOut className="h-4 w-4" />
                   </button>
                 </div>
-                <Link href="/proveedor/perfil" className="block py-2 text-sm text-gray-600 hover:text-gray-900" onClick={() => setMobileMenuOpen(false)}>
-                  👤 Perfil
+                <Link href="/perfil" className="block py-2 text-sm text-gray-600 hover:text-gray-900" onClick={() => setMobileMenuOpen(false)}>
+                  👤 Mi Perfil
                 </Link>
               </div>
             </div>

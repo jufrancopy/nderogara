@@ -140,3 +140,83 @@ export const getUsersByRole = async (request: FastifyRequest<{ Querystring: { ro
     reply.status(500).send({ success: false, error: 'Error al obtener usuarios' });
   }
 };
+
+export const updateProfile = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const userId = (request.user as any).id;
+    const { name, telefono, empresa } = request.body as any;
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name,
+        telefono,
+        empresa
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        rol: true,
+        telefono: true,
+        empresa: true,
+        image: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    reply.send({ success: true, data: user });
+  } catch (error) {
+    console.error('Error al actualizar perfil:', error);
+    reply.status(500).send({ success: false, error: 'Error al actualizar perfil' });
+  }
+};
+
+export const updateProfileImage = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const userId = (request.user as any).id;
+    const data = await request.file();
+
+    if (!data) {
+      return reply.status(400).send({ success: false, error: 'No se proporcionó imagen' });
+    }
+
+    const filename = `user_${userId}_${Date.now()}.${data.filename.split('.').pop()}`;
+    const filepath = `./public/uploads/users/${filename}`;
+
+    // Crear directorio si no existe
+    const fs = require('fs');
+    const path = require('path');
+    const dir = path.dirname(filepath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Guardar archivo
+    const buffer = await data.toBuffer();
+    fs.writeFileSync(filepath, buffer);
+
+    // Actualizar usuario
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { image: `/uploads/users/${filename}` },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        rol: true,
+        telefono: true,
+        empresa: true,
+        image: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    reply.send({ success: true, data: user });
+  } catch (error) {
+    console.error('Error al actualizar imagen de perfil:', error);
+    reply.status(500).send({ success: false, error: 'Error al actualizar imagen de perfil' });
+  }
+};
