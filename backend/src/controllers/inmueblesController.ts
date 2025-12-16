@@ -199,8 +199,10 @@ export const actualizarInmueble = async (request: FastifyRequest, reply: Fastify
     const user = request.user as any;
     const { id } = request.params as any;
 
-    console.log('🔍 Usuario intentando editar inmueble:', { userId: user.id, rol: user.rol, email: user.email });
+    console.log('🔍 Request.user completo:', JSON.stringify(request.user, null, 2));
+    console.log('🔍 Usuario intentando editar inmueble:', { userId: user?.id, rol: user?.rol, email: user?.email });
     console.log('🏠 ID del inmueble:', id);
+    console.log('🔍 Headers de autenticación:', request.headers.authorization ? 'Presente' : 'Ausente');
 
     // Verificar permisos: propietario o administrador
     const whereClause: any = { id };
