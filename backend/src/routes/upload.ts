@@ -199,4 +199,43 @@ export async function uploadRoutes(fastify: FastifyInstance) {
       reply.status(500).send({ success: false, error: 'Error al cargar galería' });
     }
   });
+
+  // GET /upload/debug-imagenes - Endpoint de debug para ver qué imágenes existen
+  fastify.get('/debug-imagenes', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+
+      const result: {
+        uploadsDirExists: boolean;
+        files: Array<{
+          name: string;
+          isDirectory: boolean;
+          path: string | null;
+          fullPath: string;
+        }>;
+      } = {
+        uploadsDirExists: fs.existsSync(uploadsDir),
+        files: []
+      };
+
+      if (result.uploadsDirExists) {
+        const files = await readdir(uploadsDir);
+        result.files = files.map(file => {
+          const filePath = path.join(uploadsDir, file);
+          const isDirectory = fs.statSync(filePath).isDirectory();
+          return {
+            name: file,
+            isDirectory,
+            path: isDirectory ? null : `/uploads/${file}`,
+            fullPath: filePath
+          };
+        });
+      }
+
+      reply.send({ success: true, data: result });
+    } catch (error) {
+      console.error('Error in debug-imagenes:', error);
+      reply.status(500).send({ success: false, error: 'Error al hacer debug de imágenes' });
+    }
+  });
 }
