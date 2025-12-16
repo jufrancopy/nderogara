@@ -667,15 +667,16 @@ export default function ProyectoDetallePage() {
                     <Calculator className="h-5 w-5 mr-2" />
                     Presupuesto
                   </h3>
-                  <button 
+                  <button
                     onClick={() => setShowAddForm(true)}
-                    className="text-white px-3 py-1 rounded text-sm transition-colors flex items-center"
+                    className="text-white px-3 py-1 rounded text-sm transition-colors flex items-center sm:px-3 sm:py-1 lg:px-3 lg:py-1"
                     style={{backgroundColor: '#38603B'}}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#633722'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#38603B'}
+                    title="Agregar Item"
                   >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Agregar Item
+                    <Plus className="h-4 w-4 sm:h-4 sm:w-4 lg:h-4 lg:w-4" />
+                    <span className="hidden sm:inline ml-1">Agregar Item</span>
                   </button>
                 </div>
 
