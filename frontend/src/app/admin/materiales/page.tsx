@@ -10,6 +10,7 @@ export default function AdminMaterialesPage() {
   const router = useRouter();
   const [materiales, setMateriales] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedMaterial, setSelectedMaterial] = useState<any>(null);
   const [deleteMaterialData, setDeleteMaterialData] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -115,11 +116,19 @@ export default function AdminMaterialesPage() {
     setDeleteMaterialData(null);
   };
 
+  // Filtrar materiales por término de búsqueda
+  const filteredMateriales = materiales.filter((material: any) =>
+    material.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    material.descripcion?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    material.categoria?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    material.unidad?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   // Paginación
-  const totalPages = Math.ceil(materiales.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredMateriales.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentMateriales = materiales.slice(startIndex, endIndex);
+  const currentMateriales = filteredMateriales.slice(startIndex, endIndex);
 
   const goToPage = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
@@ -146,12 +155,42 @@ export default function AdminMaterialesPage() {
             </Link>
           </div>
 
+          {/* Barra de búsqueda */}
+          {materiales.length > 0 && (
+            <div className="mb-6">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar materiales por nombre, descripción, categoría o unidad..."
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
           {materiales.length === 0 ? (
             <div className="bg-white rounded-lg shadow-sm p-12 text-center">
               <p className="text-gray-500 text-lg mb-4">No hay materiales en el catálogo</p>
               <p className="text-gray-400 text-sm">
                 Los proveedores podrán crear ofertas basadas en estos materiales
               </p>
+            </div>
+          ) : filteredMateriales.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+              <p className="text-gray-500 text-lg mb-4">No se encontraron materiales que coincidan con la búsqueda</p>
+              <button
+                onClick={() => setSearchTerm('')}
+                className="mt-2 text-blue-600 hover:text-blue-700 underline"
+              >
+                Limpiar búsqueda
+              </button>
             </div>
           ) : (
             <div className="bg-white shadow-sm rounded-lg overflow-hidden">
@@ -301,10 +340,15 @@ export default function AdminMaterialesPage() {
                         Mostrando{' '}
                         <span className="font-medium">{startIndex + 1}</span>
                         {' '}a{' '}
-                        <span className="font-medium">{Math.min(endIndex, materiales.length)}</span>
+                        <span className="font-medium">{Math.min(endIndex, filteredMateriales.length)}</span>
                         {' '}de{' '}
-                        <span className="font-medium">{materiales.length}</span>
+                        <span className="font-medium">{filteredMateriales.length}</span>
                         {' '}resultados
+                        {searchTerm && (
+                          <span className="text-gray-500">
+                            {' '}(filtrados de {materiales.length} totales)
+                          </span>
+                        )}
                       </p>
                     </div>
                     <div>
