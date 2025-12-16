@@ -81,37 +81,56 @@ export const getInmuebleById = async (request: FastifyRequest, reply: FastifyRep
 export const crearInmueble = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const userId = (request.user as any).id;
-    
+
     if (!userId) {
       return reply.status(401).send({ success: false, error: 'Usuario no autenticado' });
     }
-    
+
+    console.log('📨 Creando inmueble - User ID:', userId);
+    console.log('📨 Content-Type:', request.headers['content-type']);
+
     const isMultipart = request.headers['content-type']?.includes('multipart/form-data');
     let data: any = {};
     let imagenes: string[] = [];
-    
+
     if (isMultipart) {
+      console.log('📁 Procesando multipart form data');
       const parts = request.parts();
       for await (const part of parts) {
+        console.log('📦 Parte recibida:', { type: part.type, fieldname: part.fieldname, filename: (part as any).filename });
+
         if (part.type === 'field') {
           data[part.fieldname] = part.value;
+          console.log('📝 Campo:', part.fieldname, '=', part.value);
         } else if (part.type === 'file' && part.fieldname === 'imagenes') {
-          const filename = `${Date.now()}-${part.filename}`;
+          console.log('🖼️ Procesando imagen:', (part as any).filename);
+
+          const filename = `${Date.now()}-${(part as any).filename}`;
           const filepath = path.join(process.cwd(), 'public', 'uploads', 'inmuebles', filename);
 
           // Crear directorio si no existe
           const inmueblesDir = path.join(process.cwd(), 'public', 'uploads', 'inmuebles');
+          console.log('📁 Creando/verificando directorio:', inmueblesDir);
           if (!fs.existsSync(inmueblesDir)) {
             fs.mkdirSync(inmueblesDir, { recursive: true });
+            console.log('✅ Directorio creado');
           }
 
+          console.log('💾 Guardando archivo en:', filepath);
           await pipeline(part.file, fs.createWriteStream(filepath));
-          imagenes.push(`/uploads/inmuebles/${filename}`);
+          console.log('✅ Archivo guardado exitosamente');
+
+          const imageUrl = `/uploads/inmuebles/${filename}`;
+          imagenes.push(imageUrl);
+          console.log('🔗 URL generada:', imageUrl);
         }
       }
     } else {
+      console.log('📄 Procesando datos JSON normales');
       data = request.body as any;
     }
+
+    console.log('📊 Datos procesados:', { data, imagenesCount: imagenes.length });
 
     const inmuebleData = {
       titulo: data.titulo,
