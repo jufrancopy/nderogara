@@ -98,9 +98,17 @@ export const crearInmueble = async (request: FastifyRequest, reply: FastifyReply
         } else if (part.type === 'file' && part.fieldname === 'imagenes') {
           const filename = `${Date.now()}-${part.filename}`;
           const filepath = path.join(process.cwd(), 'public', 'uploads', 'inmuebles', filename);
-          
+
+          // Crear directorio si no existe
+          const inmueblesDir = path.join(process.cwd(), 'public', 'uploads', 'inmuebles');
+          if (!fs.existsSync(inmueblesDir)) {
+            fs.mkdirSync(inmueblesDir, { recursive: true });
+          }
+
+          console.log('Guardando imagen de inmueble:', filepath);
           await pipeline(part.file, fs.createWriteStream(filepath));
           imagenes.push(`/uploads/inmuebles/${filename}`);
+          console.log('Imagen guardada correctamente:', `/uploads/inmuebles/${filename}`);
         }
       }
     } else {
