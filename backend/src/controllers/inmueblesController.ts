@@ -177,9 +177,8 @@ export const getMisInmuebles = async (request: FastifyRequest, reply: FastifyRep
 // Actualizar inmueble (autenticado)
 export const actualizarInmueble = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = (request.user as any).userId;
+    const userId = (request.user as any).id;
     const { id } = request.params as any;
-    const data = request.body as any;
 
     // Verificar que el inmueble pertenece al usuario
     const inmuebleExistente = await prisma.inmueble.findFirst({
@@ -190,11 +189,76 @@ export const actualizarInmueble = async (request: FastifyRequest, reply: Fastify
       return reply.status(404).send({ success: false, error: 'Inmueble no encontrado' });
     }
 
+    const isMultipart = request.headers['content-type']?.includes('multipart/form-data');
+    let data: any = {};
+    let imagenes: string[] = [];
+
+    if (isMultipart) {
+      const parts = request.parts();
+      for await (const part of parts) {
+        if (part.type === 'field') {
+          data[part.fieldname] = part.value;
+        } else if (part.type === 'file' && part.fieldname === 'imagenes') {
+          const filename = `${Date.now()}-${(part as any).filename}`;
+          const filepath = path.join(process.cwd(), 'public', 'uploads', 'inmuebles', filename);
+
+          // Crear directorio si no existe
+          const inmueblesDir = path.join(process.cwd(), 'public', 'uploads', 'inmuebles');
+          if (!fs.existsSync(inmueblesDir)) {
+            fs.mkdirSync(inmueblesDir, { recursive: true });
+          }
+
+          await pipeline(part.file, fs.createWriteStream(filepath));
+          imagenes.push(`/uploads/inmuebles/${filename}`);
+        }
+      }
+    } else {
+      data = request.body as any;
+    }
+
+    // Procesar imágenes existentes
+    let imagenesFinales: string[] = [];
+    if (data.imagenesExistentes) {
+      try {
+        const existentes = JSON.parse(data.imagenesExistentes);
+        imagenesFinales = [...existentes];
+      } catch (error) {
+        console.error('Error parsing imagenesExistentes:', error);
+      }
+    }
+
+    // Agregar nuevas imágenes
+    imagenesFinales = [...imagenesFinales, ...imagenes];
+
+    const inmuebleData = {
+      titulo: data.titulo,
+      descripcion: data.descripcion || null,
+      tipo: data.tipo,
+      precio: parseFloat(data.precio),
+      direccion: data.direccion,
+      ciudad: data.ciudad,
+      superficie: data.superficie ? parseFloat(data.superficie) : null,
+      habitaciones: data.habitaciones ? parseInt(data.habitaciones) : null,
+      banos: data.banos ? parseInt(data.banos) : null,
+      garaje: data.garaje === 'true' || data.garaje === true,
+      piscina: data.piscina === 'true' || data.piscina === true,
+      jardin: data.jardin === 'true' || data.jardin === true,
+      contactoNombre: data.contactoNombre,
+      contactoTelefono: data.contactoTelefono,
+      proyectoId: data.proyectoId || null,
+      imagenes: imagenesFinales.length > 0 ? JSON.stringify(imagenesFinales) : null
+    };
+
     const inmueble = await prisma.inmueble.update({
       where: { id },
-      data: {
-        ...data,
-        precio: data.precio ? parseFloat(data.precio) : undefined
+      data: inmuebleData,
+      include: {
+        usuario: {
+          select: { name: true }
+        },
+        proyecto: {
+          select: { nombre: true }
+        }
       }
     });
 
