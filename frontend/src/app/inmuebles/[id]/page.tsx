@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, Home, Bath, Car, Waves, Trees, Phone, Mail, User, Building2, Calculator, ChevronLeft, ChevronRight, Trash2, Edit } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { ArrowLeft, MapPin, Home, Bath, Car, Waves, Trees, Phone, Mail, User, Building2, Calculator, ChevronLeft, ChevronRight, Trash2, Edit, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { formatPrice } from '@/lib/formatters';
@@ -181,12 +180,11 @@ export default function InmuebleDetallePage() {
 
     return (
       <div className="relative">
-        <div className="aspect-[16/9] bg-gray-300 overflow-hidden rounded-lg group relative">
+        <div className="aspect-[16/9] bg-gray-300 overflow-hidden rounded-lg group relative cursor-pointer" onClick={() => setModalImage(currentImageUrl)}>
           <img
             src={currentImageUrl}
             alt={`${inmueble.titulo} - Imagen ${currentImageIndex + 1}`}
-            className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
-            onClick={() => setModalImage(currentImageUrl)}
+            className="w-full h-full object-cover transition-transform group-hover:scale-105"
             onError={(e) => {
               console.error('Error loading image:', currentImageUrl);
               // Fallback si la imagen no carga
@@ -194,8 +192,8 @@ export default function InmuebleDetallePage() {
             }}
           />
           {/* Overlay para indicar que es clickeable */}
-          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="absolute inset-0 bg-opacity-0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+            <div className="transition-opacity duration-200 ">
               <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
               </svg>
@@ -237,6 +235,26 @@ export default function InmuebleDetallePage() {
         )}
       </div>
     );
+  };
+
+  // Función para obtener la URL correcta de la imagen
+  const getImageUrl = (imagePath: string) => {
+    if (!imagePath) return '';
+    if (!imagePath.startsWith('http')) {
+      // Es una ruta relativa, agregar el dominio
+      return `${process.env.NEXT_PUBLIC_API_URL}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+    }
+    // Si ya es una URL completa, usar tal cual
+    return imagePath;
+  };
+
+  const changeModalImage = (direction: 'next' | 'prev') => {
+    const currentIndex = imagenes.findIndex((img: string) => getImageUrl(img) === modalImage);
+    const totalImages = imagenes.length;
+    const newIndex = direction === 'next'
+      ? (currentIndex + 1) % totalImages
+      : (currentIndex - 1 + totalImages) % totalImages;
+    setModalImage(getImageUrl(imagenes[newIndex]));
   };
 
   return (
@@ -477,64 +495,41 @@ export default function InmuebleDetallePage() {
 
       {/* Modal de imagen ampliada */}
       {modalImage && (
-        <div className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50">
-          <div className="relative max-w-7xl max-h-full p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="relative w-full h-full flex items-center justify-center">
             {/* Botón cerrar */}
             <button
               onClick={() => setModalImage(null)}
-              className="absolute top-4 right-4 z-10 w-10 h-10 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center text-white text-xl transition-all"
+              className="absolute top-4 right-4 z-10 w-12 h-12 bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full flex items-center justify-center text-white transition-all"
             >
-              ×
+              <X className="h-6 w-6" />
             </button>
 
             {/* Navegación anterior */}
             {imagenes.length > 1 && (
               <button
-                onClick={() => {
-                  const currentIndex = imagenes.findIndex((img: string) => {
-                    const imgUrl = !img.startsWith('http') ? `${process.env.NEXT_PUBLIC_API_URL}${img.startsWith('/') ? '' : '/'}${img}` : img;
-                    return imgUrl === modalImage;
-                  });
-                  const prevIndex = currentIndex > 0 ? currentIndex - 1 : imagenes.length - 1;
-                  const prevImage = !imagenes[prevIndex].startsWith('http')
-                    ? `${process.env.NEXT_PUBLIC_API_URL}${imagenes[prevIndex].startsWith('/') ? '' : '/'}${imagenes[prevIndex]}`
-                    : imagenes[prevIndex];
-                  setModalImage(prevImage);
-                }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center text-white transition-all"
+                onClick={() => changeModalImage('prev')}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full flex items-center justify-center text-white text-3xl transition-all"
               >
-                ‹
+                <ChevronLeft className="h-6 w-6" />
               </button>
             )}
 
             {/* Navegación siguiente */}
             {imagenes.length > 1 && (
               <button
-                onClick={() => {
-                  const currentIndex = imagenes.findIndex((img: string) => {
-                    const imgUrl = !img.startsWith('http') ? `${process.env.NEXT_PUBLIC_API_URL}${img.startsWith('/') ? '' : '/'}${img}` : img;
-                    return imgUrl === modalImage;
-                  });
-                  const nextIndex = currentIndex < imagenes.length - 1 ? currentIndex + 1 : 0;
-                  const nextImage = !imagenes[nextIndex].startsWith('http')
-                    ? `${process.env.NEXT_PUBLIC_API_URL}${imagenes[nextIndex].startsWith('/') ? '' : '/'}${imagenes[nextIndex]}`
-                    : imagenes[nextIndex];
-                  setModalImage(nextImage);
-                }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center text-white transition-all"
+                onClick={() => changeModalImage('next')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full flex items-center justify-center text-white text-3xl transition-all"
               >
-                ›
+                <ChevronRight className="h-6 w-6" />
               </button>
             )}
 
             {/* Indicador de imagen actual */}
             {imagenes.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+              <div className="absolute bottom-5 left-1/2 -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
                 {(() => {
-                  const currentIndex = imagenes.findIndex((img: string) => {
-                    const imgUrl = !img.startsWith('http') ? `${process.env.NEXT_PUBLIC_API_URL}${img.startsWith('/') ? '' : '/'}${img}` : img;
-                    return imgUrl === modalImage;
-                  });
+                  const currentIndex = imagenes.findIndex((img: string) => getImageUrl(img) === modalImage);
                   return `${currentIndex + 1} / ${imagenes.length}`;
                 })()}
               </div>
@@ -544,7 +539,7 @@ export default function InmuebleDetallePage() {
             <img
               src={modalImage}
               alt="Imagen ampliada"
-              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+              className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
               onClick={(e) => {
                 // Cerrar modal al hacer click fuera de la imagen
                 if (e.target === e.currentTarget) {
