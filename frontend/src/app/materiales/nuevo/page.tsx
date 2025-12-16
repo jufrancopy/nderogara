@@ -45,6 +45,7 @@ export default function NuevoMaterialPage() {
   const [currentImageUrl, setCurrentImageUrl] = useState<string>('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string>('')
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const {
     register,
@@ -63,6 +64,13 @@ export default function NuevoMaterialPage() {
   useEffect(() => {
     fetchCategorias()
     fetchGaleria()
+
+    // Determinar si el usuario es admin
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      const user = JSON.parse(userData)
+      setIsAdmin(user.rol === 'ADMIN')
+    }
   }, [])
 
   const fetchGaleria = async () => {
@@ -263,35 +271,26 @@ export default function NuevoMaterialPage() {
                     )}
                   </div>
 
-                  {(() => {
-                    const userData = typeof window !== 'undefined' ? localStorage.getItem('user') : null
-                    const user = userData ? JSON.parse(userData) : null
-                    const isAdmin = user?.rol === 'ADMIN'
-
-                    if (isAdmin) {
-                      return (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Precio Base de Mercado (₲)
-                          </label>
-                          <input
-                            type="number"
-                            step="1"
-                            {...register('precioBase', { valueAsNumber: true })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Precio de referencia"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Precio promedio de mercado para cálculos aproximados (solo para catálogo admin)
-                          </p>
-                          {errors.precioBase && (
-                            <p className="mt-1 text-sm text-red-600">{errors.precioBase.message}</p>
-                          )}
-                        </div>
-                      )
-                    }
-                    return null
-                  })()}
+                  {isAdmin && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Precio Base de Mercado (₲)
+                      </label>
+                      <input
+                        type="number"
+                        step="1"
+                        {...register('precioBase', { valueAsNumber: true })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Precio de referencia"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Precio promedio de mercado para cálculos aproximados (solo para catálogo admin)
+                      </p>
+                      {errors.precioBase && (
+                        <p className="mt-1 text-sm text-red-600">{errors.precioBase.message}</p>
+                      )}
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
