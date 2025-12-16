@@ -154,11 +154,15 @@ export default function NuevoInmueblePage() {
       });
 
       // Agregar imágenes
-      imagenes.forEach((imagen) => {
+      console.log('🖼️ Agregando', imagenes.length, 'imágenes al formData');
+      imagenes.forEach((imagen, index) => {
+        console.log('📎 Imagen', index + 1, ':', imagen.name, '(', imagen.size, 'bytes)');
         formData.append('imagenes', imagen);
       });
 
-      await api.post('/inmuebles', formData);
+      console.log('🚀 Enviando request a /inmuebles');
+      const response = await api.post('/inmuebles', formData);
+      console.log('✅ Response recibido:', response.data);
 
       toast.success('Inmueble publicado exitosamente');
       router.push('/inmuebles');
