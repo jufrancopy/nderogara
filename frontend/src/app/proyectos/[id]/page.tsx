@@ -123,6 +123,7 @@ export default function ProyectoDetallePage() {
     fuente: '',
     descripcion: ''
   })
+  const [financiacionToDelete, setFinanciacionToDelete] = useState<any>(null)
 
   // Efecto para manejar la tecla Escape en el modal de imagen
   useEffect(() => {
@@ -1188,11 +1189,7 @@ export default function ProyectoDetallePage() {
                                 <p className="text-lg font-bold text-green-600">{formatPrice(financiacion.monto)}</p>
                               </div>
                               <button
-                                onClick={() => {
-                                  if (window.confirm(`¿Estás seguro de eliminar esta financiación de ${financiacion.fuente}?`)) {
-                                    handleDeleteFinanciacion(financiacion.id);
-                                  }
-                                }}
+                                onClick={() => setFinanciacionToDelete(financiacion)}
                                 className="text-red-600 hover:text-red-900 transition-colors p-1"
                                 title="Eliminar financiación"
                               >
@@ -1401,6 +1398,38 @@ export default function ProyectoDetallePage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación de eliminación de financiación */}
+      {financiacionToDelete && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg text-error">Confirmar Eliminación</h3>
+            <p className="py-4">
+              ¿Estás seguro de que quieres eliminar la financiación de <strong>"{financiacionToDelete.fuente}"</strong> por un monto de <strong>{formatPrice(financiacionToDelete.monto)}</strong>?
+            </p>
+            <p className="text-sm text-gray-600 mb-4">
+              Esta acción no se puede deshacer. La financiación será eliminada permanentemente del proyecto.
+            </p>
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setFinanciacionToDelete(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn btn-error"
+                onClick={() => {
+                  handleDeleteFinanciacion(financiacionToDelete.id);
+                  setFinanciacionToDelete(null);
+                }}
+              >
+                Eliminar
+              </button>
             </div>
           </div>
         </div>
