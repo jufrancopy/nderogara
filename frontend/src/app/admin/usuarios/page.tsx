@@ -220,13 +220,14 @@ export default function AdminUsuariosPage() {
             <h2 className="text-2xl font-bold text-gray-900">Administrar Usuarios</h2>
             <button
               onClick={() => openModal()}
-              className="flex items-center gap-2 text-white px-4 py-2 rounded-md transition-colors"
+              className="flex items-center gap-2 text-white px-3 py-1 rounded text-sm transition-colors sm:px-4 sm:py-2 lg:px-4 lg:py-2"
               style={{backgroundColor: '#38603B'}}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#633722'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#38603B'}
+              title="Nuevo Usuario"
             >
-              <Plus className="h-4 w-4" />
-              Nuevo Usuario
+              <Plus className="h-4 w-4 sm:h-4 sm:w-4 lg:h-4 lg:w-4" />
+              <span className="hidden sm:inline ml-2">Nuevo Usuario</span>
             </button>
           </div>
 
