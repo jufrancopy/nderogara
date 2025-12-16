@@ -95,7 +95,7 @@ export default function NuevoInmueblePage() {
     })
   }
 
-  const onSubmit = async (data: InmuebleForm) => {
+  const onSubmit = async () => {
     setLoading(true);
     try {
       const formData = new FormData();
@@ -109,10 +109,42 @@ export default function NuevoInmueblePage() {
         return;
       }
 
+      // Obtener valores del formulario
+      const titulo = (document.querySelector('input[name="titulo"]') as HTMLInputElement)?.value;
+      const descripcion = (document.querySelector('textarea[name="descripcion"]') as HTMLTextAreaElement)?.value;
+      const tipo = (document.querySelector('select[name="tipo"]') as HTMLSelectElement)?.value;
+      const direccion = (document.querySelector('input[name="direccion"]') as HTMLInputElement)?.value;
+      const ciudad = (document.querySelector('input[name="ciudad"]') as HTMLInputElement)?.value;
+      const superficie = (document.querySelector('input[name="superficie"]') as HTMLInputElement)?.value;
+      const habitaciones = (document.querySelector('input[name="habitaciones"]') as HTMLInputElement)?.value;
+      const banos = (document.querySelector('input[name="banos"]') as HTMLInputElement)?.value;
+      const contactoNombre = (document.querySelector('input[name="contactoNombre"]') as HTMLInputElement)?.value;
+      const contactoTelefono = (document.querySelector('input[name="contactoTelefono"]') as HTMLInputElement)?.value;
+      const proyectoId = (document.querySelector('select[name="proyectoId"]') as HTMLSelectElement)?.value;
+
+      // Validaciones básicas
+      if (!titulo || !tipo || !direccion || !ciudad || !contactoNombre || !contactoTelefono) {
+        toast.error('Por favor completa todos los campos obligatorios');
+        return;
+      }
+
       // Agregar datos del formulario
       const formDataObj = {
-        ...data,
-        precio: precioNumerico
+        titulo,
+        descripcion: descripcion || '',
+        tipo,
+        precio: precioNumerico,
+        direccion,
+        ciudad,
+        superficie: superficie ? parseFloat(superficie) : undefined,
+        habitaciones: habitaciones ? parseInt(habitaciones) : undefined,
+        banos: banos ? parseInt(banos) : undefined,
+        garaje: (document.querySelector('input[name="garaje"]') as HTMLInputElement)?.checked || false,
+        piscina: (document.querySelector('input[name="piscina"]') as HTMLInputElement)?.checked || false,
+        jardin: (document.querySelector('input[name="jardin"]') as HTMLInputElement)?.checked || false,
+        contactoNombre,
+        contactoTelefono,
+        proyectoId: proyectoId || undefined
       };
 
       Object.entries(formDataObj).forEach(([key, value]) => {
@@ -156,7 +188,7 @@ export default function NuevoInmueblePage() {
 
           {/* Form */}
           <div className="bg-white shadow rounded-lg">
-            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+            <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="p-6 space-y-6">
               {/* Información Básica */}
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Información del Inmueble</h3>
