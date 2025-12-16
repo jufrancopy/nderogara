@@ -22,6 +22,30 @@ const createProyectoSchema = z.object({
   imagenUrl: z.string().optional(),
 })
 
+// Helper para construir la cláusula de autorización basada en el rol del usuario
+const getAuthWhereClause = (user: any, id?: string) => {
+  const where: { id?: string; usuarioId?: string; clienteEmail?: string } = {}
+
+  if (id) {
+    where.id = id
+  }
+
+  switch (user.rol) {
+    case 'ADMIN':
+      // Los administradores pueden acceder a todo, no se aplica filtro de usuario.
+      break
+    case 'CLIENTE':
+      // Los clientes solo ven proyectos donde su email coincide.
+      where.clienteEmail = user.email
+      break
+    default:
+      // Otros roles (CONSTRUCTOR, etc.) solo ven los proyectos que crearon.
+      where.usuarioId = user.id
+      break
+  }
+  return where
+}
+
 export const proyectosController = {
   // GET /proyectos
   async getProyectos(request: FastifyRequest, reply: FastifyReply) {
@@ -33,23 +57,7 @@ export const proyectosController = {
         })
       }
 
-      const user = request.user as any
-      let whereClause = {}
-
-      // Administradores ven todos los proyectos
-      if (user.rol === 'ADMIN') {
-        whereClause = {}
-      }
-      // Clientes ven proyectos donde son el cliente (por email)
-      else if (user.rol === 'CLIENTE') {
-        whereClause = {
-          clienteEmail: user.email
-        }
-      }
-      // Otros roles ven solo sus proyectos creados
-      else {
-        whereClause = { usuarioId: user.id }
-      }
+      const whereClause = getAuthWhereClause(request.user)
 
       const proyectos = await prisma.proyecto.findMany({
         where: whereClause,
@@ -88,27 +96,7 @@ export const proyectosController = {
       }
 
       const { id } = request.params
-      const user = request.user as any
-      let whereClause: any = { id }
-
-      // Administradores pueden ver cualquier proyecto
-      if (user.rol === 'ADMIN') {
-        whereClause = { id }
-      }
-      // Clientes pueden ver proyectos donde son el cliente
-      else if (user.rol === 'CLIENTE') {
-        whereClause = {
-          id,
-          clienteEmail: user.email
-        }
-      }
-      // Otros roles solo ven sus proyectos creados
-      else {
-        whereClause = {
-          id,
-          usuarioId: user.id
-        }
-      }
+      const whereClause = getAuthWhereClause(request.user, id)
 
       const proyecto = await prisma.proyecto.findFirst({
         where: whereClause,
@@ -156,7 +144,7 @@ export const proyectosController = {
           error: 'No autenticado',
         })
       }
-      const usuarioId = (request.user as any).id
+      const { id: usuarioId } = request.user
 
       console.log('📝 Creating proyecto with data:', request.body)
       console.log('🖼️ imagenUrl received:', (request.body as any).imagenUrl)
@@ -166,7 +154,7 @@ export const proyectosController = {
       const proyecto = await prisma.proyecto.create({
         data: {
           ...validatedData,
-          usuarioId: usuarioId,
+          usuarioId,
           fechaInicio: validatedData.fechaInicio ? new Date(validatedData.fechaInicio) : null,
           fechaFinEstimada: validatedData.fechaFinEstimada ? new Date(validatedData.fechaFinEstimada) : null,
         },
@@ -242,22 +230,10 @@ export const proyectosController = {
       }
 
       const { id } = request.params
-      const user = request.user as any
       const validatedData = createProyectoSchema.partial().parse(request.body)
 
-      // Verificar permisos según el rol
-      let whereClause: any = { id }
-
-      if (user.rol === 'ADMIN') {
-        whereClause = { id }
-      } else if (user.rol === 'CLIENTE') {
-        whereClause = { id, clienteEmail: user.email }
-      } else {
-        whereClause = { id, usuarioId: user.id }
-      }
-
       const existing = await prisma.proyecto.findFirst({
-        where: whereClause
+        where: getAuthWhereClause(request.user, id)
       })
 
       if (!existing) {
@@ -314,21 +290,9 @@ export const proyectosController = {
       }
 
       const { id } = request.params
-      const user = request.user as any
-
-      // Verificar permisos según el rol
-      let whereClause: any = { id }
-
-      if (user.rol === 'ADMIN') {
-        whereClause = { id }
-      } else if (user.rol === 'CLIENTE') {
-        whereClause = { id, clienteEmail: user.email }
-      } else {
-        whereClause = { id, usuarioId: user.id }
-      }
 
       const existing = await prisma.proyecto.findFirst({
-        where: whereClause
+        where: getAuthWhereClause(request.user, id)
       })
 
       if (!existing) {
@@ -369,22 +333,35 @@ export const proyectosController = {
       }
 
       const { id } = request.params
-      const { estado } = request.body
+      
+      // 1. Definir los estados válidos (deben coincidir con tu schema de Prisma)
+      const estadoSchema = z.object({
+        estado: z.enum(['PENDIENTE', 'EN_PROGRESO', 'COMPLETADO', 'CANCELADO'])
+      });
+
+      // 2. Validar el cuerpo de la petición
+      const { estado } = estadoSchema.parse(request.body);
+
+      const user = request.user;
 
       const existing = await prisma.proyecto.findFirst({
-        where: { id, usuarioId: (request.user as any).id }
+        // Solo el creador del proyecto o un admin puede cambiar el estado
+        where: { 
+          id,
+          ...(user.rol !== 'ADMIN' && { usuarioId: user.id })
+        }
       })
 
       if (!existing) {
         return reply.status(404).send({
           success: false,
-          error: 'Proyecto no encontrado'
+          error: 'Proyecto no encontrado o sin permisos para modificar'
         })
       }
 
       const proyecto = await prisma.proyecto.update({
         where: { id },
-        data: { estado: estado as any },
+        data: { estado }, // 3. Usar el estado ya validado y tipado
         include: {
           usuario: {
             select: { id: true, name: true, email: true }
@@ -398,11 +375,58 @@ export const proyectosController = {
         message: 'Estado del proyecto actualizado'
       })
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Estado inválido',
+          details: error.errors
+        })
+      }
+
       console.error('Error updating proyecto estado:', error)
       return reply.status(500).send({
         success: false,
         error: 'Error interno del servidor'
       })
     }
-  }
+  },
+
+  // GET /proyectos/:id/financiaciones
+  async getFinanciacionesForProyecto(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    try {
+      if (!request.user) {
+        return reply.status(401).send({ success: false, error: 'No autenticado' });
+      }
+
+      const { id: proyectoId } = request.params;
+
+      // 1. Verificar que el usuario tiene acceso a este proyecto
+      const projectAuthClause = getAuthWhereClause(request.user, proyectoId);
+      const proyecto = await prisma.proyecto.findFirst({ where: projectAuthClause });
+
+      if (!proyecto) {
+        return reply.status(404).send({ success: false, error: 'Proyecto no encontrado o sin permisos' });
+      }
+
+      // 2. Obtener las financiaciones para el proyecto validado
+      //    (Esto asume que tienes un modelo 'financiacion' en Prisma)
+      const financiaciones = await prisma.financiacion.findMany({
+        where: {
+          proyectoId: proyectoId,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      return reply.send({ success: true, data: financiaciones });
+
+    } catch (error) {
+      console.error(`Error fetching financiaciones for proyecto ${request.params.id}:`, error);
+      return reply.status(500).send({
+        success: false,
+        error: 'Error interno del servidor',
+      });
+    }
+  },
 }

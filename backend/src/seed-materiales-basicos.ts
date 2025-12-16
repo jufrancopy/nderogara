@@ -3,17 +3,44 @@ import { PrismaClient, UnidadMedida } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Creando materiales básicos...');
+  console.log('🌱 Creando categorías de materiales...');
 
-  // Crear categoría
-  const categoria = await prisma.categoriaMaterial.upsert({
-    where: { nombre: 'Construcción General' },
-    update: {},
-    create: {
-      nombre: 'Construcción General',
-      descripcion: 'Materiales básicos de construcción'
-    }
-  });
+  // Crear categorías principales
+  const categoriasData = [
+    { nombre: 'Estructural', descripcion: 'Vigas, columnas, losas y elementos portantes' },
+    { nombre: 'Mampostería', descripcion: 'Ladrillos, bloques y elementos de cerramiento' },
+    { nombre: 'Acabados', descripcion: 'Pinturas, pisos, revestimientos y terminaciones' },
+    { nombre: 'Instalaciones Eléctricas', descripcion: 'Cables, interruptores, tomas y equipos eléctricos' },
+    { nombre: 'Instalaciones Sanitarias', descripcion: 'Tuberías, grifería y equipos de plomería' },
+    { nombre: 'Herramientas', descripcion: 'Equipos y herramientas para construcción' },
+    { nombre: 'Construcción General', descripcion: 'Materiales básicos de construcción' },
+    { nombre: 'Aislantes', descripcion: 'Materiales de aislamiento térmico y acústico' },
+    { nombre: 'Fijaciones', descripcion: 'Clavos, tornillos, pernos y elementos de unión' },
+    { nombre: 'Adhesivos y Selladores', descripcion: 'Pegamentos, siliconas y materiales de unión' },
+    { nombre: 'Cubierta y Techos', descripcion: 'Tejas, planchas y elementos de cubierta' },
+    { nombre: 'Carpintería', descripcion: 'Puertas, ventanas y elementos de madera' },
+    { nombre: 'Jardinería', descripcion: 'Materiales para áreas verdes y exteriores' },
+    { nombre: 'Seguridad', descripcion: 'Equipos de protección y seguridad en obra' }
+  ];
+
+  const categorias = [];
+  for (const catData of categoriasData) {
+    const categoria = await prisma.categoriaMaterial.upsert({
+      where: { nombre: catData.nombre },
+      update: {},
+      create: catData
+    });
+    categorias.push(categoria);
+  }
+
+  console.log('✅ Categorías creadas');
+
+  // Crear materiales básicos usando la categoría general
+  const categoriaGeneral = categorias.find(c => c.nombre === 'Construcción General');
+
+  if (!categoriaGeneral) {
+    throw new Error('No se encontró la categoría Construcción General');
+  }
 
   // Crear materiales base
   await prisma.material.upsert({
@@ -24,7 +51,7 @@ async function main() {
       nombre: 'Cemento Portland 50kg',
       descripcion: 'Cemento Portland tipo I',
       unidad: UnidadMedida.BOLSA,
-      categoriaId: categoria.id,
+      categoriaId: categoriaGeneral.id,
       usuarioId: null
     }
   });
@@ -37,7 +64,7 @@ async function main() {
       nombre: 'Ladrillo Común 6 huecos',
       descripcion: 'Ladrillo común de arcilla',
       unidad: UnidadMedida.UNIDAD,
-      categoriaId: categoria.id,
+      categoriaId: categoriaGeneral.id,
       usuarioId: null
     }
   });
@@ -50,7 +77,7 @@ async function main() {
       nombre: 'Arena Fina',
       descripcion: 'Arena fina para mezcla',
       unidad: UnidadMedida.M3,
-      categoriaId: categoria.id,
+      categoriaId: categoriaGeneral.id,
       usuarioId: null
     }
   });
@@ -63,7 +90,7 @@ async function main() {
       nombre: 'Hierro 8mm',
       descripcion: 'Barra de hierro corrugado',
       unidad: UnidadMedida.KG,
-      categoriaId: categoria.id,
+      categoriaId: categoriaGeneral.id,
       usuarioId: null
     }
   });
