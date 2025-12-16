@@ -64,6 +64,14 @@ interface Cotizacion {
   createdAt: string
 }
 
+interface Financiacion {
+  id: string
+  monto: number
+  fecha: string
+  fuente: string
+  descripcion?: string
+}
+
 interface Item {
   id: string
   nombre: string
@@ -107,6 +115,14 @@ export default function ProyectoDetallePage() {
     isOpen: boolean
     etapas: any[]
   }>({ isOpen: false, etapas: [] })
+  const [financiaciones, setFinanciaciones] = useState<Financiacion[]>([])
+  const [presupuestoTotal, setPresupuestoTotal] = useState(0)
+  const [showFinanciacionForm, setShowFinanciacionForm] = useState(false)
+  const [financiacionForm, setFinanciacionForm] = useState({
+    monto: '',
+    fuente: '',
+    descripcion: ''
+  })
 
   // Efecto para manejar la tecla Escape en el modal de imagen
   useEffect(() => {
@@ -133,6 +149,7 @@ export default function ProyectoDetallePage() {
   useEffect(() => {
     fetchProyecto()
     fetchItems()
+    fetchFinanciaciones()
   }, [proyectoId])
 
   const fetchProyecto = async () => {
@@ -390,6 +407,36 @@ export default function ProyectoDetallePage() {
 
   const cerrarModalPagosProyecto = () => {
     setModalPagosProyecto({ isOpen: false, etapas: [] })
+  }
+
+  const fetchFinanciaciones = async () => {
+    try {
+      const response = await api.get(`/proyectos/${proyectoId}/financiaciones`)
+      setFinanciaciones(response.data.data)
+
+      // Calcular presupuesto total
+      const responsePresupuesto = await api.get(`/proyectos/${proyectoId}/presupuesto-total`)
+      setPresupuestoTotal(responsePresupuesto.data.data.presupuestoTotal)
+    } catch (error) {
+      console.error('Error fetching financiaciones:', error)
+    }
+  }
+
+  const handleAddFinanciacion = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!financiacionForm.monto || !financiacionForm.fuente) return
+
+    try {
+      await api.post(`/proyectos/${proyectoId}/financiaciones`, financiacionForm)
+      toast.success('Financiación agregada exitosamente')
+      setShowFinanciacionForm(false)
+      setFinanciacionForm({ monto: '', fuente: '', descripcion: '' })
+      fetchFinanciaciones()
+    } catch (error: any) {
+      console.error('Error adding financiacion:', error)
+      const errorMessage = error.response?.data?.error || 'Error al agregar financiación'
+      toast.error(errorMessage)
+    }
   }
 
   if (loading) {
@@ -1043,27 +1090,94 @@ export default function ProyectoDetallePage() {
                 </div>
               </div>
 
+              {/* Financiaciones del Proyecto */}
+              <div className="bg-white shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <DollarSign className="h-5 w-5 mr-2" />
+                  Financiaciones
+                </h3>
+
+                <div className="space-y-4">
+                  {/* Resumen del presupuesto */}
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-green-800">Presupuesto Total</p>
+                        <p className="text-2xl font-bold text-green-900">{formatPrice(presupuestoTotal)}</p>
+                      </div>
+                      <button
+                        onClick={() => setShowFinanciacionForm(true)}
+                        className="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center text-sm"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Agregar
+                      </button>
+                    </div>
+                    <p className="text-xs text-green-600 mt-2">
+                      {financiaciones.length} fuente{financiaciones.length !== 1 ? 's' : ''} de financiamiento
+                    </p>
+                  </div>
+
+                  {/* Lista de financiaciones */}
+                  <div className="space-y-3">
+                    {financiaciones.length === 0 ? (
+                      <div className="text-center py-6 text-gray-500">
+                        <DollarSign className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm">No hay financiaciones registradas</p>
+                        <button
+                          onClick={() => setShowFinanciacionForm(true)}
+                          className="mt-2 text-green-600 hover:text-green-700 underline text-sm"
+                        >
+                          Agregar primera financiación
+                        </button>
+                      </div>
+                    ) : (
+                      financiaciones.map((financiacion) => (
+                        <div key={financiacion.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-gray-900">{financiacion.fuente}</span>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(financiacion.fecha).toLocaleDateString('es-PY')}
+                                </span>
+                              </div>
+                              {financiacion.descripcion && (
+                                <p className="text-sm text-gray-600">{financiacion.descripcion}</p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-green-600">{formatPrice(financiacion.monto)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Información del Constructor */}
               <div className="bg-white shadow rounded-lg p-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                   <Building2 className="h-5 w-5 mr-2" />
                   Constructor
                 </h3>
-                
+
                 {proyecto.usuario && (
                   <div className="space-y-3">
                     <div>
                       <p className="text-sm text-gray-600">Nombre</p>
                       <p className="font-medium">{proyecto.usuario.name}</p>
                     </div>
-                    
+
                     {proyecto.usuario.email && (
                       <div className="flex items-center">
                         <Mail className="h-4 w-4 text-gray-400 mr-2" />
                         <span className="text-sm">{proyecto.usuario.email}</span>
                       </div>
                     )}
-                    
+
                     {proyecto.usuario.telefono && (
                       <div className="flex items-center">
                         <Phone className="h-4 w-4 text-gray-400 mr-2" />
@@ -1150,6 +1264,91 @@ export default function ProyectoDetallePage() {
               className="absolute inset-0 -z-10 cursor-pointer"
               onClick={() => setModalImage(null)}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Modal de agregar financiación */}
+      {showFinanciacionForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Agregar Financiación</h2>
+                <button
+                  onClick={() => setShowFinanciacionForm(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <form onSubmit={handleAddFinanciacion} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Fuente de Financiamiento *
+                  </label>
+                  <select
+                    value={financiacionForm.fuente}
+                    onChange={(e) => setFinanciacionForm({...financiacionForm, fuente: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  >
+                    <option value="">Seleccionar fuente</option>
+                    <option value="Capital propio">Capital propio</option>
+                    <option value="Préstamo bancario">Préstamo bancario</option>
+                    <option value="Venta de activos">Venta de activos</option>
+                    <option value="Inversión externa">Inversión externa</option>
+                    <option value="Otros">Otros</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Monto *
+                  </label>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={financiacionForm.monto}
+                    onChange={(e) => setFinanciacionForm({...financiacionForm, monto: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Descripción (opcional)
+                  </label>
+                  <textarea
+                    value={financiacionForm.descripcion}
+                    onChange={(e) => setFinanciacionForm({...financiacionForm, descripcion: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Detalles adicionales sobre esta financiación..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowFinanciacionForm(false)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                  >
+                    Agregar Financiación
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
