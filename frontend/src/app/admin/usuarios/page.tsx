@@ -10,6 +10,7 @@ export default function AdminUsuariosPage() {
   const router = useRouter();
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -210,6 +211,14 @@ export default function AdminUsuariosPage() {
     return colors[rol as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
+  // Filtrar usuarios por término de búsqueda
+  const filteredUsuarios = usuarios.filter((usuario: any) =>
+    usuario.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    usuario.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    usuario.rol?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    usuario.empresa?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (loading) return <PageLoader />;
 
   return (
@@ -231,10 +240,40 @@ export default function AdminUsuariosPage() {
             </button>
           </div>
 
+          {/* Barra de búsqueda */}
+          {usuarios.length > 0 && (
+            <div className="mb-6">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar usuarios por nombre, email, rol o empresa..."
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="bg-white shadow overflow-hidden sm:rounded-md">
             {usuarios.length === 0 ? (
               <div className="p-6 text-center">
                 <p className="text-gray-500">No hay usuarios registrados</p>
+              </div>
+            ) : filteredUsuarios.length === 0 ? (
+              <div className="p-6 text-center">
+                <p className="text-gray-500">No se encontraron usuarios que coincidan con la búsqueda</p>
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="mt-2 text-blue-600 hover:text-blue-700 underline"
+                >
+                  Limpiar búsqueda
+                </button>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -249,7 +288,7 @@ export default function AdminUsuariosPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {usuarios.map((usuario: any) => (
+                    {filteredUsuarios.map((usuario: any) => (
                       <tr key={usuario.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
