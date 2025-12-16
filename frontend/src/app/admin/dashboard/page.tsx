@@ -220,7 +220,7 @@ export default function AdminDashboardPage() {
                       <p className="text-sm font-medium text-gray-900">{oferta.material.nombre}</p>
                       <p className="text-xs text-gray-500">{oferta.proveedor.usuario.name}</p>
                     </div>
-                    <span className="text-sm font-bold text-green-600">₲{formatPrice(oferta.precio)}</span>
+                    <span className="text-sm font-bold text-green-600">{formatPrice(oferta.precio)}</span>
                   </div>
                 ))}
                 {data.ofertasRecientes.length === 0 && (
