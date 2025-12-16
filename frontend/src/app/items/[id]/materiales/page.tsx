@@ -65,6 +65,17 @@ export default function MaterialesItemPage() {
     observaciones: string
   } | null>(null)
 
+  // Estados para pagos de materiales
+  const [showPagoModal, setShowPagoModal] = useState(false)
+  const [selectedMaterialForPago, setSelectedMaterialForPago] = useState<MaterialPorItem | null>(null)
+  const [pagoForm, setPagoForm] = useState({
+    montoPagado: '',
+    comprobante: null as File | null,
+    notas: ''
+  })
+  const [estadoPagos, setEstadoPagos] = useState<Record<string, any>>({})
+  const [uploadingComprobante, setUploadingComprobante] = useState(false)
+
   // Estados para búsqueda y paginación
   const [materialSearchTerm, setMaterialSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -79,6 +90,13 @@ export default function MaterialesItemPage() {
     fetchItem()
     fetchMateriales()
   }, [itemId])
+
+  // Cargar estados de pago cuando el item se carga
+  useEffect(() => {
+    if (item?.materialesPorItem) {
+      fetchEstadoPagos()
+    }
+  }, [item])
 
   // Efecto para resetear página cuando se busca
   useEffect(() => {
@@ -100,6 +118,96 @@ export default function MaterialesItemPage() {
   // Funciones de paginación
   const goToPage = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)))
+  }
+
+  // Funciones para pagos de materiales
+  const handleAddComprobante = (materialItem: MaterialPorItem) => {
+    setSelectedMaterialForPago(materialItem)
+    setPagoForm({ montoPagado: '', comprobante: null, notas: '' })
+    setShowPagoModal(true)
+  }
+
+  const formatMontoInput = (value: string) => {
+    // Remover todos los caracteres no numéricos excepto punto y coma
+    const numericValue = value.replace(/[^\d.,]/g, '')
+
+    // Convertir a número y formatear con separadores de miles
+    const number = parseFloat(numericValue.replace(/\./g, '').replace(',', '.'))
+    if (isNaN(number)) return ''
+
+    return number.toLocaleString('es-PY', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    })
+  }
+
+  const handlePagoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedMaterialForPago || !pagoForm.montoPagado || !pagoForm.comprobante) return
+
+    setUploadingComprobante(true)
+    try {
+      // Primero subir el comprobante
+      const formData = new FormData()
+      formData.append('file', pagoForm.comprobante)
+
+      const uploadResponse = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+
+      const comprobanteUrl = uploadResponse.data.data.url
+
+      // Luego crear el pago
+      await api.post('/materiales/pagos', {
+        materialPorItemId: selectedMaterialForPago.id,
+        montoPagado: pagoForm.montoPagado.replace(/\./g, '').replace(',', '.'),
+        comprobanteUrl,
+        notas: pagoForm.notas
+      })
+
+      toast.success('Comprobante de pago agregado exitosamente')
+      setShowPagoModal(false)
+      setSelectedMaterialForPago(null)
+
+      // Actualizar estados de pago
+      await fetchEstadoPagos()
+
+    } catch (error: any) {
+      console.error('Error adding pago:', error)
+      const errorMessage = error.response?.data?.error || 'Error al agregar comprobante de pago'
+      toast.error(errorMessage)
+    } finally {
+      setUploadingComprobante(false)
+    }
+  }
+
+  const fetchEstadoPagos = async () => {
+    if (!item?.materialesPorItem) return
+
+    const estados: Record<string, any> = {}
+
+    for (const materialItem of item.materialesPorItem) {
+      try {
+        const response = await api.get(`/materiales/${materialItem.id}/estado-pago`)
+        estados[materialItem.id] = response.data.data
+      } catch (error) {
+        console.error(`Error fetching estado pago for ${materialItem.id}:`, error)
+      }
+    }
+
+    setEstadoPagos(estados)
+  }
+
+  const getEstadoPagoLabel = (materialItemId: string) => {
+    const estado = estadoPagos[materialItemId]
+    if (!estado) return { label: 'Pendiente', color: 'bg-gray-100 text-gray-800' }
+
+    if (estado.estado === 'COMPLETO') {
+      return { label: 'Pagado', color: 'bg-green-100 text-green-800' }
+    } else if (estado.estado === 'PARCIAL') {
+      return { label: `Parcial (${formatPrice(estado.totalPagado)}/${formatPrice(estado.costoTotal)})`, color: 'bg-yellow-100 text-yellow-800' }
+    }
+    return { label: 'Pendiente', color: 'bg-gray-100 text-gray-800' }
   }
 
   const fetchItem = async () => {
@@ -431,6 +539,9 @@ export default function MaterialesItemPage() {
                         Costo por {item && getUnidadLabel(item.unidadMedida)}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Estado Pago
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Observaciones
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -474,6 +585,11 @@ export default function MaterialesItemPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {formatPrice(materialItem.material.precioUnitario * materialItem.cantidadPorUnidad)}
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs rounded-full ${getEstadoPagoLabel(materialItem.id).color}`}>
+                            {getEstadoPagoLabel(materialItem.id).label}
+                          </span>
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {editingMaterial?.id === materialItem.material.id ? (
                             <input
@@ -494,14 +610,14 @@ export default function MaterialesItemPage() {
                           <div className="flex space-x-2">
                             {editingMaterial?.id === materialItem.material.id ? (
                               <>
-                                <button 
+                                <button
                                   onClick={handleUpdateMaterial}
                                   className="text-green-600 hover:text-green-800 mr-2"
                                   title="Guardar"
                                 >
                                   ✓
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => setEditingMaterial(null)}
                                   className="text-gray-600 hover:text-gray-800"
                                   title="Cancelar"
@@ -510,20 +626,29 @@ export default function MaterialesItemPage() {
                                 </button>
                               </>
                             ) : (
-                              <button 
-                                onClick={() => handleEditClick(materialItem)}
-                                className="text-blue-600 hover:text-blue-800"
-                                title="Editar"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => handleEditClick(materialItem)}
+                                  className="text-blue-600 hover:text-blue-800"
+                                  title="Editar"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleAddComprobante(materialItem)}
+                                  className="text-green-600 hover:text-green-800"
+                                  title="Agregar Comprobante de Pago"
+                                >
+                                  💰
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteClick(materialItem.material.id, materialItem.material.nombre)}
+                                  className="text-red-600 hover:text-red-800"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </>
                             )}
-                            <button 
-                              onClick={() => handleDeleteClick(materialItem.material.id, materialItem.material.nombre)}
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
                           </div>
                         </td>
                       </tr>
@@ -626,6 +751,114 @@ export default function MaterialesItemPage() {
         cancelText="Cancelar"
         type="danger"
       />
+
+      {/* Modal de agregar comprobante de pago */}
+      {showPagoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Agregar Comprobante de Pago</h2>
+                <button
+                  onClick={() => setShowPagoModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              {selectedMaterialForPago && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-medium text-blue-900">
+                    Material: {selectedMaterialForPago.material.nombre}
+                  </p>
+                  <p className="text-sm text-blue-700">
+                    Costo total: {formatPrice(selectedMaterialForPago.material.precioUnitario * selectedMaterialForPago.cantidadPorUnidad)}
+                  </p>
+                </div>
+              )}
+
+              <form onSubmit={handlePagoSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Monto Pagado *
+                  </label>
+                  <input
+                    type="text"
+                    value={pagoForm.montoPagado}
+                    onChange={(e) => {
+                      const formattedValue = formatMontoInput(e.target.value)
+                      setPagoForm({...pagoForm, montoPagado: formattedValue})
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="50000"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Ingresa el monto con separadores de miles
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Comprobante (Imagen) *
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setPagoForm({...pagoForm, comprobante: e.target.files?.[0] || null})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Formatos permitidos: JPG, PNG, GIF. Máx: 10MB
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Notas (opcional)
+                  </label>
+                  <textarea
+                    value={pagoForm.notas}
+                    onChange={(e) => setPagoForm({...pagoForm, notas: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Referencia de pago, fecha, etc."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowPagoModal(false)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={uploadingComprobante}
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center"
+                  >
+                    {uploadingComprobante ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Subiendo...
+                      </>
+                    ) : (
+                      <>
+                        <span className="mr-2">💰</span>
+                        Agregar Pago
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
