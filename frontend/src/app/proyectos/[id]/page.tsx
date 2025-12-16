@@ -192,13 +192,14 @@ export default function ProyectoDetallePage() {
 
     try {
       await api.post(`/proyectos/${proyectoId}/presupuesto`, {
-        itemId: selectedItem,
+        itemId: selectedItem.id,
         cantidadMedida: Number(cantidad)
       })
-      
+
       toast.success('Item agregado al presupuesto')
       setShowAddForm(false)
-      setSelectedItem('')
+      setSelectedItem(null)
+      setSearchItemTerm('')
       setCantidad('')
       fetchProyecto() // Recargar proyecto
     } catch (error: any) {
