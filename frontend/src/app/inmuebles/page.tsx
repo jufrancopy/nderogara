@@ -180,7 +180,7 @@ export default function InmueblesPage() {
 
           <button
             onClick={handleSearch}
-            className="flex items-center gap-2 text-white px-4 py-2 rounded-md transition-colors"
+            className="w-full flex items-center gap-2 text-white px-4 py-2 rounded-md transition-colors"
             style={{backgroundColor: '#38603B'}}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#633722'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#38603B'}
