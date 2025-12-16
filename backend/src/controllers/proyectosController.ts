@@ -336,7 +336,7 @@ export const proyectosController = {
       
       // 1. Definir los estados válidos (deben coincidir con tu schema de Prisma)
       const estadoSchema = z.object({
-        estado: z.enum(['PENDIENTE', 'EN_PROGRESO', 'COMPLETADO', 'CANCELADO'])
+        estado: z.enum(['PLANIFICACION', 'EN_PROGRESO', 'PAUSADO', 'COMPLETADO', 'CANCELADO'])
       });
 
       // 2. Validar el cuerpo de la petición
