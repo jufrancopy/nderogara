@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import Link from 'next/link'
-import { Building2, ArrowLeft, Plus, Edit, Trash2, Package } from 'lucide-react'
+import Link from 'next/link' 
+import { ArrowLeft, Plus, Edit, Trash2, Package, ChevronLeft, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -249,10 +249,11 @@ export default function MaterialesItemPage() {
             </div>
             <button
               onClick={() => setShowAddForm(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center"
+              className="bg-[#38603B] text-white px-3 py-1 rounded text-sm transition-colors flex items-center hover:bg-[#2d4a2f] sm:px-4 sm:py-2 lg:px-4 lg:py-2"
+              title="Agregar Material"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar Material
+              <Plus className="h-4 w-4 sm:h-4 sm:w-4 lg:h-4 lg:w-4" />
+              <span className="hidden sm:inline ml-2">Agregar Material</span>
             </button>
           </div>
 
@@ -571,7 +572,7 @@ export default function MaterialesItemPage() {
                           className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <span className="sr-only">Anterior</span>
-                          <
+                          <ChevronLeft className="h-5 w-5" />
                         </button>
                         {Array.from({ length: totalPages }, (_, i) => i + 1)
                           .filter(page => {
@@ -603,14 +604,13 @@ export default function MaterialesItemPage() {
                           className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <span className="sr-only">Siguiente</span>
-                          >
+                          <ChevronRight className="h-5 w-5" />
                         </button>
                       </nav>
                     </div>
                   </div>
                 </div>
               )}
-            )}
           </div>
         </div>
       </main>
