@@ -529,7 +529,7 @@ export default function ProyectoDetallePage() {
             </div>
 
             {/* Botones - Siempre debajo en móvil, al lado en desktop */}
-            <div className="flex flex-wrap gap-2 sm:justify-end sm:mt-0">
+            <div className="flex flex-wrap gap-2 justify-center sm:justify-end sm:mt-0">
               <Link
                 href={`/proyectos/${proyecto.id}/obra`}
                 className="text-white px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-md transition-colors flex items-center text-xs sm:text-sm"
