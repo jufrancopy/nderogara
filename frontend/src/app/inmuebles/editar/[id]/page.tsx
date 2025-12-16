@@ -54,11 +54,14 @@ export default function EditarInmueblePage() {
       const response = await api.get(`/inmuebles/${params.id}`);
       const inmueble = response.data.data;
 
-      // Verificar que el usuario sea el propietario
+      // Verificar permisos: propietario o administrador
       const token = localStorage.getItem('token');
       if (token) {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        if (payload.id !== inmueble.usuarioId) {
+        // Los administradores pueden editar cualquier inmueble
+        // Los propietarios pueden editar sus propios inmuebles
+        const canEdit = payload.rol === 'ADMIN' || payload.id === inmueble.usuarioId;
+        if (!canEdit) {
           toast.error('No tienes permisos para editar este inmueble');
           router.push(`/inmuebles/${params.id}`);
           return;
@@ -259,7 +262,7 @@ export default function EditarInmueblePage() {
                     <input
                       type="text"
                       value={formData.titulo}
-                      onChange={(e) => setFormData({...formData, titulo: e.target.value})}
+                      onChange={(e) => setFormData({...formData, titulo: e.target.value || ''})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
                       placeholder="Casa en venta en Asunción"
                       required
@@ -272,7 +275,7 @@ export default function EditarInmueblePage() {
                     </label>
                     <select
                       value={formData.tipo}
-                      onChange={(e) => setFormData({...formData, tipo: e.target.value as 'VENTA' | 'ALQUILER'})}
+                      onChange={(e) => setFormData({...formData, tipo: (e.target.value || 'VENTA') as 'VENTA' | 'ALQUILER'})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
                     >
                       <option value="VENTA">Venta</option>
@@ -288,7 +291,7 @@ export default function EditarInmueblePage() {
                       type="text"
                       value={precioFormateado}
                       onChange={(e) => {
-                        const formattedValue = formatMontoInput(e.target.value)
+                        const formattedValue = formatMontoInput(e.target.value || '')
                         setPrecioFormateado(formattedValue)
                       }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
@@ -307,7 +310,7 @@ export default function EditarInmueblePage() {
                     <input
                       type="text"
                       value={formData.direccion}
-                      onChange={(e) => setFormData({...formData, direccion: e.target.value})}
+                      onChange={(e) => setFormData({...formData, direccion: e.target.value || ''})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
                       placeholder="Av. España 123"
                       required
@@ -321,7 +324,7 @@ export default function EditarInmueblePage() {
                     <input
                       type="text"
                       value={formData.ciudad}
-                      onChange={(e) => setFormData({...formData, ciudad: e.target.value})}
+                      onChange={(e) => setFormData({...formData, ciudad: e.target.value || ''})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
                       placeholder="Asunción"
                       required
@@ -334,7 +337,7 @@ export default function EditarInmueblePage() {
                     </label>
                     <textarea
                       value={formData.descripcion}
-                      onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
+                      onChange={(e) => setFormData({...formData, descripcion: e.target.value || ''})}
                       rows={4}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
                       placeholder="Describe las características del inmueble..."
@@ -354,7 +357,7 @@ export default function EditarInmueblePage() {
                     <input
                       type="number"
                       value={formData.superficie}
-                      onChange={(e) => setFormData({...formData, superficie: e.target.value})}
+                      onChange={(e) => setFormData({...formData, superficie: e.target.value || ''})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
                       placeholder="120"
                     />
@@ -367,7 +370,7 @@ export default function EditarInmueblePage() {
                     <input
                       type="number"
                       value={formData.habitaciones}
-                      onChange={(e) => setFormData({...formData, habitaciones: e.target.value})}
+                      onChange={(e) => setFormData({...formData, habitaciones: e.target.value || ''})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
                       placeholder="3"
                     />
@@ -380,7 +383,7 @@ export default function EditarInmueblePage() {
                     <input
                       type="number"
                       value={formData.banos}
-                      onChange={(e) => setFormData({...formData, banos: e.target.value})}
+                      onChange={(e) => setFormData({...formData, banos: e.target.value || ''})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
                       placeholder="2"
                     />
@@ -431,7 +434,7 @@ export default function EditarInmueblePage() {
                     <input
                       type="text"
                       value={formData.contactoNombre}
-                      onChange={(e) => setFormData({...formData, contactoNombre: e.target.value})}
+                      onChange={(e) => setFormData({...formData, contactoNombre: e.target.value || ''})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
                       placeholder="Juan Pérez"
                       required
@@ -445,7 +448,7 @@ export default function EditarInmueblePage() {
                     <input
                       type="text"
                       value={formData.contactoTelefono}
-                      onChange={(e) => setFormData({...formData, contactoTelefono: e.target.value})}
+                      onChange={(e) => setFormData({...formData, contactoTelefono: e.target.value || ''})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
                       placeholder="0981123456"
                       required
@@ -460,7 +463,7 @@ export default function EditarInmueblePage() {
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Proyecto BuildManager (Opcional)</h3>
                   <select
                     value={formData.proyectoId}
-                    onChange={(e) => setFormData({...formData, proyectoId: e.target.value})}
+                    onChange={(e) => setFormData({...formData, proyectoId: e.target.value || ''})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#38603B] focus:border-[#38603B]"
                   >
                     <option value="">Seleccionar proyecto (opcional)</option>
