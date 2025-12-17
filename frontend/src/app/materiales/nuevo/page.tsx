@@ -16,11 +16,11 @@ import { API_BASE_URL } from '@/lib/api'
 const materialSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
   unidad: z.enum(['KG', 'BOLSA', 'M2', 'M3', 'ML', 'UNIDAD', 'LOTE', 'GLOBAL']),
-  precioUnitario: z.number().positive('El precio debe ser mayor a 0').optional(),
+  precioUnitario: z.number().positive('El precio debe ser mayor a 0'),
   precioBase: z.number().positive('El precio base debe ser mayor a 0').optional(),
   tipoCalidad: z.enum(['COMUN', 'PREMIUM', 'INDUSTRIAL', 'ARTESANAL']).optional(),
   marca: z.string().optional(),
-  proveedor: z.string().optional(),
+  proveedorId: z.string().min(1, 'El proveedor es requerido'),
   telefonoProveedor: z.string().optional(),
   stockMinimo: z.number().int().min(0).optional(),
   imagenUrl: z.string().url('Debe ser una URL válida').optional().or(z.literal('')),
@@ -35,6 +35,13 @@ interface Categoria {
   nombre: string
 }
 
+interface Proveedor {
+  id: string
+  nombre: string
+  telefono?: string
+  ciudad?: string
+}
+
 export default function NuevoMaterialPage() {
   const router = useRouter()
   const [categorias, setCategorias] = useState<Categoria[]>([])
@@ -46,6 +53,10 @@ export default function NuevoMaterialPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string>('')
   const [isAdmin, setIsAdmin] = useState(false)
+  const [proveedores, setProveedores] = useState<Proveedor[]>([])
+  const [proveedorSearchTerm, setProveedorSearchTerm] = useState('')
+  const [showProveedorDropdown, setShowProveedorDropdown] = useState(false)
+  const [selectedProveedor, setSelectedProveedor] = useState<Proveedor | null>(null)
 
   const {
     register,
@@ -64,6 +75,7 @@ export default function NuevoMaterialPage() {
   useEffect(() => {
     fetchCategorias()
     fetchGaleria()
+    fetchProveedores()
 
     // Determinar si el usuario es admin
     const userData = localStorage.getItem('user')
@@ -79,6 +91,17 @@ export default function NuevoMaterialPage() {
       setGaleria(response.data.data || [])
     } catch (error) {
       console.error('Error al cargar galería:', error)
+    }
+  }
+
+  const fetchProveedores = async () => {
+    try {
+      const response = await api.get('/proveedores')
+      setProveedores(response.data.data || [])
+    } catch (error) {
+      console.error('Error al cargar proveedores:', error)
+      // Proveedores vacíos si hay error
+      setProveedores([])
     }
   }
 
@@ -416,18 +439,80 @@ export default function NuevoMaterialPage() {
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Información del Proveedor</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Proveedor *
                     </label>
-                    <input
-                      type="text"
-                      {...register('proveedor')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Nombre del proveedor"
-                    />
-                    {errors.proveedor && (
-                      <p className="mt-1 text-sm text-red-600">{errors.proveedor.message}</p>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={proveedorSearchTerm}
+                        onChange={(e) => {
+                          setProveedorSearchTerm(e.target.value)
+                          setShowProveedorDropdown(true)
+                          if (selectedProveedor && e.target.value !== selectedProveedor.nombre) {
+                            setSelectedProveedor(null)
+                            setValue('proveedorId', '')
+                          }
+                        }}
+                        onFocus={() => setShowProveedorDropdown(true)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Buscar proveedor..."
+                      />
+                      {selectedProveedor && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedProveedor(null)
+                            setProveedorSearchTerm('')
+                            setValue('proveedorId', '')
+                          }}
+                          className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Dropdown de proveedores */}
+                    {showProveedorDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        {proveedores
+                          .filter(proveedor =>
+                            proveedor.nombre.toLowerCase().includes(proveedorSearchTerm.toLowerCase())
+                          )
+                          .map((proveedor) => (
+                            <div
+                              key={proveedor.id}
+                              onClick={() => {
+                                setSelectedProveedor(proveedor)
+                                setProveedorSearchTerm(proveedor.nombre)
+                                setValue('proveedorId', proveedor.id)
+                                setShowProveedorDropdown(false)
+                              }}
+                              className="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="font-medium text-gray-900">{proveedor.nombre}</div>
+                              {proveedor.ciudad && (
+                                <div className="text-sm text-gray-500">📍 {proveedor.ciudad}</div>
+                              )}
+                              {proveedor.telefono && (
+                                <div className="text-sm text-gray-500">📞 {proveedor.telefono}</div>
+                              )}
+                            </div>
+                          ))}
+                        {proveedores.filter(proveedor =>
+                          proveedor.nombre.toLowerCase().includes(proveedorSearchTerm.toLowerCase())
+                        ).length === 0 && (
+                          <div className="px-3 py-2 text-gray-500 text-center">
+                            No se encontraron proveedores
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {errors.proveedorId && (
+                      <p className="mt-1 text-sm text-red-600">{errors.proveedorId.message}</p>
                     )}
                   </div>
 
@@ -437,9 +522,23 @@ export default function NuevoMaterialPage() {
                     </label>
                     <input
                       type="tel"
-                      {...register('telefonoProveedor')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="3001234567"
+                      value={selectedProveedor?.telefono || ''}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
+                      placeholder="Se completa automáticamente"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ciudad
+                    </label>
+                    <input
+                      type="text"
+                      value={selectedProveedor?.ciudad || ''}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
+                      placeholder="Se completa automáticamente"
                     />
                   </div>
 

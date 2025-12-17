@@ -98,6 +98,31 @@ fastify.register(async function (fastify) {
   await fastify.register(notificacionesRoutes, { prefix: '/notificaciones' })
   await fastify.register(financiacionRoutes.default)
   await fastify.register(pagoMaterialRoutes.default)
+
+  // Ruta pública para proveedores (sin autenticación requerida)
+  fastify.get('/proveedores', async (request, reply) => {
+    try {
+      const { PrismaClient } = await import('@prisma/client')
+      const prisma = new PrismaClient()
+
+      const proveedores = await prisma.proveedor.findMany({
+        where: { esActivo: true },
+        select: {
+          id: true,
+          nombre: true,
+          telefono: true,
+          ciudad: true,
+          departamento: true
+        },
+        orderBy: { nombre: 'asc' }
+      })
+
+      reply.send({ success: true, data: proveedores })
+    } catch (error) {
+      console.error('Error fetching proveedores:', error)
+      reply.status(500).send({ success: false, error: 'Error al obtener proveedores' })
+    }
+  })
 })
 
 const start = async () => {

@@ -17,7 +17,7 @@ const materialSchema = z.object({
   precioUnitario: z.number().positive('El precio debe ser mayor a 0'),
   tipoCalidad: z.enum(['COMUN', 'PREMIUM', 'INDUSTRIAL', 'ARTESANAL']),
   marca: z.string().optional(),
-  proveedor: z.string().min(1, 'El proveedor es requerido'),
+  proveedorId: z.string().min(1, 'El proveedor es requerido'),
   telefonoProveedor: z.string().optional(),
   stockMinimo: z.number().int().min(0).optional(),
   imagenUrl: z.string().url('Debe ser una URL válida').optional().or(z.literal('')),
@@ -30,6 +30,13 @@ type MaterialForm = z.infer<typeof materialSchema>
 interface Categoria {
   id: string
   nombre: string
+}
+
+interface Proveedor {
+  id: string
+  nombre: string
+  telefono?: string
+  ciudad?: string
 }
 
 export default function EditarMaterialPage() {
@@ -46,6 +53,10 @@ export default function EditarMaterialPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string>('')
   const [isAdmin, setIsAdmin] = useState(false)
+  const [proveedores, setProveedores] = useState<Proveedor[]>([])
+  const [proveedorSearchTerm, setProveedorSearchTerm] = useState('')
+  const [showProveedorDropdown, setShowProveedorDropdown] = useState(false)
+  const [selectedProveedor, setSelectedProveedor] = useState<Proveedor | null>(null)
 
   const {
     register,
