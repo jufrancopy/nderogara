@@ -302,6 +302,13 @@ export default function MaterialesPage() {
                         {user?.rol !== 'CLIENTE' && (
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex justify-end space-x-2">
+                              <Link
+                                href={`/materiales/editar/${material.id}`}
+                                className="text-green-600 hover:text-green-900 px-2 py-1 rounded text-sm"
+                                title="Editar"
+                              >
+                                ✏️
+                              </Link>
                               <button
                                 onClick={() => handlePriceUpdateClick(material)}
                                 className="text-blue-600 hover:text-blue-900 px-2 py-1 rounded text-sm"
