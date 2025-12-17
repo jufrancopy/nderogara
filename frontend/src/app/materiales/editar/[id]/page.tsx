@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
-import { Building2, ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Upload, X } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
+import { API_BASE_URL } from '@/lib/api'
 
 const materialSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
@@ -37,8 +38,14 @@ export default function EditarMaterialPage() {
   const materialId = params.id as string
   
   const [categorias, setCategorias] = useState<Categoria[]>([])
+  const [galeria, setGaleria] = useState([])
+  const [showGallery, setShowGallery] = useState(false)
   const [loading, setLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
+  const [currentImageUrl, setCurrentImageUrl] = useState<string>('')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string>('')
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const {
     register,
@@ -52,7 +59,15 @@ export default function EditarMaterialPage() {
 
   useEffect(() => {
     fetchCategorias()
+    fetchGaleria()
     fetchMaterial()
+
+    // Determinar si el usuario es admin
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      const user = JSON.parse(userData)
+      setIsAdmin(user.rol === 'ADMIN')
+    }
   }, [materialId])
 
   const fetchCategorias = async () => {
@@ -69,11 +84,20 @@ export default function EditarMaterialPage() {
     }
   }
 
+  const fetchGaleria = async () => {
+    try {
+      const response = await api.get('/upload/galeria')
+      setGaleria(response.data.data || [])
+    } catch (error) {
+      console.error('Error al cargar galería:', error)
+    }
+  }
+
   const fetchMaterial = async () => {
     try {
       const response = await api.get(`/materiales/${materialId}`)
       const material = response.data.data
-      
+
       // Llenar el formulario con los datos existentes
       reset({
         nombre: material.nombre,
@@ -88,6 +112,11 @@ export default function EditarMaterialPage() {
         observaciones: material.observaciones || '',
         categoriaId: material.categoriaId
       })
+
+      // Si el material tiene imagen, setearla como current
+      if (material.imagenUrl) {
+        setCurrentImageUrl(material.imagenUrl)
+      }
     } catch (error) {
       console.error('Error fetching material:', error)
       toast.error('Error al cargar el material')
@@ -125,20 +154,6 @@ export default function EditarMaterialPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center">
-                <Building2 className="h-8 w-8 text-blue-600" />
-                <h1 className="ml-2 text-xl font-bold text-gray-900">Build Manager</h1>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
@@ -254,18 +269,93 @@ export default function EditarMaterialPage() {
                     />
                   </div>
 
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Imagen (URL)
+                      Imagen del Material
                     </label>
-                    <input
-                      type="url"
-                      {...register('imagenUrl')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="https://ejemplo.com/imagen.jpg"
-                    />
-                    {errors.imagenUrl && (
-                      <p className="mt-1 text-sm text-red-600">{errors.imagenUrl.message}</p>
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) {
+                                setSelectedFile(file)
+                                const url = URL.createObjectURL(file)
+                                setPreviewUrl(url)
+                                setCurrentImageUrl('')
+                                setValue('imagenUrl', '')
+                              }
+                            }}
+                            className="hidden"
+                            id="image-upload-edit"
+                          />
+                          <label
+                            htmlFor="image-upload-edit"
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors text-gray-700 text-sm"
+                          >
+                            📎 Seleccionar imagen...
+                          </label>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowGallery(!showGallery)}
+                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 whitespace-nowrap"
+                        >
+                          🖼️ Galería
+                        </button>
+                      </div>
+                      {previewUrl || currentImageUrl ? (
+                        <img src={previewUrl || currentImageUrl} alt="Preview" className="w-32 h-32 object-cover rounded-md" />
+                      ) : null}
+
+                      {/* Campo URL como opción adicional */}
+                      <div className="border-t pt-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          O especificar URL
+                        </label>
+                        <input
+                          type="url"
+                          {...register('imagenUrl')}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="https://ejemplo.com/imagen.jpg"
+                        />
+                        {errors.imagenUrl && (
+                          <p className="mt-1 text-sm text-red-600">{errors.imagenUrl.message}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {showGallery && (
+                      <div className="border rounded-lg p-4 bg-gray-50 max-h-64 overflow-y-auto">
+                        <h4 className="font-medium mb-3">Seleccionar de Galería</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          {galeria.map((img: any) => (
+                            <div
+                              key={img.filename}
+                              onClick={() => {
+                                // Usar imagen de galería
+                                const fullUrl = img.url.startsWith('http')
+                                  ? img.url
+                                  : `${API_BASE_URL}${img.url}`;
+                                setCurrentImageUrl(fullUrl);
+                                setPreviewUrl('');
+                                setSelectedFile(null);
+                                setValue('imagenUrl', fullUrl);
+                                setShowGallery(false);
+                              }}
+                              className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden transition-colors"
+                            >
+                              <img src={`${API_BASE_URL}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                        {galeria.length === 0 && (
+                          <p className="text-gray-500 text-sm text-center py-4">No hay imágenes en la galería</p>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
