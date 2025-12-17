@@ -19,7 +19,9 @@ export const createMaterialCatalogo = async (
   reply: FastifyReply
 ) => {
   try {
-    // Only extract the fields that belong to the Material model
+    const user = request.user as any;
+
+    // Extraer campos del formulario
     const {
       nombre,
       unidad,
@@ -27,9 +29,15 @@ export const createMaterialCatalogo = async (
       imagenUrl,
       precioUnitario,
       precioBase,
-      observaciones
+      observaciones,
+      tipoCalidad,
+      marca,
+      proveedor,
+      telefonoProveedor,
+      stockMinimo
     } = request.body as any;
 
+    // 1. Crear el material en el catálogo
     const material = await prisma.material.create({
       data: {
         nombre,
@@ -43,16 +51,78 @@ export const createMaterialCatalogo = async (
         esActivo: true
       },
       include: {
+        categoria: true
+      },
+    });
+
+    // 2. Si se proporcionó información de precio, crear una oferta automática
+    // Esto simula que el admin está "ofreciendo" este material
+    let ofertaCreada = null;
+    if (precioUnitario && proveedor) {
+      try {
+        // Buscar o crear el proveedor admin (usuario admin actuando como proveedor)
+        let proveedorAdmin = await prisma.proveedor.findFirst({
+          where: { usuarioId: user.id }
+        });
+
+        // Si no existe, crear el proveedor admin
+        if (!proveedorAdmin) {
+          proveedorAdmin = await prisma.proveedor.create({
+            data: {
+              nombre: proveedor,
+              email: user.email,
+              telefono: telefonoProveedor || user.telefono,
+              sitioWeb: null,
+              logo: null,
+              esActivo: true,
+              usuarioId: user.id,
+              latitud: null,
+              longitud: null,
+              ciudad: null,
+              departamento: null
+            }
+          });
+        }
+
+        // Crear la oferta
+        ofertaCreada = await prisma.ofertaProveedor.create({
+          data: {
+            materialId: material.id,
+            proveedorId: proveedorAdmin.id,
+            precio: parseFloat(precioUnitario),
+            tipoCalidad: tipoCalidad || 'COMUN',
+            marca: marca || null,
+            comisionPorcentaje: 0, // Admin no paga comisión
+            stock: stockMinimo ? parseInt(stockMinimo) > 0 : true,
+            vigenciaHasta: null, // Sin límite
+            observaciones: observaciones || null
+          },
+          include: {
+            proveedor: true
+          }
+        });
+
+        console.log('✅ Oferta automática creada para material del catálogo');
+      } catch (ofertaError) {
+        console.error('⚠️ Error creando oferta automática:', ofertaError);
+        // No fallar la creación del material si falla la oferta
+      }
+    }
+
+    // 3. Devolver el material con sus ofertas (incluyendo la nueva si se creó)
+    const materialCompleto = await prisma.material.findUnique({
+      where: { id: material.id },
+      include: {
         categoria: true,
         ofertas: {
           include: {
             proveedor: true
           }
         }
-      },
+      }
     });
 
-    reply.send({ success: true, data: material });
+    reply.send({ success: true, data: materialCompleto });
   } catch (error) {
     console.error('Error al crear material del catálogo:', error);
     reply.status(500).send({ success: false, error: 'Error al crear material' });
