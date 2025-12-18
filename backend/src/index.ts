@@ -146,7 +146,7 @@ fastify.register(async function (fastify) {
         return reply.status(400).send({ success: false, error: 'Ya existe un proveedor con ese email' })
       }
 
-      const proveedor = await (prisma as any).proveedor.create({
+      const proveedor = await prisma.proveedor.create({
         data: {
           nombre,
           email,
@@ -158,7 +158,7 @@ fastify.register(async function (fastify) {
           longitud: null,
           sitioWeb: null,
           logo: null
-          // usuarioId se omite para proveedores creados desde formulario
+          // usuarioId es null para proveedores creados desde formulario
         },
         select: {
           id: true,

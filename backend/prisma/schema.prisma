@@ -152,8 +152,8 @@ model Proveedor {
   sitioWeb          String?
   logo              String?
   esActivo          Boolean           @default(true)
-  usuarioId         String            @unique // Relación con User
-  usuario           User              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuarioId         String?           // Relación opcional con User (null para proveedores creados desde formularios)
+  usuario           User?             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   ofertas           OfertaProveedor[]
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
@@ -161,6 +161,7 @@ model Proveedor {
   @@index([nombre])
   @@index([ciudad])
   @@index([departamento])
+  @@unique([usuarioId]) // Cambiado de @unique simple a @@unique
 }
 
 // Ofertas de proveedores para materiales
