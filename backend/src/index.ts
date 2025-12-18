@@ -152,7 +152,7 @@ fastify.register(async function (fastify) {
         try {
           const proveedor = await prisma.proveedor.create({
             data: {
-              nombre: usuario.empresa || usuario.name,
+              nombre: usuario.empresa || usuario.name || 'Proveedor',
               email: usuario.email,
               telefono: usuario.telefono || '',
               sitioWeb: null,
