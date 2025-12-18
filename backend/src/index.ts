@@ -124,64 +124,7 @@ fastify.register(async function (fastify) {
     }
   })
 
-  // Ruta para crear proveedores faltantes (one-time fix)
-  fastify.post('/fix-proveedores', async (request, reply) => {
-    try {
-      const { PrismaClient } = await import('@prisma/client')
-      const prisma = new PrismaClient()
 
-      // Encontrar usuarios PROVEEDOR_MATERIALES que no tienen proveedor
-      const usuariosSinProveedor = await prisma.user.findMany({
-        where: {
-          rol: 'PROVEEDOR_MATERIALES',
-          proveedor: null // No tienen proveedor asociado
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          telefono: true,
-          empresa: true
-        }
-      })
-
-      console.log(`Encontrados ${usuariosSinProveedor.length} usuarios sin proveedor`)
-
-      const resultados = []
-      for (const usuario of usuariosSinProveedor) {
-        try {
-          const proveedor = await prisma.proveedor.create({
-            data: {
-              nombre: usuario.empresa || usuario.name || 'Proveedor',
-              email: usuario.email,
-              telefono: usuario.telefono || '',
-              sitioWeb: null,
-              logo: null,
-              esActivo: true,
-              usuarioId: usuario.id,
-              latitud: null,
-              longitud: null,
-              ciudad: null,
-              departamento: null
-            }
-          })
-          resultados.push({ usuario: usuario.email, proveedor: proveedor.nombre, status: 'creado' })
-        } catch (error) {
-          console.error(`Error creando proveedor para ${usuario.email}:`, error)
-          resultados.push({ usuario: usuario.email, status: 'error', error: (error as Error).message })
-        }
-      }
-
-      reply.send({
-        success: true,
-        message: `Procesados ${usuariosSinProveedor.length} usuarios`,
-        data: resultados
-      })
-    } catch (error) {
-      console.error('Error en fix-proveedores:', error)
-      reply.status(500).send({ success: false, error: 'Error al crear proveedores faltantes' })
-    }
-  })
 })
 
 const start = async () => {
