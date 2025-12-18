@@ -71,8 +71,6 @@ export default function EditarMaterialPage() {
   useEffect(() => {
     fetchCategorias()
     fetchGaleria()
-    fetchProveedores()
-    fetchMaterial()
 
     // Determinar si el usuario es admin
     const userData = localStorage.getItem('user')
@@ -81,6 +79,18 @@ export default function EditarMaterialPage() {
       setIsAdmin(user.rol === 'ADMIN')
     }
   }, [materialId])
+
+  useEffect(() => {
+    // Cargar proveedores primero, luego el material
+    fetchProveedores()
+  }, [])
+
+  useEffect(() => {
+    // Una vez que tenemos los proveedores, cargar el material
+    if (proveedores.length > 0) {
+      fetchMaterial()
+    }
+  }, [proveedores])
 
   const fetchProveedores = async () => {
     try {
@@ -120,6 +130,12 @@ export default function EditarMaterialPage() {
       const response = await api.get(`/materiales/${materialId}`)
       const material = response.data.data
 
+      // Buscar el proveedor correspondiente si tiene proveedorId
+      let proveedorEncontrado = null
+      if (material.proveedorId) {
+        proveedorEncontrado = proveedores.find(p => p.id === material.proveedorId)
+      }
+
       // Llenar el formulario con los datos existentes
       reset({
         nombre: material.nombre,
@@ -127,13 +143,19 @@ export default function EditarMaterialPage() {
         precioUnitario: Number(material.precioUnitario),
         tipoCalidad: material.tipoCalidad,
         marca: material.marca || '',
-        proveedor: material.proveedor,
+        proveedorId: material.proveedorId || '',
         telefonoProveedor: material.telefonoProveedor || '',
         stockMinimo: material.stockMinimo || 0,
         imagenUrl: material.imagenUrl || '',
         observaciones: material.observaciones || '',
         categoriaId: material.categoriaId
       })
+
+      // Si encontró el proveedor, setearlo como seleccionado
+      if (proveedorEncontrado) {
+        setSelectedProveedor(proveedorEncontrado)
+        setProveedorSearchTerm(proveedorEncontrado.nombre)
+      }
 
       // Si el material tiene imagen, setearla como current
       if (material.imagenUrl) {
@@ -387,17 +409,80 @@ export default function EditarMaterialPage() {
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Información del Proveedor</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Proveedor *
                     </label>
-                    <input
-                      type="text"
-                      {...register('proveedor')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    {errors.proveedor && (
-                      <p className="mt-1 text-sm text-red-600">{errors.proveedor.message}</p>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={proveedorSearchTerm}
+                        onChange={(e) => {
+                          setProveedorSearchTerm(e.target.value)
+                          setShowProveedorDropdown(true)
+                          if (selectedProveedor && e.target.value !== selectedProveedor.nombre) {
+                            setSelectedProveedor(null)
+                            setValue('proveedorId', '')
+                          }
+                        }}
+                        onFocus={() => setShowProveedorDropdown(true)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Buscar proveedor..."
+                      />
+                      {selectedProveedor && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedProveedor(null)
+                            setProveedorSearchTerm('')
+                            setValue('proveedorId', '')
+                          }}
+                          className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Dropdown de proveedores */}
+                    {showProveedorDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        {proveedores
+                          .filter(proveedor =>
+                            proveedor.nombre.toLowerCase().includes(proveedorSearchTerm.toLowerCase())
+                          )
+                          .map((proveedor) => (
+                            <div
+                              key={proveedor.id}
+                              onClick={() => {
+                                setSelectedProveedor(proveedor)
+                                setProveedorSearchTerm(proveedor.nombre)
+                                setValue('proveedorId', proveedor.id)
+                                setShowProveedorDropdown(false)
+                              }}
+                              className="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="font-medium text-gray-900">{proveedor.nombre}</div>
+                              {proveedor.ciudad && (
+                                <div className="text-sm text-gray-500">📍 {proveedor.ciudad}</div>
+                              )}
+                              {proveedor.telefono && (
+                                <div className="text-sm text-gray-500">📞 {proveedor.telefono}</div>
+                              )}
+                            </div>
+                          ))}
+                        {proveedores.filter(proveedor =>
+                          proveedor.nombre.toLowerCase().includes(proveedorSearchTerm.toLowerCase())
+                        ).length === 0 && (
+                          <div className="px-3 py-2 text-gray-500 text-center">
+                            No se encontraron proveedores
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {errors.proveedorId && (
+                      <p className="mt-1 text-sm text-red-600">{errors.proveedorId.message}</p>
                     )}
                   </div>
 
@@ -407,8 +492,23 @@ export default function EditarMaterialPage() {
                     </label>
                     <input
                       type="tel"
-                      {...register('telefonoProveedor')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      value={selectedProveedor?.telefono || ''}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
+                      placeholder="Se completa automáticamente"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ciudad
+                    </label>
+                    <input
+                      type="text"
+                      value={selectedProveedor?.ciudad || ''}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
+                      placeholder="Se completa automáticamente"
                     />
                   </div>
 
@@ -420,6 +520,7 @@ export default function EditarMaterialPage() {
                       type="number"
                       {...register('stockMinimo', { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
                     />
                   </div>
                 </div>
