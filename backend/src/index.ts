@@ -124,6 +124,58 @@ fastify.register(async function (fastify) {
     }
   })
 
+  // Ruta para crear proveedores (desde formulario de materiales)
+  fastify.post('/proveedores', async (request, reply) => {
+    try {
+      const { PrismaClient } = await import('@prisma/client')
+      const prisma = new PrismaClient()
+
+      const { nombre, email, telefono, ciudad, departamento } = request.body as any
+
+      // Validaciones básicas
+      if (!nombre || !email) {
+        return reply.status(400).send({ success: false, error: 'Nombre y email son requeridos' })
+      }
+
+      // Verificar si ya existe un proveedor con ese email
+      const existente = await prisma.proveedor.findUnique({
+        where: { email }
+      })
+
+      if (existente) {
+        return reply.status(400).send({ success: false, error: 'Ya existe un proveedor con ese email' })
+      }
+
+      const proveedor = await (prisma as any).proveedor.create({
+        data: {
+          nombre,
+          email,
+          telefono: telefono || null,
+          ciudad: ciudad || null,
+          departamento: departamento || null,
+          esActivo: true,
+          latitud: null,
+          longitud: null,
+          sitioWeb: null,
+          logo: null
+          // usuarioId se omite para proveedores creados desde formulario
+        },
+        select: {
+          id: true,
+          nombre: true,
+          telefono: true,
+          ciudad: true,
+          departamento: true
+        }
+      })
+
+      reply.send({ success: true, data: proveedor })
+    } catch (error) {
+      console.error('Error creating proveedor:', error)
+      reply.status(500).send({ success: false, error: 'Error al crear proveedor' })
+    }
+  })
+
 
 })
 
