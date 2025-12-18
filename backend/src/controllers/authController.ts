@@ -50,6 +50,31 @@ export const register = async (request: FastifyRequest<{ Body: RegisterBody }>, 
       },
     });
 
+    // Si el usuario es PROVEEDOR_MATERIALES, crear automáticamente el proveedor
+    if (user.rol === 'PROVEEDOR_MATERIALES') {
+      try {
+        await prisma.proveedor.create({
+          data: {
+            nombre: empresa || name,
+            email: email,
+            telefono: telefono || '',
+            sitioWeb: null,
+            logo: null,
+            esActivo: true,
+            usuarioId: user.id,
+            latitud: null,
+            longitud: null,
+            ciudad: null,
+            departamento: null
+          }
+        });
+        console.log(`✅ Proveedor creado automáticamente para usuario ${user.email}`);
+      } catch (proveedorError) {
+        console.error(`❌ Error creando proveedor para ${user.email}:`, proveedorError);
+        // No fallar el registro si falla la creación del proveedor
+      }
+    }
+
     const token = request.server.jwt.sign({ id: user.id, email: user.email, rol: user.rol });
 
     reply.send({ success: true, data: { user, token } });
