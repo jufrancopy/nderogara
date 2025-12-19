@@ -130,21 +130,59 @@ export const createMaterialCatalogo = async (
 };
 
 export const updateMaterialCatalogo = async (
-  request: FastifyRequest<{ Params: { id: string }; Body: Partial<CreateMaterialCatalogoBody> }>,
+  request: FastifyRequest<{ Params: { id: string }; Body: any }>,
   reply: FastifyReply
 ) => {
   try {
     const { id } = request.params;
+    const user = request.user as any;
 
     const material = await prisma.material.findUnique({ where: { id } });
-    if (!material || material.usuarioId !== null) {
-      return reply.status(404).send({ success: false, error: 'Material del catálogo no encontrado' });
+    if (!material) {
+      return reply.status(404).send({ success: false, error: 'Material no encontrado' });
     }
 
+    // Permitir editar materiales del catálogo (usuarioId = null) o materiales propios
+    const puedeEditar = user.rol === 'ADMIN' ||
+                       (material.usuarioId !== null && material.usuarioId === user.id);
+
+    if (!puedeEditar) {
+      return reply.status(403).send({ success: false, error: 'No tienes permisos para editar este material' });
+    }
+
+    // Extraer campos relevantes para la actualización
+    const body = request.body as any;
+    const {
+      nombre,
+      unidad,
+      precioUnitario,
+      precioBase,
+      tipoCalidad,
+      marca,
+      proveedorId,
+      telefonoProveedor,
+      stockMinimo,
+      imagenUrl,
+      observaciones,
+      categoriaId
+    } = body;
+
+    // Preparar datos de actualización
+    const updateData: any = {};
+
+    if (nombre !== undefined) updateData.nombre = nombre;
+    if (unidad !== undefined) updateData.unidad = unidad;
+    if (precioUnitario !== undefined) updateData.precio = precioUnitario;
+    if (precioBase !== undefined) updateData.precioBase = precioBase;
+    if (imagenUrl !== undefined) updateData.imagenUrl = imagenUrl;
+    if (observaciones !== undefined) updateData.descripcion = observaciones;
+    if (categoriaId !== undefined) updateData.categoriaId = categoriaId;
+
+    // Actualizar el material
     const updated = await prisma.material.update({
       where: { id },
-      data: request.body as any,
-      include: { 
+      data: updateData,
+      include: {
         categoria: true,
         ofertas: {
           include: {
@@ -153,6 +191,47 @@ export const updateMaterialCatalogo = async (
         }
       },
     });
+
+    // Si se proporcionó información de proveedor, actualizar la oferta asociada
+    if (proveedorId && precioUnitario) {
+      try {
+        // Buscar oferta existente para este material
+        const ofertaExistente = await prisma.ofertaProveedor.findFirst({
+          where: { materialId: id }
+        });
+
+        if (ofertaExistente) {
+          // Actualizar oferta existente
+          await prisma.ofertaProveedor.update({
+            where: { id: ofertaExistente.id },
+            data: {
+              proveedorId: proveedorId,
+              precio: precioUnitario,
+              tipoCalidad: tipoCalidad || 'COMUN',
+              marca: marca || null,
+              observaciones: observaciones || null
+            }
+          });
+        } else if (proveedorId) {
+          // Crear nueva oferta
+          await prisma.ofertaProveedor.create({
+            data: {
+              materialId: id,
+              proveedorId: proveedorId,
+              precio: precioUnitario,
+              tipoCalidad: tipoCalidad || 'COMUN',
+              marca: marca || null,
+              comisionPorcentaje: 0, // Admin no paga comisión
+              stock: stockMinimo ? parseInt(stockMinimo) > 0 : true,
+              observaciones: observaciones || null
+            }
+          });
+        }
+      } catch (ofertaError) {
+        console.error('Error actualizando oferta:', ofertaError);
+        // No fallar la actualización del material si falla la oferta
+      }
+    }
 
     reply.send({ success: true, data: updated });
   } catch (error) {
