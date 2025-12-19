@@ -52,6 +52,7 @@ export default function MaterialesItemPage() {
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
+  const [selectedIndex, setSelectedIndex] = useState(-1)
   const [cantidad, setCantidad] = useState('')
   const [observaciones, setObservaciones] = useState('')
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -96,6 +97,55 @@ export default function MaterialesItemPage() {
     fetchItem()
     fetchMateriales()
   }, [itemId])
+
+  // Filtrar materiales para el dropdown
+  const filteredDropdownMateriales = materiales.filter(m =>
+    m.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  // Resetear selección cuando cambia el filtro
+  useEffect(() => {
+    setSelectedIndex(-1)
+  }, [searchTerm])
+
+  // Manejar navegación por teclado
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!showDropdown || filteredDropdownMateriales.length === 0) return
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault()
+          setSelectedIndex(prev =>
+            prev < filteredDropdownMateriales.length - 1 ? prev + 1 : prev
+          )
+          break
+        case 'ArrowUp':
+          e.preventDefault()
+          setSelectedIndex(prev => prev > 0 ? prev - 1 : -1)
+          break
+        case 'Enter':
+          e.preventDefault()
+          if (selectedIndex >= 0 && selectedIndex < filteredDropdownMateriales.length) {
+            const selectedMaterial = filteredDropdownMateriales[selectedIndex]
+            setSelectedMaterial(selectedMaterial)
+            setSearchTerm(selectedMaterial.nombre)
+            setShowDropdown(false)
+            setSelectedIndex(-1)
+          }
+          break
+        case 'Escape':
+          setShowDropdown(false)
+          setSelectedIndex(-1)
+          break
+      }
+    }
+
+    if (showDropdown) {
+      document.addEventListener('keydown', handleKeyDown)
+      return () => document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showDropdown, selectedIndex, filteredDropdownMateriales])
 
   // Cargar estados de pago cuando el item se carga
   useEffect(() => {
@@ -419,19 +469,21 @@ export default function MaterialesItemPage() {
 
                   {showDropdown && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                      {materiales
-                        .filter(m =>
-                          m.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-                        )
-                        .map(material => (
+                      {filteredDropdownMateriales
+                        .map((material, index) => (
                           <div
                             key={material.id}
                             onClick={() => {
                               setSelectedMaterial(material)
                               setSearchTerm(material.nombre)
                               setShowDropdown(false)
+                              setSelectedIndex(-1)
                             }}
-                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            className={`px-3 py-2 cursor-pointer border-b border-gray-100 last:border-b-0 ${
+                              selectedIndex === index
+                                ? 'bg-blue-100 text-blue-900'
+                                : 'hover:bg-gray-100'
+                            }`}
                           >
                             <div className="flex items-center justify-between">
                               <div>
