@@ -99,6 +99,12 @@ fastify.register(async function (fastify) {
   await fastify.register(financiacionRoutes.default)
   await fastify.register(pagoMaterialRoutes.default)
 
+  // Ruta de respaldo para financiaciones (maneja llamadas incorrectas del frontend)
+  fastify.get('/financiaciones', async (request, reply) => {
+    console.log('⚠️  Llamada a /financiaciones detectada - devolviendo array vacío')
+    reply.send({ success: true, data: [] })
+  })
+
   // Ruta pública para proveedores (sin autenticación requerida)
   fastify.get('/proveedores', async (request, reply) => {
     try {
