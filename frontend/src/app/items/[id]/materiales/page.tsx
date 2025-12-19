@@ -581,8 +581,8 @@ export default function MaterialesItemPage() {
 
                   {showDropdown && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                      {filteredDropdownMateriales
-                        .map((material, index) => (
+                      {filteredDropdownMateriales.length > 0 ? (
+                        filteredDropdownMateriales.map((material, index) => (
                           <div
                             key={material.id}
                             onClick={() => {
@@ -598,40 +598,40 @@ export default function MaterialesItemPage() {
                             }`}
                           >
                             <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {material.nombre}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {getUnidadLabel(material.unidad)}
-                            {(() => {
-                              // Mostrar el precio más atractivo disponible
-                              let precioMasAtractivo = null;
-                              let fuentePrecio = '';
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {material.nombre}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {getUnidadLabel(material.unidad)}
+                                  {(() => {
+                                    // Mostrar el precio más atractivo disponible
+                                    let precioMasAtractivo = null;
+                                    let fuentePrecio = '';
 
-                              // Primero buscar el precio más bajo entre ofertas activas
-                              if (material.ofertas && material.ofertas.length > 0) {
-                                const ofertasActivas = material.ofertas.filter(oferta => oferta.stock === true);
-                                if (ofertasActivas.length > 0) {
-                                  precioMasAtractivo = Math.min(...ofertasActivas.map(o => Number(o.precio)));
-                                  fuentePrecio = `• Mejor oferta: ₲ ${precioMasAtractivo.toLocaleString('es-PY')}`;
-                                }
-                              }
+                                    // Primero buscar el precio más bajo entre ofertas activas
+                                    if (material.ofertas && material.ofertas.length > 0) {
+                                      const ofertasActivas = material.ofertas.filter(oferta => oferta.stock === true);
+                                      if (ofertasActivas.length > 0) {
+                                        precioMasAtractivo = Math.min(...ofertasActivas.map(o => Number(o.precio)));
+                                        fuentePrecio = `• Mejor oferta: ₲ ${precioMasAtractivo.toLocaleString('es-PY')}`;
+                                      }
+                                    }
 
-                              // Si no hay ofertas, mostrar precio base
-                              if (precioMasAtractivo === null && material.precioBase) {
-                                precioMasAtractivo = Number(material.precioBase);
-                                fuentePrecio = `• Precio base: ₲ ${precioMasAtractivo.toLocaleString('es-PY')}`;
-                              }
+                                    // Si no hay ofertas, mostrar precio base
+                                    if (precioMasAtractivo === null && material.precioBase) {
+                                      precioMasAtractivo = Number(material.precioBase);
+                                      fuentePrecio = `• Precio base: ₲ ${precioMasAtractivo.toLocaleString('es-PY')}`;
+                                    }
 
-                              return precioMasAtractivo ? (
-                                <span className="ml-2 text-green-600 font-medium">
-                                  {fuentePrecio}
-                                </span>
-                              ) : null;
-                            })()}
-                          </div>
-                        </div>
+                                    return precioMasAtractivo ? (
+                                      <span className="ml-2 text-green-600 font-medium">
+                                        {fuentePrecio}
+                                      </span>
+                                    ) : null;
+                                  })()}
+                                </div>
+                              </div>
                               {material.precioBase && (
                                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
                                   📊 Base
@@ -639,10 +639,8 @@ export default function MaterialesItemPage() {
                               )}
                             </div>
                           </div>
-                        ))}
-                      {materiales.filter(m =>
-                        m.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-                      ).length === 0 && (
+                        ))
+                      ) : (
                         <div className="px-3 py-2 text-sm text-gray-500 text-center">
                           No se encontraron materiales
                         </div>
