@@ -9,6 +9,21 @@ import api from '@/lib/api'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { formatPrice } from '@/lib/formatters'
 
+// Función auxiliar para formatear unidades
+const getUnidadLabel = (unidad: string) => {
+  const labels: { [key: string]: string } = {
+    'M2': 'm²',
+    'M3': 'm³',
+    'ML': 'ml',
+    'KG': 'kg',
+    'BOLSA': 'bolsa',
+    'UNIDAD': 'unidad',
+    'LOTE': 'lote',
+    'GLOBAL': 'global'
+  }
+  return labels[unidad] || unidad
+}
+
 interface Item {
   id: string
   nombre: string
@@ -40,6 +55,21 @@ interface Material {
       nombre: string
     }
   }>
+}
+
+// Función auxiliar para formatear unidades
+const getUnidadLabel = (unidad: string) => {
+  const labels: { [key: string]: string } = {
+    'M2': 'm²',
+    'M3': 'm³',
+    'ML': 'ml',
+    'KG': 'kg',
+    'BOLSA': 'bolsa',
+    'UNIDAD': 'unidad',
+    'LOTE': 'lote',
+    'GLOBAL': 'global'
+  }
+  return labels[unidad] || unidad
 }
 
 export default function MaterialesItemPage() {
@@ -395,19 +425,6 @@ export default function MaterialesItemPage() {
 
 
 
-  const getUnidadLabel = (unidad: string) => {
-    const labels: { [key: string]: string } = {
-      'M2': 'm²',
-      'M3': 'm³',
-      'ML': 'ml',
-      'KG': 'kg',
-      'BOLSA': 'bolsa',
-      'UNIDAD': 'unidad',
-      'LOTE': 'lote',
-      'GLOBAL': 'global'
-    }
-    return labels[unidad] || unidad
-  }
 
   if (loading) {
     return (
