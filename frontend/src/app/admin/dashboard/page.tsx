@@ -37,7 +37,7 @@ interface DashboardData {
     id: string;
     precio: number;
     material: { nombre: string };
-    proveedor: { usuario: { name: string } };
+    proveedor: { usuario?: { name: string } };
     createdAt: string;
   }>;
   todosLosMateriales: Array<{
@@ -220,7 +220,7 @@ export default function AdminDashboardPage() {
                   <div key={oferta.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
                     <div>
                       <p className="text-sm font-medium text-gray-900">{oferta.material.nombre}</p>
-                      <p className="text-xs text-gray-500">{oferta.proveedor.usuario.name}</p>
+                      <p className="text-xs text-gray-500">{oferta.proveedor.usuario?.name || 'Sistema'}</p>
                     </div>
                     <span className="text-sm font-bold text-green-600">{formatPrice(oferta.precio)}</span>
                   </div>
