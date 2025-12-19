@@ -421,7 +421,6 @@ export default function MaterialesItemPage() {
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
                       {materiales
                         .filter(m =>
-                          !item?.materialesPorItem.some(mpi => mpi.material.id === m.id) &&
                           m.nombre.toLowerCase().includes(searchTerm.toLowerCase())
                         )
                         .map(material => (
@@ -457,7 +456,6 @@ export default function MaterialesItemPage() {
                           </div>
                         ))}
                       {materiales.filter(m =>
-                        !item?.materialesPorItem.some(mpi => mpi.material.id === m.id) &&
                         m.nombre.toLowerCase().includes(searchTerm.toLowerCase())
                       ).length === 0 && (
                         <div className="px-3 py-2 text-sm text-gray-500 text-center">
