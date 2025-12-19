@@ -13,6 +13,7 @@ interface Item {
   id: string
   nombre: string
   unidadMedida: string
+  manoObraUnitaria?: number
   materialesPorItem: MaterialPorItem[]
 }
 
@@ -164,6 +165,16 @@ export default function MaterialesItemPage() {
     materialItem.material.nombre.toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
     materialItem.observaciones?.toLowerCase().includes(materialSearchTerm.toLowerCase())
   ) || []
+
+  // Calcular costos totales
+  const costoTotalMateriales = filteredMaterialesPorItem.reduce((total, materialItem) => {
+    const costoMaterial = materialItem.material.precioUnitario * materialItem.cantidadPorUnidad
+    return total + costoMaterial
+  }, 0)
+
+  const costoTotalManoObra = Number(item?.manoObraUnitaria || 0)
+  const costoTotalPorUnidad = costoTotalMateriales + costoTotalManoObra
+  const costoTotalGeneral = costoTotalPorUnidad * (item ? getUnidadLabel(item.unidadMedida) === 'm²' ? 1 : 1 : 1) // Multiplicador según unidad
 
   // Paginación
   const totalPages = Math.ceil(filteredMaterialesPorItem.length / itemsPerPage)
@@ -436,6 +447,96 @@ export default function MaterialesItemPage() {
               <span className="hidden sm:inline ml-2">Agregar Material</span>
             </button>
           </div>
+
+          {/* Cost Summary Card */}
+          {item?.materialesPorItem && item.materialesPorItem.length > 0 && (
+            <div className="bg-white shadow rounded-lg p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <span className="mr-2">💰</span>
+                Resumen de Costos - {item.nombre}
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* Costo Total Materiales */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-blue-900">Materiales</span>
+                    <Package className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="text-2xl font-bold text-blue-900">
+                    {formatPrice(costoTotalMateriales)}
+                  </div>
+                  <div className="text-xs text-blue-700 mt-1">
+                    {filteredMaterialesPorItem.length} material{filteredMaterialesPorItem.length !== 1 ? 'es' : ''}
+                  </div>
+                </div>
+
+                {/* Costo Mano de Obra */}
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-green-900">Mano de Obra</span>
+                    <span className="text-green-600">👷</span>
+                  </div>
+                  <div className="text-2xl font-bold text-green-900">
+                    {formatPrice(costoTotalManoObra)}
+                  </div>
+                  <div className="text-xs text-green-700 mt-1">
+                    Por {getUnidadLabel(item.unidadMedida)}
+                  </div>
+                </div>
+
+                {/* Costo Total por Unidad */}
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-purple-900">Total por {getUnidadLabel(item.unidadMedida)}</span>
+                    <span className="text-purple-600">📊</span>
+                  </div>
+                  <div className="text-2xl font-bold text-purple-900">
+                    {formatPrice(costoTotalPorUnidad)}
+                  </div>
+                  <div className="text-xs text-purple-700 mt-1">
+                    Incluye todo
+                  </div>
+                </div>
+
+                {/* Costo Total General */}
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-orange-900">Costo Total Acumulativo</span>
+                    <span className="text-orange-600">💵</span>
+                  </div>
+                  <div className="text-3xl font-bold text-orange-900">
+                    {formatPrice(costoTotalGeneral)}
+                  </div>
+                  <div className="text-xs text-orange-700 mt-1">
+                    Costo total del item
+                  </div>
+                </div>
+              </div>
+
+              {/* Breakdown por material */}
+              <div className="mt-6">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Desglose por Material:</h4>
+                <div className="space-y-2">
+                  {filteredMaterialesPorItem.slice(0, 5).map((materialItem) => (
+                    <div key={materialItem.id} className="flex justify-between items-center text-sm">
+                      <span className="text-gray-600">
+                        {materialItem.material.nombre} ({materialItem.cantidadPorUnidad}x)
+                      </span>
+                      <span className="font-medium text-gray-900">
+                        {formatPrice(materialItem.material.precioUnitario * materialItem.cantidadPorUnidad)}
+                      </span>
+                    </div>
+                  ))}
+                  {filteredMaterialesPorItem.length > 5 && (
+                    <div className="text-xs text-gray-500 text-center pt-2">
+                      ... y {filteredMaterialesPorItem.length - 5} materiales más
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Add Material Form */}
           {showAddForm && (
