@@ -109,6 +109,8 @@ export default function MaterialesItemPage() {
     setSelectedIndex(-1)
   }, [searchTerm])
 
+  // Función auxiliar para formatear unidades
+
   // Manejar navegación por teclado
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
