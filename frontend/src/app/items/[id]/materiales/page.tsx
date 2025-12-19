@@ -43,7 +43,6 @@ interface MaterialPorItem {
     precioUnitario: number
   }
 }
-
 interface Material {
   id: string
   nombre: string
@@ -55,21 +54,6 @@ interface Material {
       nombre: string
     }
   }>
-}
-
-// Función auxiliar para formatear unidades
-const getUnidadLabel = (unidad: string) => {
-  const labels: { [key: string]: string } = {
-    'M2': 'm²',
-    'M3': 'm³',
-    'ML': 'ml',
-    'KG': 'kg',
-    'BOLSA': 'bolsa',
-    'UNIDAD': 'unidad',
-    'LOTE': 'lote',
-    'GLOBAL': 'global'
-  }
-  return labels[unidad] || unidad
 }
 
 export default function MaterialesItemPage() {
@@ -138,8 +122,6 @@ export default function MaterialesItemPage() {
   useEffect(() => {
     setSelectedIndex(-1)
   }, [searchTerm])
-
-  // Función auxiliar para formatear unidades
 
   // Manejar navegación por teclado
   useEffect(() => {
