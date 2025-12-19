@@ -16,7 +16,7 @@ export const materialesController = {
       const materiales = await prisma.material.findMany({
         where: userId ? {
           OR: [
-            { usuarioId: null }, // Materiales del catálogo
+            { usuarioId: null }, // Materiales del catálogo y creados desde formularios
             { usuarioId: userId } // Materiales personalizados del usuario
           ]
         } : {
