@@ -98,6 +98,10 @@ export default function MaterialesItemPage() {
   const [pagosMaterial, setPagosMaterial] = useState<any[]>([])
   const [loadingPagos, setLoadingPagos] = useState(false)
 
+  // Estados para ver detalles del material
+  const [showMaterialDetailModal, setShowMaterialDetailModal] = useState(false)
+  const [selectedMaterialForDetail, setSelectedMaterialForDetail] = useState<Material | null>(null)
+
   // Estados para búsqueda y paginación
   const [materialSearchTerm, setMaterialSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -394,7 +398,7 @@ export default function MaterialesItemPage() {
         cantidadPorUnidad: editingMaterial.cantidadPorUnidad,
         observaciones: editingMaterial.observaciones || undefined
       })
-      
+
       toast.success('Material actualizado exitosamente')
       setEditingMaterial(null)
       fetchItem()
@@ -403,6 +407,11 @@ export default function MaterialesItemPage() {
       const errorMessage = error.response?.data?.error || 'Error al actualizar material'
       toast.error(errorMessage)
     }
+  }
+
+  const handleShowDetail = (material: Material) => {
+    setSelectedMaterialForDetail(material)
+    setShowMaterialDetailModal(true)
   }
 
 
@@ -701,6 +710,9 @@ export default function MaterialesItemPage() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Imagen
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Material
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -727,8 +739,16 @@ export default function MaterialesItemPage() {
                     {currentMaterialesPorItem.map((materialItem) => (
                       <tr key={materialItem.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="w-12 h-12 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer"
+                               onClick={() => handleShowDetail(materialItem.material)}>
+                            {/* Aquí iría la imagen del material si estuviera disponible */}
+                            <span className="text-gray-400 text-xs">Sin imagen</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <div>
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600"
+                                 onClick={() => handleShowDetail(materialItem.material)}>
                               {materialItem.material.nombre}
                             </div>
                             <div className="text-sm text-gray-500">
@@ -1245,6 +1265,63 @@ export default function MaterialesItemPage() {
                 <button
                   onClick={() => setShowPagoDetalleModal(false)}
                   className="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de detalles del material */}
+      {showMaterialDetailModal && selectedMaterialForDetail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Detalles del Material</h2>
+                <button
+                  onClick={() => setShowMaterialDetailModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">{selectedMaterialForDetail.nombre}</h3>
+                  <p className="text-sm text-gray-600">{getUnidadLabel(selectedMaterialForDetail.unidad)}</p>
+                </div>
+
+                {selectedMaterialForDetail.ofertas && selectedMaterialForDetail.ofertas.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Ofertas Disponibles:</h4>
+                    <div className="space-y-2">
+                      {selectedMaterialForDetail.ofertas.map((oferta, index) => (
+                        <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="text-sm text-gray-600">{oferta.proveedor.nombre}</span>
+                          <span className="text-sm font-medium text-green-600">{formatPrice(oferta.precio)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selectedMaterialForDetail.precioBase && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                    <p className="text-sm text-blue-800">
+                      <strong>Precio Base:</strong> {formatPrice(selectedMaterialForDetail.precioBase)}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setShowMaterialDetailModal(false)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                 >
                   Cerrar
                 </button>
