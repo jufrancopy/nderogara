@@ -582,20 +582,32 @@ export default function MaterialesItemPage() {
 
   // Función para gestionar ofertas de un material
   const handleGestionarOfertas = async (materialItem: MaterialPorItem) => {
-    setSelectedMaterialForOfertas(materialItem)
     setLoadingOfertas(true)
     setShowOfertasModal(true)
 
     try {
-      // Cargar ofertas del material con información actualizada
+      // Recargar la información del item primero para tener datos actualizados
+      await fetchItem()
+
+      // Obtener la información actualizada del material del item recargado
+      const updatedItem = await api.get(`/items/${itemId}`)
+      const updatedMaterialItem = updatedItem.data.data.materialesPorItem.find(
+        (m: MaterialPorItem) => m.material.id === materialItem.material.id
+      )
+
+      if (updatedMaterialItem) {
+        setSelectedMaterialForOfertas(updatedMaterialItem)
+      } else {
+        setSelectedMaterialForOfertas(materialItem)
+      }
+
+      // Cargar ofertas del material
       const response = await api.get(`/materiales/${materialItem.material.id}/ofertas`)
       setOfertasMaterial(response.data.data || [])
-
-      // También recargar la información del item para obtener datos actualizados del material
-      await fetchItem()
     } catch (error) {
       console.error('Error fetching ofertas:', error)
       setOfertasMaterial([])
+      setSelectedMaterialForOfertas(materialItem)
     } finally {
       setLoadingOfertas(false)
     }
@@ -692,8 +704,14 @@ export default function MaterialesItemPage() {
         setSelectedProveedor(null)
         setProveedorSearchTerm('')
 
-        // Recargar materiales para mostrar la nueva oferta
-        fetchMateriales()
+        // Recargar materiales y ofertas del modal actual
+        await fetchMateriales()
+
+        // Si estamos en el modal de ofertas, recargar las ofertas
+        if (showOfertasModal && selectedMaterialForOfertas) {
+          const ofertasResponse = await api.get(`/materiales/${selectedMaterialForOfertas.material.id}/ofertas`)
+          setOfertasMaterial(ofertasResponse.data.data || [])
+        }
       } else {
         toast.error(response.data.error || 'Error al agregar oferta')
       }
