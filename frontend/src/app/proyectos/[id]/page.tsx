@@ -213,7 +213,23 @@ function SortableItem({
                       // Cargar pagos del item antes de abrir el modal
                       const response = await api.get(`/proyectos/${proyectoId}/presupuesto/${item.id}/pagos`)
                       const pagos = response.data.data || []
-                      setPagoModal({ isOpen: true, presupuestoItem: item, pagos })
+
+                      // Calcular el costo actual basado en los pagos existentes (para items dinámicos)
+                      let costoActual = item.costoTotal
+                      if (item.esDinamico) {
+                        const totalPagosAprobados = pagos
+                          .filter((p: any) => p.estado === 'APROBADO')
+                          .reduce((sum: number, p: any) => sum + Number(p.montoPagado), 0)
+                        costoActual = totalPagosAprobados
+                      }
+
+                      // Crear item actualizado con el costo correcto
+                      const itemActualizado = {
+                        ...item,
+                        costoTotal: costoActual
+                      }
+
+                      setPagoModal({ isOpen: true, presupuestoItem: itemActualizado, pagos })
                     } catch (error) {
                       console.error('Error loading pagos:', error)
                       setPagoModal({ isOpen: true, presupuestoItem: item, pagos: [] })
@@ -318,11 +334,13 @@ function SortableItem({
 function PagoHistorialItem({
   presupuestoItemId,
   proyectoId,
-  pagosIniciales
+  pagosIniciales,
+  setModalComprobante
 }: {
   presupuestoItemId: string
   proyectoId: string
   pagosIniciales?: any[]
+  setModalComprobante: (url: string | null) => void
 }) {
   const [pagos, setPagos] = useState<any[]>(pagosIniciales || [])
   const [loading, setLoading] = useState(!pagosIniciales)
@@ -2011,6 +2029,7 @@ export default function ProyectoDetallePage() {
                     presupuestoItemId={pagoModal.presupuestoItem.id}
                     proyectoId={proyectoId}
                     pagosIniciales={pagoModal.pagos}
+                    setModalComprobante={setModalComprobante}
                   />
                 </div>
               </div>
@@ -2038,15 +2057,28 @@ export default function ProyectoDetallePage() {
                         nuevoCostoTotal = totalPagosAprobados
                       }
 
-                      // Actualizar el estado del modal con los nuevos pagos y costo actualizado
-                      setPagoModal(prev => ({
-                        ...prev,
-                        pagos: pagosActualizados,
-                        presupuestoItem: {
-                          ...prev.presupuestoItem,
-                          costoTotal: nuevoCostoTotal
-                        }
-                      }))
+      // Actualizar el estado del modal con los nuevos pagos y costo actualizado
+      setPagoModal(prev => ({
+        ...prev,
+        pagos: pagosActualizados,
+        presupuestoItem: {
+          ...prev.presupuestoItem,
+          costoTotal: nuevoCostoTotal
+        }
+      }))
+
+      // También actualizar el item en el estado global del proyecto
+      setProyecto(prevProyecto => {
+        if (!prevProyecto || !prevProyecto.presupuestoItems) return prevProyecto
+        return {
+          ...prevProyecto,
+          presupuestoItems: prevProyecto.presupuestoItems.map(item =>
+            item.id === pagoModal.presupuestoItem.id
+              ? { ...item, costoTotal: nuevoCostoTotal }
+              : item
+          )
+        }
+      })
 
                       // Recargar datos del proyecto para actualizar costos en la lista principal
                       await fetchProyecto()
