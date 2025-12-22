@@ -12,6 +12,11 @@ export default async function financiacionRoutes(fastify: FastifyInstance) {
   // Aplicar middleware de autenticación a todas las rutas
   fastify.addHook('preHandler', authenticate);
 
+  // Ruta básica para evitar errores 404 (temporal)
+  fastify.get('/financiaciones', async (request, reply) => {
+    return { data: [], success: true };
+  });
+
   // Obtener todas las financiaciones de un proyecto
   fastify.get('/proyectos/:proyectoId/financiaciones', getFinanciaciones);
 
