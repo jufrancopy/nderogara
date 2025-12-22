@@ -9,13 +9,13 @@ import {
 import { authenticate } from '../middleware/auth';
 
 export default async function financiacionRoutes(fastify: FastifyInstance) {
-  // Aplicar middleware de autenticación a todas las rutas
-  fastify.addHook('preHandler', authenticate);
-
-  // Ruta básica para evitar errores 404 (temporal)
+  // Ruta básica para evitar errores 404 (temporal) - SIN AUTENTICACIÓN
   fastify.get('/financiaciones', async (request, reply) => {
     return { data: [], success: true };
   });
+
+  // Aplicar middleware de autenticación a todas las rutas restantes
+  fastify.addHook('preHandler', authenticate);
 
   // Obtener todas las financiaciones de un proyecto
   fastify.get('/proyectos/:proyectoId/financiaciones', getFinanciaciones);
