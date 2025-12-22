@@ -238,7 +238,7 @@ export default function MaterialesItemPage() {
 
   // Filtrar materiales del item
   const filteredMaterialesPorItem = item?.materialesPorItem.filter(materialItem =>
-    materialItem.material.nombre.toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
+    (materialItem.material?.nombre || '').toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
     materialItem.observaciones?.toLowerCase().includes(materialSearchTerm.toLowerCase())
   ) || []
 
@@ -846,7 +846,7 @@ export default function MaterialesItemPage() {
                   {filteredMaterialesPorItem.slice(0, 5).map((materialItem) => (
                     <div key={materialItem.id} className="flex justify-between items-center text-sm">
                       <span className="text-gray-600">
-                        {materialItem.material.nombre} ({materialItem.cantidadPorUnidad}x)
+                        {materialItem.material?.nombre || 'Material sin nombre'} ({materialItem.cantidadPorUnidad}x)
                       </span>
                       <span className="font-medium text-gray-900">
                         {formatPrice(materialItem.material.precioUnitario * materialItem.cantidadPorUnidad)}
@@ -1074,13 +1074,13 @@ export default function MaterialesItemPage() {
                       <tr key={materialItem.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="w-12 h-12 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer overflow-hidden"
-                               onClick={() => handleShowDetail(materialItem.material)}>
-                            {materialItem.material.imagenUrl ? (
+                               onClick={() => materialItem.material && handleShowDetail(materialItem.material)}>
+                            {materialItem.material?.imagenUrl ? (
                               <img
                                 src={materialItem.material.imagenUrl.startsWith('http')
                                   ? materialItem.material.imagenUrl
                                   : `${API_BASE_URL}${materialItem.material.imagenUrl}`}
-                                alt={materialItem.material.nombre}
+                                alt={materialItem.material.nombre || 'Material'}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
@@ -1099,11 +1099,11 @@ export default function MaterialesItemPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <div className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600"
-                                 onClick={() => handleShowDetail(materialItem.material)}>
-                              {materialItem.material.nombre}
+                                 onClick={() => materialItem.material && handleShowDetail(materialItem.material)}>
+                              {materialItem.material?.nombre || 'Material sin nombre'}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {getUnidadLabel(materialItem.material.unidad)}
+                              {materialItem.material ? getUnidadLabel(materialItem.material.unidad) : 'Sin unidad'}
                             </div>
                           </div>
                         </td>
