@@ -29,8 +29,15 @@ export default function AdminMaterialesPage() {
     marca: '',
     comisionPorcentaje: '0',
     stock: true,
-    observaciones: ''
+    observaciones: '',
+    imagenUrl: ''
   });
+
+  // Estados para gestión de imágenes
+  const [galeria, setGaleria] = useState([]);
+  const [showGallery, setShowGallery] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string>('');
 
   // Estados para crear proveedores
   const [showCreateProveedorModal, setShowCreateProveedorModal] = useState(false);
@@ -174,7 +181,8 @@ export default function AdminMaterialesPage() {
       marca: '',
       comisionPorcentaje: '0',
       stock: true,
-      observaciones: ''
+      observaciones: '',
+      imagenUrl: ''
     });
 
     // Cargar proveedores
@@ -222,6 +230,17 @@ export default function AdminMaterialesPage() {
     } catch (error) {
       console.error('Error al agregar oferta:', error);
       toast.error('Error al agregar oferta');
+    }
+  };
+
+  // Función para cargar galería de imágenes
+  const fetchGaleria = async () => {
+    try {
+      const response = await api.get('/upload/galeria');
+      setGaleria(response.data.data || []);
+    } catch (error) {
+      console.error('Error al cargar galería:', error);
+      setGaleria([]);
     }
   };
 
@@ -834,6 +853,102 @@ export default function AdminMaterialesPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     placeholder="0.0"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Imagen del Producto
+                  </label>
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setSelectedFile(file);
+                              const url = URL.createObjectURL(file);
+                              setCurrentImageUrl('');
+                              setOfertaForm(prev => ({ ...prev, imagenUrl: url }));
+                            }
+                          }}
+                          className="hidden"
+                          id="oferta-image-upload"
+                        />
+                        <label
+                          htmlFor="oferta-image-upload"
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors text-gray-700 text-sm"
+                        >
+                          📎 Seleccionar imagen...
+                        </label>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          fetchGaleria();
+                          setShowGallery(!showGallery);
+                        }}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 whitespace-nowrap"
+                      >
+                        🖼️ Galería
+                      </button>
+                    </div>
+                    {currentImageUrl || ofertaForm.imagenUrl ? (
+                      <img
+                        src={currentImageUrl || ofertaForm.imagenUrl}
+                        alt="Vista previa"
+                        className="w-32 h-32 object-cover rounded-md"
+                      />
+                    ) : null}
+
+                    {/* Campo URL como opción adicional */}
+                    <div className="border-t pt-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        O especificar URL
+                      </label>
+                      <input
+                        type="url"
+                        value={ofertaForm.imagenUrl.startsWith('blob:') ? '' : ofertaForm.imagenUrl}
+                        onChange={(e) => {
+                          setOfertaForm(prev => ({ ...prev, imagenUrl: e.target.value }));
+                          setSelectedFile(null);
+                          setCurrentImageUrl('');
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="https://ejemplo.com/imagen.jpg"
+                      />
+                    </div>
+                  </div>
+
+                  {showGallery && (
+                    <div className="border rounded-lg p-4 bg-gray-50 max-h-64 overflow-y-auto mt-3">
+                      <h4 className="font-medium mb-3">Seleccionar de Galería</h4>
+                      <div className="grid grid-cols-3 gap-3">
+                        {galeria.map((img: any) => (
+                          <div
+                            key={img.filename}
+                            onClick={() => {
+                              const fullUrl = img.url.startsWith('http')
+                                ? img.url
+                                : `${API_BASE_URL}${img.url}`;
+                              setOfertaForm(prev => ({ ...prev, imagenUrl: fullUrl }));
+                              setCurrentImageUrl(fullUrl);
+                              setSelectedFile(null);
+                              setShowGallery(false);
+                            }}
+                            className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden transition-colors"
+                          >
+                            <img src={`${API_BASE_URL}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                      {galeria.length === 0 && (
+                        <p className="text-gray-500 text-sm text-center py-4">No hay imágenes en la galería</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div>
