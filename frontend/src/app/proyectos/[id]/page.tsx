@@ -408,37 +408,25 @@ function PagoHistorialItem({
                 )}
               </div>
               {pago.comprobanteUrl.toLowerCase().endsWith('.pdf') ? (
-                <div className="flex items-center justify-center p-4 bg-red-50 rounded">
-                  <a
-                    href={`${API_BASE_URL}${pago.comprobanteUrl}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 text-sm underline"
-                  >
-                    Ver comprobante PDF
-                  </a>
+                <div className="flex items-center justify-center p-3 bg-red-50 rounded-lg border-2 border-dashed border-red-200 cursor-pointer hover:bg-red-100 transition-colors"
+                     onClick={() => window.open(`${API_BASE_URL}${pago.comprobanteUrl}`, '_blank')}>
+                  <div className="text-center">
+                    <div className="text-red-500 text-2xl mb-1">📄</div>
+                    <p className="text-red-700 text-sm font-medium">Click para ver PDF</p>
+                    <p className="text-red-500 text-xs">Abrirá en nueva pestaña</p>
+                  </div>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="flex justify-center">
                   <img
                     src={`${API_BASE_URL}${pago.comprobanteUrl}`}
                     alt="Comprobante de pago"
-                    className="w-full max-w-md h-auto rounded border shadow-sm"
+                    className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all"
+                    onClick={() => window.open(`${API_BASE_URL}${pago.comprobanteUrl}`, '_blank')}
                     onError={(e) => {
                       ;(e.target as HTMLImageElement).style.display = 'none'
                     }}
                   />
-                  <div className="flex items-center space-x-2">
-                    <span className="text-green-600 text-sm">🖼️</span>
-                    <a
-                      href={`${API_BASE_URL}${pago.comprobanteUrl}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-sm underline"
-                    >
-                      Ver imagen completa
-                    </a>
-                  </div>
                 </div>
               )}
             </div>
@@ -2027,9 +2015,24 @@ export default function ProyectoDetallePage() {
                   presupuestoItemId={pagoModal.presupuestoItem.id}
                   proyectoId={proyectoId}
                   costoTotal={Number(pagoModal.presupuestoItem.costoTotal)}
-                  onPagoSuccess={() => {
-                    // Recargar datos del proyecto para actualizar costos
-                    fetchProyecto()
+                  onPagoSuccess={async () => {
+                    try {
+                      // Recargar pagos del item para actualizar el historial
+                      const response = await api.get(`/proyectos/${proyectoId}/presupuesto/${pagoModal.presupuestoItem.id}/pagos`)
+                      const pagosActualizados = response.data.data || []
+
+                      // Actualizar el estado del modal con los nuevos pagos
+                      setPagoModal(prev => ({
+                        ...prev,
+                        pagos: pagosActualizados
+                      }))
+
+                      // Recargar datos del proyecto para actualizar costos
+                      fetchProyecto()
+                    } catch (error) {
+                      console.error('Error recargando pagos:', error)
+                      fetchProyecto() // Fallback
+                    }
                   }}
                 />
               </div>
