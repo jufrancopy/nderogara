@@ -440,7 +440,7 @@ function PagoHistorialItem({
                     src={`${API_BASE_URL}${pago.comprobanteUrl}`}
                     alt="Comprobante de pago"
                     className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all"
-                    onClick={() => setModalComprobante(`${API_BASE_URL}${pago.comprobanteUrl}`)}
+                    onClick={() => setModalComprobante && setModalComprobante(`${API_BASE_URL}${pago.comprobanteUrl}`)}
                     onError={(e) => {
                       ;(e.target as HTMLImageElement).style.display = 'none'
                     }}
