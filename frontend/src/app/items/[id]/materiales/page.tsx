@@ -177,7 +177,7 @@ export default function MaterialesItemPage() {
 
   // Filtrar materiales para el dropdown
   const filteredDropdownMateriales = materiales.filter(m =>
-    m.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    (m.nombre || '').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   // Resetear selección cuando cambia el filtro
@@ -238,8 +238,9 @@ export default function MaterialesItemPage() {
 
   // Filtrar materiales del item
   const filteredMaterialesPorItem = item?.materialesPorItem.filter(materialItem =>
-    (materialItem.material?.nombre || '').toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
-    materialItem.observaciones?.toLowerCase().includes(materialSearchTerm.toLowerCase())
+    materialItem.material &&
+    ((materialItem.material.nombre || '').toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
+    materialItem.observaciones?.toLowerCase().includes(materialSearchTerm.toLowerCase()))
   ) || []
 
   // Calcular costos totales
@@ -384,7 +385,7 @@ export default function MaterialesItemPage() {
   const fetchMateriales = async () => {
     try {
       const response = await api.get('/materiales')
-      setMateriales(response.data.data || [])
+      setMateriales(response.data.data?.filter(m => m && m.nombre) || [])
     } catch (error) {
       console.error('Error fetching materiales:', error)
     }
@@ -712,7 +713,7 @@ export default function MaterialesItemPage() {
   const fetchProveedores = async () => {
     try {
       const response = await api.get('/proveedores')
-      setProveedores(response.data.data || [])
+      setProveedores(response.data.data?.filter(p => p && p.nombre) || [])
     } catch (error) {
       console.error('Error al cargar proveedores:', error)
       setProveedores([])
@@ -1661,7 +1662,7 @@ export default function MaterialesItemPage() {
                     <div className="space-y-2">
                       {selectedMaterialForDetail.ofertas.map((oferta, index) => (
                         <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                          <span className="text-sm text-gray-600">{oferta.proveedor.nombre}</span>
+                          <span className="text-sm text-gray-600">{oferta.proveedor?.nombre || 'Proveedor desconocido'}</span>
                           <span className="text-sm font-medium text-green-600">{formatPrice(oferta.precio)}</span>
                         </div>
                       ))}
@@ -1975,20 +1976,20 @@ export default function MaterialesItemPage() {
                         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
                           {proveedores
                             .filter(proveedor =>
-                              proveedor.nombre.toLowerCase().includes(proveedorSearchTerm.toLowerCase())
+                              (proveedor.nombre || '').toLowerCase().includes(proveedorSearchTerm.toLowerCase())
                             )
                             .map((proveedor) => (
                               <div
                                 key={proveedor.id}
                                 onClick={() => {
                                   setSelectedProveedor(proveedor)
-                                  setProveedorSearchTerm(proveedor.nombre)
+                                  setProveedorSearchTerm(proveedor.nombre || '')
                                   setCreateMaterialForm(prev => ({ ...prev, proveedorId: proveedor.id }))
                                   setShowProveedorDropdown(false)
                                 }}
                                 className="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                               >
-                                <div className="font-medium text-gray-900">{proveedor.nombre}</div>
+                                <div className="font-medium text-gray-900">{proveedor.nombre || 'Sin nombre'}</div>
                                 {proveedor.ciudad && (
                                   <div className="text-sm text-gray-500">📍 {proveedor.ciudad}</div>
                                 )}
@@ -2286,21 +2287,21 @@ export default function MaterialesItemPage() {
                       <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
                         {proveedores
                           .filter(proveedor =>
-                            proveedor.nombre.toLowerCase().includes(proveedorSearchTerm.toLowerCase()) ||
-                            proveedor.ciudad?.toLowerCase().includes(proveedorSearchTerm.toLowerCase())
+                            (proveedor.nombre || '').toLowerCase().includes(proveedorSearchTerm.toLowerCase()) ||
+                            (proveedor.ciudad || '').toLowerCase().includes(proveedorSearchTerm.toLowerCase())
                           )
                           .map((proveedor) => (
                             <div
                               key={proveedor.id}
                               onClick={() => {
                                 setSelectedProveedor(proveedor)
-                                setProveedorSearchTerm(proveedor.nombre)
+                                setProveedorSearchTerm(proveedor.nombre || '')
                                 setOfertaForm(prev => ({ ...prev, proveedorId: proveedor.id }))
                                 setShowProveedorDropdown(false)
                               }}
                               className="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                             >
-                              <div className="font-medium text-gray-900">{proveedor.nombre}</div>
+                              <div className="font-medium text-gray-900">{proveedor.nombre || 'Sin nombre'}</div>
                               {proveedor.ciudad && (
                                 <div className="text-sm text-gray-500">📍 {proveedor.ciudad}</div>
                               )}
