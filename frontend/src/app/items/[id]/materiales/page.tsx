@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import Link from 'next/link' 
+import Link from 'next/link'
 import { ArrowLeft, Plus, Edit, Trash2, Package, ChevronLeft, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { formatPrice } from '@/lib/formatters'
+import { API_BASE_URL } from '@/lib/api'
 
 // Función auxiliar para formatear unidades
 const getUnidadLabel = (unidad: string) => {
@@ -103,6 +104,42 @@ export default function MaterialesItemPage() {
   const [showMaterialDetailModal, setShowMaterialDetailModal] = useState(false)
   const [selectedMaterialForDetail, setSelectedMaterialForDetail] = useState<Material | null>(null)
 
+  // Estados para crear nuevo material
+  const [showCreateMaterialModal, setShowCreateMaterialModal] = useState(false)
+  const [categorias, setCategorias] = useState<any[]>([])
+  const [galeria, setGaleria] = useState<any[]>([])
+  const [showGallery, setShowGallery] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [currentImageUrl, setCurrentImageUrl] = useState<string>('')
+  const [proveedores, setProveedores] = useState<any[]>([])
+  const [proveedorSearchTerm, setProveedorSearchTerm] = useState('')
+  const [showProveedorDropdown, setShowProveedorDropdown] = useState(false)
+  const [selectedProveedor, setSelectedProveedor] = useState<any>(null)
+  const [showCreateProveedorModal, setShowCreateProveedorModal] = useState(false)
+  const [newProveedor, setNewProveedor] = useState({
+    nombre: '',
+    email: '',
+    telefono: '',
+    ciudad: '',
+    departamento: ''
+  })
+  const [createMaterialForm, setCreateMaterialForm] = useState({
+    nombre: '',
+    descripcion: '',
+    unidad: 'UNIDAD',
+    categoriaId: '',
+    precioUnitario: '',
+    precioBase: '',
+    tipoCalidad: 'COMUN',
+    marca: '',
+    proveedorId: '',
+    telefonoProveedor: '',
+    stockMinimo: '0',
+    imagenUrl: '',
+    observaciones: ''
+  })
+  const [loadingCreate, setLoadingCreate] = useState(false)
+
   // Estados para búsqueda y paginación
   const [materialSearchTerm, setMaterialSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -116,6 +153,9 @@ export default function MaterialesItemPage() {
   useEffect(() => {
     fetchItem()
     fetchMateriales()
+    fetchCategorias()
+    fetchGaleria()
+    fetchProveedores()
   }, [itemId])
 
   // Filtrar materiales para el dropdown
@@ -415,6 +455,181 @@ export default function MaterialesItemPage() {
     setShowMaterialDetailModal(true)
   }
 
+  // Función para crear nuevo material y agregarlo al item
+  const handleCreateNewMaterial = async () => {
+    // Validaciones básicas
+    if (!createMaterialForm.nombre || !createMaterialForm.categoriaId ||
+        !createMaterialForm.precioUnitario || !createMaterialForm.proveedorId) {
+      toast.error('Por favor completa todos los campos requeridos')
+      return
+    }
+
+    setLoadingCreate(true)
+
+    try {
+      // Subir imagen si hay archivo seleccionado
+      let finalImageUrl = createMaterialForm.imagenUrl || ''
+      if (selectedFile) {
+        const formData = new FormData()
+        formData.append('file', selectedFile)
+
+        const uploadResponse = await api.post('/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+
+        if (uploadResponse.data.success) {
+          finalImageUrl = uploadResponse.data.data.url
+        }
+      }
+
+      // Crear el material usando la API de admin (que también crea la oferta automáticamente)
+      const materialData = {
+        nombre: createMaterialForm.nombre,
+        descripcion: createMaterialForm.observaciones,
+        unidad: createMaterialForm.unidad,
+        categoriaId: createMaterialForm.categoriaId,
+        precioUnitario: parseFloat(createMaterialForm.precioUnitario.replace(/\./g, '').replace(',', '.')),
+        precioBase: createMaterialForm.precioBase ? parseFloat(createMaterialForm.precioBase) : null,
+        tipoCalidad: createMaterialForm.tipoCalidad,
+        marca: createMaterialForm.marca,
+        proveedorId: createMaterialForm.proveedorId,
+        telefonoProveedor: selectedProveedor?.telefono || '',
+        stockMinimo: parseInt(createMaterialForm.stockMinimo) || 0,
+        imagenUrl: finalImageUrl,
+        observaciones: createMaterialForm.observaciones
+      }
+
+      const response = await api.post('/admin/materiales', materialData)
+
+      if (response.data.success) {
+        const nuevoMaterial = response.data.data
+
+        // Agregar automáticamente el material al item actual
+        await api.post(`/items/${itemId}/materiales`, {
+          materialId: nuevoMaterial.id,
+          cantidadPorUnidad: 1, // Valor por defecto
+          observaciones: `Material creado y agregado automáticamente - ${new Date().toLocaleDateString('es-PY')}`
+        })
+
+        toast.success('Material creado y agregado exitosamente al item')
+
+        // Resetear formulario
+        setCreateMaterialForm({
+          nombre: '',
+          descripcion: '',
+          unidad: 'UNIDAD',
+          categoriaId: '',
+          precioUnitario: '',
+          precioBase: '',
+          tipoCalidad: 'COMUN',
+          marca: '',
+          proveedorId: '',
+          telefonoProveedor: '',
+          stockMinimo: '0',
+          imagenUrl: '',
+          observaciones: ''
+        })
+        setSelectedFile(null)
+        setCurrentImageUrl('')
+        setSelectedProveedor(null)
+        setProveedorSearchTerm('')
+
+        // Cerrar modal y recargar datos
+        setShowCreateMaterialModal(false)
+        fetchItem()
+        fetchMateriales()
+      } else {
+        toast.error(response.data.error || 'Error al crear material')
+      }
+    } catch (error: any) {
+      console.error('Error creating material:', error)
+      const errorMessage = error.response?.data?.error || 'Error al crear material'
+      toast.error(`Error: ${errorMessage}`)
+    } finally {
+      setLoadingCreate(false)
+    }
+  }
+
+  // Función para crear proveedores
+  const handleCreateProveedor = async () => {
+    try {
+      const response = await api.post('/proveedores', newProveedor)
+      const proveedorCreado = response.data.data
+
+      // Agregar el nuevo proveedor a la lista
+      setProveedores(prev => [...prev, proveedorCreado])
+
+      // Seleccionar automáticamente el nuevo proveedor
+      setSelectedProveedor(proveedorCreado)
+      setProveedorSearchTerm(proveedorCreado.nombre)
+      setCreateMaterialForm(prev => ({ ...prev, proveedorId: proveedorCreado.id }))
+      setShowProveedorDropdown(false)
+
+      // Cerrar modal y resetear formulario
+      setShowCreateProveedorModal(false)
+      setNewProveedor({
+        nombre: '',
+        email: '',
+        telefono: '',
+        ciudad: '',
+        departamento: ''
+      })
+
+      toast.success('Proveedor creado exitosamente')
+    } catch (error: any) {
+      console.error('Error creating proveedor:', error)
+      const errorMessage = error.response?.data?.error || 'Error al crear proveedor'
+      toast.error(`Error: ${errorMessage}`)
+    }
+  }
+
+  // Funciones para cargar datos
+  const fetchCategorias = async () => {
+    try {
+      const response = await api.get('/categorias')
+      setCategorias(response.data.data || [])
+    } catch (error) {
+      console.error('Error al cargar categorías:', error)
+      // Cargar categorías por defecto si falla
+      setCategorias([
+        { id: '1', nombre: 'Estructural' },
+        { id: '2', nombre: 'Mampostería' },
+        { id: '3', nombre: 'Acabados' },
+        { id: '4', nombre: 'Instalaciones Eléctricas' },
+        { id: '5', nombre: 'Instalaciones Sanitarias' },
+        { id: '6', nombre: 'Herramientas' },
+        { id: '7', nombre: 'Construcción General' },
+        { id: '8', nombre: 'Aislantes' },
+        { id: '9', nombre: 'Fijaciones' },
+        { id: '10', nombre: 'Adhesivos y Selladores' },
+        { id: '11', nombre: 'Cubierta y Techos' },
+        { id: '12', nombre: 'Carpintería' },
+        { id: '13', nombre: 'Jardinería' },
+        { id: '14', nombre: 'Seguridad' }
+      ])
+    }
+  }
+
+  const fetchGaleria = async () => {
+    try {
+      const response = await api.get('/upload/galeria')
+      setGaleria(response.data.data || [])
+    } catch (error) {
+      console.error('Error al cargar galería:', error)
+      setGaleria([])
+    }
+  }
+
+  const fetchProveedores = async () => {
+    try {
+      const response = await api.get('/proveedores')
+      setProveedores(response.data.data || [])
+    } catch (error) {
+      console.error('Error al cargar proveedores:', error)
+      setProveedores([])
+    }
+  }
+
 
 
 
@@ -449,14 +664,24 @@ export default function MaterialesItemPage() {
                 <p className="text-gray-600">{item?.nombre}</p>
               </div>
             </div>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="bg-[#38603B] text-white px-3 py-1 rounded text-sm transition-colors flex items-center hover:bg-[#2d4a2f] sm:px-4 sm:py-2 lg:px-4 lg:py-2"
-              title="Agregar Material"
-            >
-              <Plus className="h-4 w-4 sm:h-4 sm:w-4 lg:h-4 lg:w-4" />
-              <span className="hidden sm:inline ml-2">Agregar Material</span>
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="bg-[#38603B] text-white px-3 py-1 rounded text-sm transition-colors flex items-center hover:bg-[#2d4a2f] sm:px-4 sm:py-2 lg:px-4 lg:py-2"
+                title="Agregar Material Existente"
+              >
+                <Plus className="h-4 w-4 sm:h-4 sm:w-4 lg:h-4 lg:w-4" />
+                <span className="hidden sm:inline ml-2">Agregar Material</span>
+              </button>
+              <button
+                onClick={() => setShowCreateMaterialModal(true)}
+                className="bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors flex items-center hover:bg-blue-700 sm:px-4 sm:py-2 lg:px-4 lg:py-2"
+                title="Crear Nuevo Material"
+              >
+                <span className="text-lg">+</span>
+                <span className="hidden sm:inline ml-2">Nuevo Material</span>
+              </button>
+            </div>
           </div>
 
           {/* Cost Summary Card */}
@@ -1344,6 +1569,521 @@ export default function MaterialesItemPage() {
                   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                 >
                   Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para crear nuevo material */}
+      {showCreateMaterialModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Crear Nuevo Material</h2>
+                <button
+                  onClick={() => setShowCreateMaterialModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-green-900 mb-2">¿Qué hace esto?</h3>
+                <ul className="text-sm text-green-800 space-y-1">
+                  <li>• Crea un material en el catálogo general</li>
+                  <li>• Genera automáticamente una oferta</li>
+                  <li>• Agrega el material a este item inmediatamente</li>
+                  <li>• El material estará disponible para otros proyectos</li>
+                </ul>
+              </div>
+
+              <form className="space-y-6">
+                {/* Información Básica */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Información Básica</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nombre del Material *
+                      </label>
+                      <input
+                        type="text"
+                        value={createMaterialForm.nombre}
+                        onChange={(e) => setCreateMaterialForm(prev => ({ ...prev, nombre: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Ej: Cemento Portland"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Categoría *
+                      </label>
+                      <select
+                        value={createMaterialForm.categoriaId}
+                        onChange={(e) => setCreateMaterialForm(prev => ({ ...prev, categoriaId: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      >
+                        <option value="">Seleccionar categoría</option>
+                        {categorias.map((categoria: any) => (
+                          <option key={categoria.id} value={categoria.id}>
+                            {categoria.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Unidad de Medida *
+                      </label>
+                      <select
+                        value={createMaterialForm.unidad}
+                        onChange={(e) => setCreateMaterialForm(prev => ({ ...prev, unidad: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="UNIDAD">Unidad</option>
+                        <option value="KG">Kilogramo</option>
+                        <option value="BOLSA">Bolsa</option>
+                        <option value="M2">Metro Cuadrado</option>
+                        <option value="M3">Metro Cúbico</option>
+                        <option value="ML">Metro Lineal</option>
+                        <option value="LOTE">Lote</option>
+                        <option value="GLOBAL">Global</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Precio Unitario (₲) *
+                      </label>
+                      <input
+                        type="text"
+                        value={createMaterialForm.precioUnitario}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9]/g, '')
+                          const numValue = parseInt(value) || 0
+                          setCreateMaterialForm(prev => ({
+                            ...prev,
+                            precioUnitario: numValue.toLocaleString('es-PY')
+                          }))
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="0"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tipo de Calidad
+                      </label>
+                      <select
+                        value={createMaterialForm.tipoCalidad}
+                        onChange={(e) => setCreateMaterialForm(prev => ({ ...prev, tipoCalidad: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="COMUN">Común</option>
+                        <option value="PREMIUM">Premium</option>
+                        <option value="INDUSTRIAL">Industrial</option>
+                        <option value="ARTESANAL">Artesanal</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Marca
+                      </label>
+                      <input
+                        type="text"
+                        value={createMaterialForm.marca}
+                        onChange={(e) => setCreateMaterialForm(prev => ({ ...prev, marca: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Ej: Holcim"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Imagen del Material
+                      </label>
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setSelectedFile(file);
+                                  const url = URL.createObjectURL(file);
+                                  setCurrentImageUrl('');
+                                  setCreateMaterialForm(prev => ({ ...prev, imagenUrl: url }));
+                                }
+                              }}
+                              className="hidden"
+                              id="create-material-image-upload"
+                            />
+                            <label
+                              htmlFor="create-material-image-upload"
+                              className="block w-full px-3 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors text-gray-700 text-sm"
+                            >
+                              📎 Seleccionar imagen...
+                            </label>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // Cargar galería si no está cargada
+                              if (galeria.length === 0) {
+                                fetchGaleria();
+                              }
+                              setShowGallery(!showGallery);
+                            }}
+                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 whitespace-nowrap"
+                          >
+                            🖼️ Galería
+                          </button>
+                        </div>
+                        {currentImageUrl || createMaterialForm.imagenUrl ? (
+                          <img src={currentImageUrl || createMaterialForm.imagenUrl} alt="Preview" className="w-32 h-32 object-cover rounded-md" />
+                        ) : null}
+
+                        {/* Campo URL como opción adicional */}
+                        <div className="border-t pt-3">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            O especificar URL
+                          </label>
+                          <input
+                            type="url"
+                            value={createMaterialForm.imagenUrl.startsWith('blob:') ? '' : createMaterialForm.imagenUrl}
+                            onChange={(e) => {
+                              setCreateMaterialForm(prev => ({ ...prev, imagenUrl: e.target.value }));
+                              setSelectedFile(null);
+                              setCurrentImageUrl('');
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="https://ejemplo.com/imagen.jpg"
+                          />
+                        </div>
+                      </div>
+
+                      {showGallery && (
+                        <div className="border rounded-lg p-4 bg-gray-50 max-h-64 overflow-y-auto mt-3">
+                          <h4 className="font-medium mb-3">Seleccionar de Galería</h4>
+                          <div className="grid grid-cols-3 gap-3">
+                            {galeria.map((img: any) => (
+                              <div
+                                key={img.filename}
+                                onClick={() => {
+                                  const fullUrl = img.url.startsWith('http')
+                                    ? img.url
+                                    : `${API_BASE_URL}${img.url}`;
+                                  setCreateMaterialForm(prev => ({ ...prev, imagenUrl: fullUrl }));
+                                  setCurrentImageUrl(fullUrl);
+                                  setSelectedFile(null);
+                                  setShowGallery(false);
+                                }}
+                                className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden transition-colors"
+                              >
+                                <img src={`${API_BASE_URL}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
+                              </div>
+                            ))}
+                          </div>
+                          {galeria.length === 0 && (
+                            <p className="text-gray-500 text-sm text-center py-4">No hay imágenes en la galería</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Información del Proveedor */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Información del Proveedor</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="relative">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Proveedor *
+                      </label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="text"
+                            value={proveedorSearchTerm}
+                            onChange={(e) => {
+                              setProveedorSearchTerm(e.target.value)
+                              setShowProveedorDropdown(true)
+                              if (selectedProveedor && e.target.value !== selectedProveedor.nombre) {
+                                setSelectedProveedor(null)
+                                setCreateMaterialForm(prev => ({ ...prev, proveedorId: '' }))
+                              }
+                            }}
+                            onFocus={() => setShowProveedorDropdown(true)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Buscar proveedor..."
+                            required
+                          />
+                          {selectedProveedor && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedProveedor(null)
+                                setProveedorSearchTerm('')
+                                setCreateMaterialForm(prev => ({ ...prev, proveedorId: '' }))
+                              }}
+                              className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowCreateProveedorModal(true)}
+                          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors whitespace-nowrap"
+                        >
+                          + Agregar
+                        </button>
+                      </div>
+
+                      {/* Dropdown de proveedores */}
+                      {showProveedorDropdown && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          {proveedores
+                            .filter(proveedor =>
+                              proveedor.nombre.toLowerCase().includes(proveedorSearchTerm.toLowerCase())
+                            )
+                            .map((proveedor) => (
+                              <div
+                                key={proveedor.id}
+                                onClick={() => {
+                                  setSelectedProveedor(proveedor)
+                                  setProveedorSearchTerm(proveedor.nombre)
+                                  setCreateMaterialForm(prev => ({ ...prev, proveedorId: proveedor.id }))
+                                  setShowProveedorDropdown(false)
+                                }}
+                                className="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                              >
+                                <div className="font-medium text-gray-900">{proveedor.nombre}</div>
+                                {proveedor.ciudad && (
+                                  <div className="text-sm text-gray-500">📍 {proveedor.ciudad}</div>
+                                )}
+                                {proveedor.telefono && (
+                                  <div className="text-sm text-gray-500">📞 {proveedor.telefono}</div>
+                                )}
+                              </div>
+                            ))}
+                          {proveedores.filter(proveedor =>
+                            proveedor.nombre.toLowerCase().includes(proveedorSearchTerm.toLowerCase())
+                          ).length === 0 && (
+                            <div className="px-3 py-2 text-gray-500 text-center">
+                              No se encontraron proveedores
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {createMaterialForm.proveedorId === '' && (
+                        <p className="mt-1 text-sm text-red-600">El proveedor es requerido</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Teléfono del Proveedor
+                      </label>
+                      <input
+                        type="tel"
+                        value={selectedProveedor?.telefono || ''}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
+                        placeholder="Se completa automáticamente"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Ciudad
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedProveedor?.ciudad || ''}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
+                        placeholder="Se completa automáticamente"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Stock Mínimo
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={createMaterialForm.stockMinimo}
+                        onChange={(e) => setCreateMaterialForm(prev => ({ ...prev, stockMinimo: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Observaciones */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Observaciones
+                  </label>
+                  <textarea
+                    value={createMaterialForm.observaciones}
+                    onChange={(e) => setCreateMaterialForm(prev => ({ ...prev, observaciones: e.target.value }))}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Notas adicionales sobre el material..."
+                  />
+                </div>
+
+                {/* Botones */}
+                <div className="flex justify-end space-x-4 pt-6 border-t">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateMaterialModal(false)}
+                    className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateNewMaterial}
+                    disabled={loadingCreate}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center disabled:opacity-50"
+                  >
+                    {loadingCreate ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Creando...
+                      </>
+                    ) : (
+                      <>
+                        <span className="mr-2">⚡</span>
+                        Crear y Agregar Material
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para crear proveedor */}
+      {showCreateProveedorModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Agregar Nuevo Proveedor</h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre del Proveedor *
+                  </label>
+                  <input
+                    type="text"
+                    value={newProveedor.nombre}
+                    onChange={(e) => setNewProveedor(prev => ({ ...prev, nombre: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Ej: Ferretería Central"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    value={newProveedor.email}
+                    onChange={(e) => setNewProveedor(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="contacto@proveedor.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Teléfono
+                  </label>
+                  <input
+                    type="tel"
+                    value={newProveedor.telefono}
+                    onChange={(e) => setNewProveedor(prev => ({ ...prev, telefono: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="+595 21 123456"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ciudad
+                  </label>
+                  <input
+                    type="text"
+                    value={newProveedor.ciudad}
+                    onChange={(e) => setNewProveedor(prev => ({ ...prev, ciudad: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Asunción"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Departamento
+                  </label>
+                  <input
+                    type="text"
+                    value={newProveedor.departamento}
+                    onChange={(e) => setNewProveedor(prev => ({ ...prev, departamento: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Central"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateProveedorModal(false)
+                    setNewProveedor({
+                      nombre: '',
+                      email: '',
+                      telefono: '',
+                      ciudad: '',
+                      departamento: ''
+                    })
+                  }}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateProveedor}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                >
+                  Crear Proveedor
                 </button>
               </div>
             </div>
