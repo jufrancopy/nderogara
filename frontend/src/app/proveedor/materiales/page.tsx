@@ -23,6 +23,7 @@ interface Material {
     id: string;
     marca: string | null;
     precio: number;
+    stock: boolean;
     proveedor: {
       id: string;
       nombre: string;
@@ -65,12 +66,29 @@ export default function MisMaterialesPage() {
   const [offerImagePreview, setOfferImagePreview] = useState<string>('');
   const [showOfferGallery, setShowOfferGallery] = useState(false);
   const [offerPriceDisplay, setOfferPriceDisplay] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [materialesBaseSearchTerm, setMaterialesBaseSearchTerm] = useState('');
 
   useEffect(() => {
     fetchMateriales();
     fetchMaterialesBase();
     fetchGaleria();
   }, []);
+
+  // Filtrar materiales base
+  const filteredMaterialesBase = materialesBase.filter(materialBase =>
+    (materialBase.nombre || '').toLowerCase().includes(materialesBaseSearchTerm.toLowerCase()) ||
+    (materialBase.descripcion || '').toLowerCase().includes(materialesBaseSearchTerm.toLowerCase()) ||
+    (materialBase.categoria?.nombre || '').toLowerCase().includes(materialesBaseSearchTerm.toLowerCase())
+  )
+
+  // Filtrar materiales
+  const filteredMateriales = materiales.filter(material =>
+    (material.nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (material.descripcion || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (material.categoria?.nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (material.ofertas?.[0]?.marca || '').toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   const fetchGaleria = async () => {
     try {
@@ -401,8 +419,26 @@ export default function MisMaterialesPage() {
             <div className="flex items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mr-4">📦 Materiales Base Disponibles</h2>
               <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                {materialesBase.length} materiales
+                {filteredMaterialesBase.length} materiales
               </span>
+            </div>
+
+            {/* Search Bar for Materiales Base */}
+            <div className="mb-6">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar materiales base..."
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  value={materialesBaseSearchTerm}
+                  onChange={(e) => setMaterialesBaseSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="bg-white shadow-sm rounded-lg overflow-hidden">
@@ -428,7 +464,7 @@ export default function MisMaterialesPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {materialesBase.map((materialBase) => (
+                    {filteredMaterialesBase.map((materialBase) => (
                       <tr key={materialBase.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -480,9 +516,29 @@ export default function MisMaterialesPage() {
         <div className="flex items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mr-4">🛒 Mis Materiales</h2>
           <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-            {materiales.length} materiales
+            {filteredMateriales.length} materiales
           </span>
         </div>
+
+        {/* Search Bar */}
+        {materiales.length > 0 && (
+          <div className="mb-6">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Buscar materiales..."
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
 
         {materiales.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
@@ -521,7 +577,7 @@ export default function MisMaterialesPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {materiales.map((material) => (
+                  {filteredMateriales.map((material) => (
                     <tr key={material.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -548,11 +604,11 @@ export default function MisMaterialesPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          material.esActivo
+                          material.ofertas?.[0]?.stock
                             ? 'bg-green-100 text-green-800'
                             : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {material.esActivo ? 'Activo' : 'Inactivo'}
+                          {material.ofertas?.[0]?.stock ? 'Activo' : 'Inactivo'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -572,15 +628,15 @@ export default function MisMaterialesPage() {
                             ✏️
                           </Link>
                           <button
-                            onClick={() => toggleActivo(material.id, material.esActivo)}
+                            onClick={() => toggleActivo(material.id, material.ofertas?.[0]?.stock || false)}
                             className={`px-2 py-1 rounded text-sm ${
-                              material.esActivo
+                              material.ofertas?.[0]?.stock
                                 ? 'text-gray-600 hover:text-gray-900'
                                 : 'text-green-600 hover:text-green-900'
                             }`}
-                            title={material.esActivo ? 'Desactivar' : 'Activar'}
+                            title={material.ofertas?.[0]?.stock ? 'Desactivar' : 'Activar'}
                           >
-                            {material.esActivo ? '🚫' : '✅'}
+                            {material.ofertas?.[0]?.stock ? '🚫' : '✅'}
                           </button>
                           <button
                             onClick={() => handleDeleteClick(material)}

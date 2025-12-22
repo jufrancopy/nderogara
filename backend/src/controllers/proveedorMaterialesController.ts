@@ -45,41 +45,63 @@ export const getMaterialesBase = async (request: FastifyRequest, reply: FastifyR
   }
 };
 
-// Obtener materiales del proveedor autenticado
+// Obtener ofertas activas del proveedor (como "materiales virtuales")
 export const getMisMateriales = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const userId = (request.user as any).id;
 
-    const materiales = await prisma.material.findMany({
-      where: { usuarioId: userId },
+    // Buscar el proveedor del usuario
+    const proveedor = await prisma.proveedor.findFirst({
+      where: { usuarioId: userId }
+    });
+
+    if (!proveedor) {
+      return reply.send([]);
+    }
+
+    // Buscar todas las ofertas del proveedor (activas e inactivas)
+    const ofertas = await prisma.ofertaProveedor.findMany({
+      where: {
+        proveedorId: proveedor.id
+        // Sin filtro de stock para mostrar todas las ofertas
+      },
       include: {
-        categoria: true,
-        ofertas: {
+        material: {
           include: {
-            proveedor: true
+            categoria: true
           }
         }
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    // Map precio to precio for frontend compatibility
-    const materialesMapped = materiales.map(material => {
-      console.log(`Material ${material.id}: imagenUrl = ${material.imagenUrl}`);
-      console.log(`Material ${material.id}: ofertas =`, material.ofertas?.length || 0);
+    // Crear estructura compatible con el frontend (materiales virtuales basados en ofertas)
+    const materialesVirtuales = ofertas.map(oferta => ({
+      ...oferta.material,
+      imagenUrl: oferta.imagenUrl || oferta.material.imagenUrl, // Priorizar imagen específica de la oferta
+      precio: oferta.precio, // Usar precio de la oferta
+      ofertas: [{
+        ...oferta,
+        proveedor: {
+          id: proveedor.id,
+          nombre: proveedor.nombre
+        }
+      }]
+    }));
+
+    const materialesMapped = materialesVirtuales.map(material => {
+      console.log(`Material virtual ${material.id}: imagenUrl = ${material.imagenUrl}`);
+      console.log(`Material virtual ${material.id}: ofertas =`, material.ofertas?.length || 0);
       if (material.ofertas && material.ofertas.length > 0) {
-        console.log(`Material ${material.id}: primera oferta marca =`, material.ofertas[0].marca);
+        console.log(`Material virtual ${material.id}: primera oferta marca =`, material.ofertas[0].marca);
       }
-      return {
-        ...material,
-        precio: material.precio
-      };
+      return material;
     });
 
     reply.send(materialesMapped);
   } catch (error) {
-    console.error('Error al obtener materiales del proveedor:', error);
-    reply.status(500).send({ error: 'Error al obtener materiales' });
+    console.error('Error al obtener ofertas del proveedor:', error);
+    reply.status(500).send({ error: 'Error al obtener ofertas' });
   }
 };
 
@@ -146,57 +168,75 @@ export const crearMaterial = async (request: FastifyRequest, reply: FastifyReply
   }
 };
 
-// Actualizar material del proveedor
+// Actualizar oferta del proveedor (material virtual)
 export const actualizarMaterial = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const userId = (request.user as any).id;
-    const { id } = request.params as any;
-    const { nombre, descripcion, unidad, categoriaId, imagenUrl, precio, marca, esActivo } = request.body as any;
+    const { id } = request.params as any; // id del material del catálogo
+    const { precio, marca, esActivo } = request.body as any;
 
-    // Verificar que el material pertenece al proveedor
-    const materialExistente = await prisma.material.findFirst({
-      where: { id, usuarioId: userId }
+    // Buscar el proveedor del usuario
+    const proveedor = await prisma.proveedor.findFirst({
+      where: { usuarioId: userId }
     });
 
-    if (!materialExistente) {
-      return reply.status(404).send({ error: 'Material no encontrado' });
+    if (!proveedor) {
+      return reply.status(404).send({ error: 'Proveedor no encontrado' });
     }
 
-    // Actualizar el material
-    const material = await prisma.material.update({
-      where: { id },
-      data: {
-        nombre,
-        descripcion,
-        unidad,
-        categoria: { connect: { id: categoriaId } },
-        imagenUrl,
-        precio: precio,
-        esActivo
+    // Buscar la oferta del proveedor para este material
+    const ofertaExistente = await prisma.ofertaProveedor.findFirst({
+      where: {
+        materialId: id,
+        proveedorId: proveedor.id
       },
-      include: { categoria: true }
+      include: {
+        material: {
+          include: {
+            categoria: true
+          }
+        }
+      }
     });
 
-    // Actualizar la marca en la oferta asociada si se proporcionó
-    if (marca !== undefined) {
-      console.log('Actualizando marca en oferta:', marca);
-      await prisma.ofertaProveedor.updateMany({
-        where: {
-          materialId: id,
-          proveedor: {
-            usuarioId: userId
-          }
-        },
-        data: {
-          marca: marca || null
-        }
-      });
+    if (!ofertaExistente) {
+      return reply.status(404).send({ error: 'Oferta no encontrada' });
     }
 
-    reply.send(material);
+    // Actualizar la oferta
+    const ofertaActualizada = await prisma.ofertaProveedor.update({
+      where: { id: ofertaExistente.id },
+      data: {
+        precio: precio ? parseFloat(precio.toString()) : ofertaExistente.precio,
+        marca: marca !== undefined ? marca : ofertaExistente.marca,
+        stock: esActivo !== undefined ? esActivo : ofertaExistente.stock
+      },
+      include: {
+        material: {
+          include: {
+            categoria: true
+          }
+        }
+      }
+    });
+
+    // Devolver el material virtual actualizado
+    const materialVirtual = {
+      ...ofertaActualizada.material,
+      precio: ofertaActualizada.precio,
+      ofertas: [{
+        ...ofertaActualizada,
+        proveedor: {
+          id: proveedor.id,
+          nombre: proveedor.nombre
+        }
+      }]
+    };
+
+    reply.send(materialVirtual);
   } catch (error) {
-    console.error('Error al actualizar material:', error);
-    reply.status(500).send({ error: 'Error al actualizar material' });
+    console.error('Error al actualizar oferta:', error);
+    reply.status(500).send({ error: 'Error al actualizar oferta' });
   }
 };
 
@@ -347,26 +387,43 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
   }
 };
 
-// Eliminar material del proveedor
+// Eliminar oferta del proveedor (material virtual)
 export const eliminarMaterial = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const userId = (request.user as any).id;
-    const { id } = request.params as any;
+    const { id } = request.params as any; // id del material del catálogo
 
-    // Verificar que el material pertenece al proveedor
-    const materialExistente = await prisma.material.findFirst({
-      where: { id, usuarioId: userId }
+    // Buscar el proveedor del usuario
+    const proveedor = await prisma.proveedor.findFirst({
+      where: { usuarioId: userId }
     });
 
-    if (!materialExistente) {
-      return reply.status(404).send({ error: 'Material no encontrado' });
+    if (!proveedor) {
+      return reply.status(404).send({ error: 'Proveedor no encontrado' });
     }
 
-    await prisma.material.delete({ where: { id } });
+    // Buscar la oferta del proveedor para este material
+    const ofertaExistente = await prisma.ofertaProveedor.findFirst({
+      where: {
+        materialId: id,
+        proveedorId: proveedor.id
+      }
+    });
 
-    reply.send({ message: 'Material eliminado correctamente' });
+    if (!ofertaExistente) {
+      return reply.status(404).send({ error: 'Oferta no encontrada' });
+    }
+
+    // Eliminar la oferta
+    await prisma.ofertaProveedor.delete({
+      where: { id: ofertaExistente.id }
+    });
+
+    console.log('Oferta eliminada:', ofertaExistente.id);
+
+    reply.send({ message: 'Oferta eliminada correctamente' });
   } catch (error) {
-    console.error('Error al eliminar material:', error);
-    reply.status(500).send({ error: 'Error al eliminar material' });
+    console.error('Error al eliminar oferta:', error);
+    reply.status(500).send({ error: 'Error al eliminar oferta' });
   }
 };

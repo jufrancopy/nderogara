@@ -170,5 +170,7 @@ export const materialesController = {
       console.error('Error fetching ofertas by material:', error);
       reply.status(500).send({ success: false, error: 'Error al cargar ofertas del material' });
     }
-  }
+  },
+
+
 };

@@ -36,6 +36,7 @@ interface Item {
 interface MaterialPorItem {
   id: string
   cantidadPorUnidad: number
+  precioUnitario?: number
   observaciones?: string
   material: {
     id: string
@@ -54,6 +55,7 @@ interface Material {
   ofertas?: Array<{
     precio: number
     stock: boolean
+    imagenUrl?: string
     proveedor: {
       nombre: string
     }
@@ -79,11 +81,7 @@ export default function MaterialesItemPage() {
     materialId: string
     materialNombre: string
   }>({ isOpen: false, materialId: '', materialNombre: '' })
-  const [editingMaterial, setEditingMaterial] = useState<{
-    id: string
-    cantidadPorUnidad: number
-    observaciones: string
-  } | null>(null)
+
 
   // Estados para pagos de materiales
   const [showPagoModal, setShowPagoModal] = useState(false)
@@ -254,9 +252,10 @@ export default function MaterialesItemPage() {
     materialItem.observaciones?.toLowerCase().includes(materialSearchTerm.toLowerCase()))
   ) || []
 
-  // Calcular costos totales
+  // Calcular costos totales (prioridad: precio específico → precio base)
   const costoTotalMateriales = filteredMaterialesPorItem.reduce((total, materialItem) => {
-    const costoMaterial = (materialItem.material?.precioUnitario || 0) * materialItem.cantidadPorUnidad
+    const precioUnitario = materialItem.precioUnitario || materialItem.material?.precioUnitario || 0
+    const costoMaterial = precioUnitario * Number(materialItem.cantidadPorUnidad)
     return total + costoMaterial
   }, 0)
 
@@ -429,6 +428,20 @@ export default function MaterialesItemPage() {
   }
 
   const handleDeleteClick = (materialId: string, materialNombre: string) => {
+    console.log('handleDeleteClick - materialId (registro MaterialPorItem):', materialId, 'materialNombre:', materialNombre);
+    console.log('itemId from params:', itemId);
+
+    // Verificar que el material existe antes de mostrar el dialog
+    const materialExists = item?.materialesPorItem.find(m => m.id === materialId);
+    console.log('Material encontrado en item:', !!materialExists);
+    if (materialExists) {
+      console.log('Detalles del material:', {
+        id: materialExists.id,
+        materialId: materialExists.material.id,
+        materialNombre: materialExists.material.nombre
+      });
+    }
+
     setDeleteDialog({
       isOpen: true,
       materialId,
@@ -480,9 +493,26 @@ export default function MaterialesItemPage() {
     }
   }
 
-  const handleShowDetail = (material: Material) => {
-    setSelectedMaterialForDetail(material)
-    setShowMaterialDetailModal(true)
+  const handleShowDetail = async (material: Material) => {
+    // Cargar las ofertas completas con información del proveedor
+    try {
+      const response = await api.get(`/materiales/${material.id}/ofertas`)
+      const ofertasCompletas = response.data.data || []
+
+      // Agregar las ofertas completas al material
+      const materialConOfertas = {
+        ...material,
+        ofertas: ofertasCompletas
+      }
+
+      setSelectedMaterialForDetail(materialConOfertas)
+      setShowMaterialDetailModal(true)
+    } catch (error) {
+      console.error('Error loading material details:', error)
+      // Fallback: mostrar el material sin ofertas completas
+      setSelectedMaterialForDetail(material)
+      setShowMaterialDetailModal(true)
+    }
   }
 
   // Función para crear nuevo material y agregarlo al item
@@ -582,6 +612,12 @@ export default function MaterialesItemPage() {
 
   // Función para gestionar ofertas de un material
   const handleGestionarOfertas = async (materialItem: MaterialPorItem) => {
+    console.log('🎯 handleGestionarOfertas called with:', {
+      materialId: materialItem.material.id,
+      materialNombre: materialItem.material.nombre,
+      precioUnitario: materialItem.precioUnitario
+    });
+
     setLoadingOfertas(true)
     setShowOfertasModal(true)
 
@@ -595,21 +631,66 @@ export default function MaterialesItemPage() {
         (m: MaterialPorItem) => m.material.id === materialItem.material.id
       )
 
+      console.log('🔄 Material actualizado:', {
+        found: !!updatedMaterialItem,
+        precioUnitario: updatedMaterialItem?.precioUnitario,
+        originalPrecioUnitario: materialItem.precioUnitario
+      });
+
       if (updatedMaterialItem) {
         setSelectedMaterialForOfertas(updatedMaterialItem)
       } else {
         setSelectedMaterialForOfertas(materialItem)
       }
 
+      console.log('📊 selectedMaterialForOfertas set to:', selectedMaterialForOfertas);
+
       // Cargar ofertas del material
       const response = await api.get(`/materiales/${materialItem.material.id}/ofertas`)
       setOfertasMaterial(response.data.data || [])
+
+      console.log('📋 Ofertas cargadas:', response.data.data?.length || 0);
     } catch (error) {
-      console.error('Error fetching ofertas:', error)
+      console.error('❌ Error fetching ofertas:', error)
       setOfertasMaterial([])
       setSelectedMaterialForOfertas(materialItem)
     } finally {
       setLoadingOfertas(false)
+    }
+  }
+
+  // Función para seleccionar una oferta específica para el material
+  const handleSeleccionarOferta = async (oferta: any) => {
+    if (!selectedMaterialForOfertas) return
+
+    try {
+      console.log('Seleccionando oferta:', {
+        ofertaId: oferta.id,
+        precio: oferta.precio,
+        proveedor: oferta.proveedor?.nombre,
+        materialItemId: selectedMaterialForOfertas.id
+      })
+
+      // Actualizar el material en el item con el precio de la oferta seleccionada
+      const response = await api.put(`/items/${itemId}/materiales/${selectedMaterialForOfertas.id}`, {
+        cantidadPorUnidad: selectedMaterialForOfertas.cantidadPorUnidad,
+        precioUnitario: parseFloat(oferta.precio), // Establecer el precio específico de la oferta
+        observaciones: `Oferta seleccionada: ${oferta.proveedor?.nombre} - ${oferta.marca || 'Sin marca'} - ${formatPrice(oferta.precio)}`
+      })
+
+      console.log('Respuesta de actualización:', response.data)
+
+      toast.success(`Oferta seleccionada: ${formatPrice(oferta.precio)} de ${oferta.proveedor?.nombre}`)
+
+      // Recargar el item para mostrar el nuevo precio
+      console.log('Recargando item...')
+      await fetchItem()
+
+      setShowOfertasModal(false) // Cerrar el modal
+    } catch (error: any) {
+      console.error('Error selecting oferta:', error)
+      console.error('Detalles del error:', error.response?.data)
+      toast.error('Error al seleccionar la oferta')
     }
   }
 
@@ -923,9 +1004,12 @@ export default function MaterialesItemPage() {
                     <div key={materialItem.id} className="flex justify-between items-center text-sm">
                       <span className="text-gray-600">
                         {materialItem.material?.nombre || 'Material sin nombre'} ({materialItem.cantidadPorUnidad}x)
+                        {materialItem.precioUnitario && (
+                          <span className="text-xs text-green-600 ml-2">💰 Oferta seleccionada</span>
+                        )}
                       </span>
                       <span className="font-medium text-gray-900">
-                        {formatPrice((materialItem.material?.precioUnitario || 0) * materialItem.cantidadPorUnidad)}
+                        {formatPrice((materialItem.precioUnitario || materialItem.material?.precioUnitario || 0) * materialItem.cantidadPorUnidad)}
                       </span>
                     </div>
                   ))}
@@ -1198,25 +1282,56 @@ export default function MaterialesItemPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="w-12 h-12 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer overflow-hidden"
                                onClick={() => materialItem.material && handleShowDetail(materialItem.material)}>
-                            {materialItem.material?.imagenUrl ? (
-                              <img
-                                src={materialItem.material.imagenUrl.startsWith('http')
-                                  ? materialItem.material.imagenUrl
-                                  : `${API_BASE_URL}${materialItem.material.imagenUrl}`}
-                                alt={materialItem.material.nombre || 'Material'}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  const parent = target.parentElement;
-                                  if (parent) {
-                                    parent.innerHTML = '<span class="text-gray-400 text-xs">Sin imagen</span>';
-                                  }
-                                }}
-                              />
-                            ) : (
-                              <span className="text-gray-400 text-xs">Sin imagen</span>
-                            )}
+                            {(() => {
+                              // Prioridad: imagen de oferta seleccionada → imagen del catálogo
+                              let imagenUrl = null;
+
+                              // Si hay precio específico, buscar la oferta correspondiente
+                              if (materialItem.precioUnitario) {
+                                // Buscar ofertas del material para encontrar la que coincida con el precio
+                                const materialOfertas = materialItem.material?.ofertas || [];
+                                const ofertaSeleccionada = materialOfertas.find((oferta: any) =>
+                                  Number(oferta.precio) === Number(materialItem.precioUnitario)
+                                );
+
+                                if (ofertaSeleccionada?.imagenUrl) {
+                                  imagenUrl = ofertaSeleccionada.imagenUrl;
+                                }
+                              }
+
+                              // Fallback a imagen del catálogo
+                              if (!imagenUrl && materialItem.material?.imagenUrl) {
+                                imagenUrl = materialItem.material.imagenUrl;
+                              }
+
+                              // Si no hay imagen pero hay ofertas disponibles, mostrar imagen de la oferta más barata
+                              if (!imagenUrl && materialItem.material?.ofertas && materialItem.material.ofertas.length > 0) {
+                                const ofertaMasBarata = materialItem.material.ofertas[0];
+                                if (ofertaMasBarata.imagenUrl) {
+                                  imagenUrl = ofertaMasBarata.imagenUrl;
+                                }
+                              }
+
+                              return imagenUrl ? (
+                                <img
+                                  src={imagenUrl.startsWith('http')
+                                    ? imagenUrl
+                                    : `${API_BASE_URL}${imagenUrl}`}
+                                  alt={materialItem.material.nombre || 'Material'}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    const parent = target.parentElement;
+                                    if (parent) {
+                                      parent.innerHTML = '<span class="text-gray-400 text-xs">Sin imagen</span>';
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <span className="text-gray-400 text-xs">Sin imagen</span>
+                              );
+                            })()}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -1231,27 +1346,13 @@ export default function MaterialesItemPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {editingMaterial?.id === materialItem.material.id ? (
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0.01"
-                              value={editingMaterial.cantidadPorUnidad}
-                              onChange={(e) => setEditingMaterial({
-                                ...editingMaterial,
-                                cantidadPorUnidad: Number(e.target.value)
-                              })}
-                              className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-                            />
-                          ) : (
-                            materialItem.cantidadPorUnidad
-                          )}
+                          {materialItem.cantidadPorUnidad}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatPrice(materialItem.material?.precioUnitario || 0)}
+                          {formatPrice(materialItem.precioUnitario || materialItem.material?.precioUnitario || 0)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {formatPrice((materialItem.material?.precioUnitario || 0) * materialItem.cantidadPorUnidad)}
+                          {formatPrice((materialItem.precioUnitario || materialItem.material?.precioUnitario || 0) * materialItem.cantidadPorUnidad)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <button
@@ -1267,73 +1368,32 @@ export default function MaterialesItemPage() {
                           </button>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 max-w-48 overflow-hidden">
-                          {editingMaterial?.id === materialItem.material.id ? (
-                            <input
-                              type="text"
-                              value={editingMaterial.observaciones}
-                              onChange={(e) => setEditingMaterial({
-                                ...editingMaterial,
-                                observaciones: e.target.value
-                              })}
-                              className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
-                              placeholder="Observaciones"
-                            />
-                          ) : (
-                            <span title={materialItem.observaciones || '-'} className="block truncate whitespace-nowrap">
-                              {materialItem.observaciones || '-'}
-                            </span>
-                          )}
+                          <span title={materialItem.observaciones || '-'} className="block truncate whitespace-nowrap">
+                            {materialItem.observaciones || '-'}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
-                            {editingMaterial?.id === materialItem.material.id ? (
-                              <>
-                                <button
-                                  onClick={handleUpdateMaterial}
-                                  className="text-green-600 hover:text-green-800 mr-2"
-                                  title="Guardar"
-                                >
-                                  ✓
-                                </button>
-                                <button
-                                  onClick={() => setEditingMaterial(null)}
-                                  className="text-gray-600 hover:text-gray-800"
-                                  title="Cancelar"
-                                >
-                                  ✕
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => handleGestionarOfertas(materialItem)}
-                                  className="text-purple-600 hover:text-purple-800"
-                                  title="Gestionar Ofertas"
-                                >
-                                  💰
-                                </button>
-                                <button
-                                  onClick={() => handleEditClick(materialItem)}
-                                  className="text-blue-600 hover:text-blue-800"
-                                  title="Editar"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleAddComprobante(materialItem)}
-                                  className="text-green-600 hover:text-green-800"
-                                  title="Agregar Comprobante de Pago"
-                                >
-                                  🧾
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteClick(materialItem.material.id, materialItem.material.nombre)}
-                                  className="text-red-600 hover:text-red-800"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </>
-                            )}
+                            <button
+                              onClick={() => handleGestionarOfertas(materialItem)}
+                              className="text-purple-600 hover:text-purple-800"
+                              title="Gestionar Ofertas"
+                            >
+                              💰
+                            </button>
+                            <button
+                              onClick={() => handleAddComprobante(materialItem)}
+                              className="text-green-600 hover:text-green-800"
+                              title="Agregar Comprobante de Pago"
+                            >
+                              🧾
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(materialItem.id, materialItem.material.nombre)}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -1455,11 +1515,33 @@ export default function MaterialesItemPage() {
               {selectedMaterialForPago && (
                 <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <h3 className="text-lg font-semibold text-blue-900 mb-3">Resumen de Pago</h3>
+
+                  {/* Información del precio seleccionado */}
+                  <div className="mb-4 p-3 bg-white border border-blue-300 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-blue-800">Precio Unitario Seleccionado:</span>
+                      <span className="text-lg font-bold text-blue-900">
+                        {formatPrice(selectedMaterialForPago.precioUnitario || selectedMaterialForPago.material.precioUnitario || 0)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-blue-700">Cantidad:</span>
+                      <span className="text-sm font-medium text-blue-800">
+                        {selectedMaterialForPago.cantidadPorUnidad} {getUnidadLabel(selectedMaterialForPago.material.unidad)}
+                      </span>
+                    </div>
+                    {selectedMaterialForPago.observaciones && selectedMaterialForPago.observaciones.includes('Oferta seleccionada') && (
+                      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-800">
+                        💰 {selectedMaterialForPago.observaciones}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="text-center">
                       <p className="text-sm text-blue-600 font-medium">Monto Total</p>
-                      <p className="text-xl font-bold text-blue-900">
-                        {formatPrice(selectedMaterialForPago.material.precioUnitario * selectedMaterialForPago.cantidadPorUnidad)}
+                      <p className="text-2xl font-bold text-blue-900">
+                        {formatPrice((selectedMaterialForPago.precioUnitario || selectedMaterialForPago.material.precioUnitario || 0) * selectedMaterialForPago.cantidadPorUnidad)}
                       </p>
                     </div>
 
@@ -1470,7 +1552,7 @@ export default function MaterialesItemPage() {
                           <>
                             <div className="text-center">
                               <p className="text-sm text-green-600 font-medium">Pagado</p>
-                              <p className="text-xl font-bold text-green-900">
+                              <p className="text-2xl font-bold text-green-900">
                                 {formatPrice(estadoPago.totalPagado)}
                               </p>
                             </div>
@@ -1497,6 +1579,9 @@ export default function MaterialesItemPage() {
                   <div className="mt-3 pt-3 border-t border-blue-200">
                     <p className="text-sm text-blue-800">
                       <strong>Material:</strong> {selectedMaterialForPago.material.nombre}
+                    </p>
+                    <p className="text-sm text-blue-700 mt-1">
+                      <strong>Unidad:</strong> {getUnidadLabel(selectedMaterialForPago.material.unidad)}
                     </p>
                   </div>
                 </div>
@@ -1773,29 +1858,61 @@ export default function MaterialesItemPage() {
               </div>
 
               <div className="space-y-4">
-                {/* Imagen del Material */}
+                {/* Imagen del Material - Prioridad: oferta seleccionada → imagen del catálogo */}
                 <div className="flex justify-center">
-                  {selectedMaterialForDetail.imagenUrl ? (
-                    <img
-                      src={selectedMaterialForDetail.imagenUrl.startsWith('http')
-                        ? selectedMaterialForDetail.imagenUrl
-                        : `${API_BASE_URL}${selectedMaterialForDetail.imagenUrl}`}
-                      alt={selectedMaterialForDetail.nombre}
-                      className="w-48 h-48 object-cover rounded-lg shadow-md"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        const parent = target.parentElement;
-                        if (parent) {
-                          parent.innerHTML = '<div class="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center"><span class="text-gray-500 text-sm">Imagen no disponible</span></div>';
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div className="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center">
-                      <span className="text-gray-500 text-sm">Sin imagen</span>
-                    </div>
-                  )}
+                  {(() => {
+                    // Buscar si hay una oferta seleccionada para este material
+                    let imagenUrl = null;
+
+                    // Si hay materiales por item, buscar la instancia específica
+                    const materialPorItem = item?.materialesPorItem.find(m => m.material.id === selectedMaterialForDetail.id);
+
+                    if (materialPorItem?.precioUnitario) {
+                      // Buscar la oferta que coincida con el precio seleccionado
+                      const ofertaSeleccionada = selectedMaterialForDetail.ofertas?.find((oferta: any) =>
+                        Number(oferta.precio) === Number(materialPorItem.precioUnitario)
+                      );
+
+                      if (ofertaSeleccionada?.imagenUrl) {
+                        imagenUrl = ofertaSeleccionada.imagenUrl;
+                      }
+                    }
+
+                    // Fallback a imagen del catálogo
+                    if (!imagenUrl && selectedMaterialForDetail.imagenUrl) {
+                      imagenUrl = selectedMaterialForDetail.imagenUrl;
+                    }
+
+                    // Si no hay selección pero hay ofertas, mostrar imagen de la primera oferta
+                    if (!imagenUrl && selectedMaterialForDetail.ofertas && selectedMaterialForDetail.ofertas.length > 0) {
+                      const primeraOferta = selectedMaterialForDetail.ofertas[0];
+                      if (primeraOferta.imagenUrl) {
+                        imagenUrl = primeraOferta.imagenUrl;
+                      }
+                    }
+
+                    return imagenUrl ? (
+                      <img
+                        src={imagenUrl.startsWith('http')
+                          ? imagenUrl
+                          : `${API_BASE_URL}${imagenUrl}`}
+                        alt={selectedMaterialForDetail.nombre}
+                        className="w-48 h-48 object-cover rounded-lg shadow-md"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = '<div class="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center"><span class="text-gray-500 text-sm">Imagen no disponible</span></div>';
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <span className="text-gray-500 text-sm">Sin imagen</span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div>
@@ -2522,11 +2639,54 @@ export default function MaterialesItemPage() {
                           </div>
 
                           <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                            <span className="text-xs text-gray-500">
-                              Actualizado: {new Date(oferta.updatedAt).toLocaleDateString('es-PY')}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-500">
+                                Actualizado: {new Date(oferta.updatedAt).toLocaleDateString('es-PY')}
+                              </span>
+                              {/* Indicador de oferta seleccionada */}
+                              {(() => {
+                                const materialPrecio = Number(selectedMaterialForOfertas?.precioUnitario || 0);
+                                const ofertaPrecio = Number(oferta.precio || 0);
+                                const esSeleccionada = materialPrecio === ofertaPrecio;
+
+                                console.log('Comparación de precios:', {
+                                  materialPrecio,
+                                  ofertaPrecio,
+                                  esSeleccionada,
+                                  materialPrecioUnitario: selectedMaterialForOfertas?.precioUnitario,
+                                  ofertaPrecioRaw: oferta.precio,
+                                  materialPrecioType: typeof selectedMaterialForOfertas?.precioUnitario,
+                                  ofertaPrecioType: typeof oferta.precio
+                                });
+
+                                return esSeleccionada ? (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></span>
+                                    Seleccionada
+                                  </span>
+                                ) : null;
+                              })()}
+                            </div>
                             <div className="flex gap-2">
-                              {/* Aquí podríamos agregar botones para editar o eliminar oferta */}
+                              {(() => {
+                                const materialPrecio = Number(selectedMaterialForOfertas?.precioUnitario || 0);
+                                const ofertaPrecio = Number(oferta.precio || 0);
+                                const esSeleccionada = materialPrecio === ofertaPrecio;
+
+                                return esSeleccionada ? (
+                                  <span className="px-3 py-1 bg-green-600 text-white text-xs rounded font-medium">
+                                    Oferta Seleccionada
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={() => handleSeleccionarOferta(oferta)}
+                                    className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                                    title="Seleccionar esta oferta para el material"
+                                  >
+                                    Usar Esta Oferta
+                                  </button>
+                                );
+                              })()}
                             </div>
                           </div>
                         </div>

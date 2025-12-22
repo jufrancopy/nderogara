@@ -353,45 +353,72 @@ export const createOfertaAdmin = async (
 
     // Verificar que el proveedor existe
     const proveedor = await prisma.proveedor.findUnique({
-      where: { id: proveedorId }
+      where: { id: proveedorId },
+      include: { usuario: true }
     });
 
     if (!proveedor) {
       return reply.status(404).send({ success: false, error: 'Proveedor no encontrado' });
     }
 
-    // Verificar que no existe ya una oferta de este proveedor para este material
+    // Nota: Si el proveedor no tiene usuarioId, solo se creará la oferta pero no el material en su inventario
+
+    // Nota: Ya no creamos material duplicado, solo la oferta
+
+    // Crear/actualizar la oferta vinculada al material del catálogo (para que aparezca en Gestionar Ofertas)
     const ofertaExistente = await prisma.ofertaProveedor.findFirst({
       where: {
-        materialId,
+        materialId, // materialId del catálogo
         proveedorId
       }
     });
 
+    let oferta;
+
     if (ofertaExistente) {
-      return reply.status(400).send({ success: false, error: 'Ya existe una oferta de este proveedor para este material' });
+      // Actualizar la oferta existente
+      oferta = await prisma.ofertaProveedor.update({
+        where: { id: ofertaExistente.id },
+        data: {
+          precio: parseFloat(precio.toString()),
+          tipoCalidad: (tipoCalidad as any) || 'COMUN',
+          marca: marca || null,
+          comisionPorcentaje: comisionPorcentaje ? parseFloat(comisionPorcentaje.toString()) : 0,
+          stock: stock !== undefined ? stock : true,
+          vigenciaHasta: null, // Sin límite de tiempo
+          observaciones: observaciones || null,
+          imagenUrl: imagenUrl || null // Imagen específica de la oferta
+        },
+        include: {
+          proveedor: true,
+          material: true
+        }
+      });
+
+      console.log(`✅ Oferta actualizada por admin: ${oferta.proveedor.nombre} - ₲${oferta.precio} (Material catálogo ID: ${materialId})`);
+    } else {
+      // Crear la oferta vinculada al material del catálogo
+      oferta = await prisma.ofertaProveedor.create({
+        data: {
+          materialId, // Vincular al material del catálogo para que aparezca en Gestionar Ofertas
+          proveedorId,
+          precio: parseFloat(precio.toString()),
+          tipoCalidad: (tipoCalidad as any) || 'COMUN',
+          marca: marca || null,
+          comisionPorcentaje: comisionPorcentaje ? parseFloat(comisionPorcentaje.toString()) : 0,
+          stock: stock !== undefined ? stock : true,
+          vigenciaHasta: null, // Sin límite de tiempo
+          observaciones: observaciones || null,
+          imagenUrl: imagenUrl || null // Imagen específica de la oferta
+        },
+        include: {
+          proveedor: true,
+          material: true
+        }
+      });
+
+      console.log(`✅ Oferta creada por admin: ${oferta.proveedor.nombre} - ₲${oferta.precio} (Material catálogo ID: ${materialId})`);
     }
-
-    // Crear la oferta
-    const oferta = await prisma.ofertaProveedor.create({
-      data: {
-        materialId,
-        proveedorId,
-        precio: parseFloat(precio.toString()),
-        tipoCalidad: (tipoCalidad as any) || 'COMUN',
-        marca: marca || null,
-        comisionPorcentaje: comisionPorcentaje ? parseFloat(comisionPorcentaje.toString()) : 0,
-        stock: stock !== undefined ? stock : true,
-        vigenciaHasta: null, // Sin límite de tiempo
-        observaciones: observaciones || null,
-        imagenUrl: imagenUrl || null // Imagen específica de la oferta
-      },
-      include: {
-        proveedor: true
-      }
-    });
-
-    console.log(`✅ Oferta creada por admin: ${oferta.proveedor.nombre} - ₲${oferta.precio}`);
 
     reply.send({ success: true, data: oferta });
   } catch (error) {

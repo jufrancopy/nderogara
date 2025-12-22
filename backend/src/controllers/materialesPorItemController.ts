@@ -93,11 +93,11 @@ export const materialesPorItemController = {
   // PUT /items/:itemId/materiales/:materialId
   async updateMaterialInItem(request: FastifyRequest<{
     Params: { itemId: string, materialId: string }
-    Body: { cantidadPorUnidad: number, observaciones?: string }
+    Body: { cantidadPorUnidad: number, precioUnitario?: number, observaciones?: string }
   }>, reply: FastifyReply) {
     try {
       const { itemId, materialId } = request.params
-      const { cantidadPorUnidad, observaciones } = request.body
+      const { cantidadPorUnidad, precioUnitario, observaciones } = request.body
 
       // Verificar que el registro existe y pertenece al item
       const existingRecord = await prisma.materialPorItem.findFirst({
@@ -114,12 +114,21 @@ export const materialesPorItemController = {
         })
       }
 
+      console.log('Actualizando MaterialPorItem:', {
+        id: materialId,
+        cantidadPorUnidad,
+        precioUnitario,
+        precioUnitarioType: typeof precioUnitario,
+        observaciones
+      });
+
       const materialPorItem = await prisma.materialPorItem.update({
         where: {
           id: materialId
         },
         data: {
           cantidadPorUnidad,
+          ...(precioUnitario !== undefined && { precioUnitario }),
           observaciones
         },
         include: {
@@ -135,22 +144,30 @@ export const materialesPorItemController = {
             }
           }
         }
-      })
+      });
 
-      // Determinar el precio unitario a usar (prioridad: ofertas → precio base → precio personalizado)
-      let precioUnitario = 0
+      console.log('MaterialPorItem actualizado:', {
+        id: materialPorItem.id,
+        precioUnitario: materialPorItem.precioUnitario,
+        precioUnitarioType: typeof materialPorItem.precioUnitario
+      });
 
-      // Buscar ofertas activas con stock
-      const ofertasActivas = materialPorItem.material.ofertas?.filter((oferta: any) => oferta.stock === true) || []
-      if (ofertasActivas.length > 0) {
-        // Usar la oferta más económica
-        precioUnitario = Math.min(...ofertasActivas.map((o: any) => Number(o.precio)))
-      } else if (materialPorItem.material.precioBase) {
-        // Usar precio base si no hay ofertas
-        precioUnitario = Number(materialPorItem.material.precioBase)
-      } else if (materialPorItem.material.precio) {
-        // Usar precio personalizado como último recurso
-        precioUnitario = Number(materialPorItem.material.precio)
+      // Determinar el precio unitario a usar (prioridad: precio específico → ofertas → precio base → precio personalizado)
+      let precioUnitarioCalculado = materialPorItem.precioUnitario || 0
+
+      if (!precioUnitarioCalculado) {
+        // Buscar ofertas activas con stock
+        const ofertasActivas = materialPorItem.material.ofertas?.filter((oferta: any) => oferta.stock === true) || []
+        if (ofertasActivas.length > 0) {
+          // Usar la oferta más económica
+          precioUnitarioCalculado = Math.min(...ofertasActivas.map((o: any) => Number(o.precio)))
+        } else if (materialPorItem.material.precioBase) {
+          // Usar precio base si no hay ofertas
+          precioUnitarioCalculado = Number(materialPorItem.material.precioBase)
+        } else if (materialPorItem.material.precio) {
+          // Usar precio personalizado como último recurso
+          precioUnitarioCalculado = Number(materialPorItem.material.precio)
+        }
       }
 
       // Crear la respuesta con el precio unitario determinado
@@ -158,7 +175,7 @@ export const materialesPorItemController = {
         ...materialPorItem,
         material: {
           ...materialPorItem.material,
-          precioUnitario
+          precioUnitario: precioUnitarioCalculado
         }
       }
 
@@ -183,6 +200,10 @@ export const materialesPorItemController = {
     try {
       const { itemId, materialId } = request.params
 
+      console.log('Backend - removeMaterialFromItem:')
+      console.log('- itemId:', itemId)
+      console.log('- materialId (registro MaterialPorItem):', materialId)
+
       // Verificar que el registro existe y pertenece al item
       const materialPorItem = await prisma.materialPorItem.findFirst({
         where: {
@@ -191,7 +212,23 @@ export const materialesPorItemController = {
         }
       })
 
+      console.log('MaterialPorItem encontrado:', !!materialPorItem)
+      if (materialPorItem) {
+        console.log('- ID:', materialPorItem.id)
+        console.log('- ItemId:', materialPorItem.itemId)
+        console.log('- MaterialId:', materialPorItem.materialId)
+      }
+
       if (!materialPorItem) {
+        // Buscar sin el filtro de itemId para ver si existe en otro lado
+        const materialPorItemAnywhere = await prisma.materialPorItem.findUnique({
+          where: { id: materialId }
+        })
+        console.log('MaterialPorItem existe en otro item?', !!materialPorItemAnywhere)
+        if (materialPorItemAnywhere) {
+          console.log('- Existe en itemId:', materialPorItemAnywhere.itemId)
+        }
+
         return reply.status(404).send({
           success: false,
           error: 'Material no encontrado en este item'
@@ -205,6 +242,7 @@ export const materialesPorItemController = {
         }
       })
 
+      console.log('Material eliminado exitosamente')
       return reply.send({
         success: true,
         message: 'Material removido del item exitosamente'

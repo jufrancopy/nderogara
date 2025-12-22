@@ -97,7 +97,9 @@ fastify.register(async function (fastify) {
   await fastify.register(pagosRoutes)
   await fastify.register(constructorRoutes, { prefix: '/constructor' })
   await fastify.register(notificacionesRoutes, { prefix: '/notificaciones' })
-  await fastify.register(pagoMaterialRoutes.default)
+  console.log('🔄 Registrando pagoMaterialRoutes...');
+  await fastify.register(pagoMaterialRoutes.default);
+  console.log('✅ pagoMaterialRoutes registradas correctamente');
 
   // Ruta pública para proveedores (sin autenticación requerida)
   fastify.get('/proveedores', async (request, reply) => {
