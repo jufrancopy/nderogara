@@ -25,15 +25,15 @@ cd ..
 echo "📦 Instalando dependencias del frontend..."
 cd frontend
 
-# Cambiar permisos temporales para npm install
+# Cambiar propietario temporalmente para npm install
 echo "🔧 Ajustando permisos para npm install..."
-chmod 666 package-lock.json 2>/dev/null || true
+sudo chown -R $USER:$USER . 2>/dev/null || true
 
 npm install
 
-# Restaurar permisos
-echo "🔧 Restaurando permisos..."
-chmod 664 package-lock.json 2>/dev/null || true
+# Restaurar permisos originales si es necesario
+echo "🔧 Verificando permisos..."
+# No necesitamos restaurar ya que el chown fue temporal
 
 # Build del frontend
 echo "📦 Haciendo build del frontend..."
