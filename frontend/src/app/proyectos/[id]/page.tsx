@@ -304,7 +304,7 @@ function PagoHistorialItem({ presupuestoItemId }: { presupuestoItemId: string })
   useEffect(() => {
     const fetchPagos = async () => {
       try {
-        const response = await api.get(`/proyectos/presupuesto/${presupuestoItemId}/pagos`)
+        const response = await api.get(`/proyectos/${proyectoId}/presupuesto/${presupuestoItemId}/pagos`)
         setPagos(response.data.data || [])
       } catch (error) {
         console.error('Error fetching pagos:', error)
@@ -315,7 +315,7 @@ function PagoHistorialItem({ presupuestoItemId }: { presupuestoItemId: string })
     }
 
     fetchPagos()
-  }, [presupuestoItemId])
+  }, [presupuestoItemId, proyectoId])
 
   if (loading) {
     return <div className="text-center py-4">Cargando historial...</div>
@@ -445,14 +445,14 @@ function PagoFormItem({
   useEffect(() => {
     const fetchPagos = async () => {
       try {
-        const response = await api.get(`/proyectos/presupuesto/${presupuestoItemId}/pagos`)
+        const response = await api.get(`/proyectos/${proyectoId}/presupuesto/${presupuestoItemId}/pagos`)
         setPagosExistentes(response.data.data || [])
       } catch (error) {
         console.error('Error fetching pagos existentes:', error)
       }
     }
     fetchPagos()
-  }, [presupuestoItemId])
+  }, [presupuestoItemId, proyectoId])
 
   const handleMontoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let value = event.target.value
