@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import PageLoader from '@/components/PageLoader';
 import { API_BASE_URL } from '@/lib/api';
+import api from '@/lib/api';
 
 export default function AdminMaterialesPage() {
   const router = useRouter();
@@ -28,6 +29,16 @@ export default function AdminMaterialesPage() {
     comisionPorcentaje: '0',
     stock: true,
     observaciones: ''
+  });
+
+  // Estados para crear proveedores
+  const [showCreateProveedorModal, setShowCreateProveedorModal] = useState(false);
+  const [newProveedor, setNewProveedor] = useState({
+    nombre: '',
+    email: '',
+    telefono: '',
+    ciudad: '',
+    departamento: ''
   });
 
   useEffect(() => {
@@ -68,8 +79,12 @@ export default function AdminMaterialesPage() {
 
       console.log('Cambiando estado de material:', material.nombre, 'de', esActivo, 'a', !esActivo);
 
-      const categoriaId = material.categoria?.id || material.categoriaId;
-      console.log('CategoriaId:', categoriaId);
+      // Preparar datos para actualizar solo el estado activo
+      const updateData = {
+        esActivo: !esActivo
+      };
+
+      console.log('Enviando datos:', updateData);
 
       const response = await fetch(`${API_BASE_URL}/admin/materiales/${id}`, {
         method: 'PUT',
@@ -77,14 +92,7 @@ export default function AdminMaterialesPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({
-          nombre: material.nombre,
-          descripcion: material.descripcion,
-          unidad: material.unidad,
-          categoriaId: categoriaId,
-          imagenUrl: material.imagenUrl,
-          esActivo: !esActivo
-        })
+        body: JSON.stringify(updateData)
       });
 
       if (response.ok) {
@@ -93,9 +101,11 @@ export default function AdminMaterialesPage() {
       } else {
         const errorText = await response.text();
         console.error('Error del servidor:', response.status, errorText);
+        alert('Error al cambiar el estado del material');
       }
     } catch (error) {
       console.error('Error al actualizar material:', error);
+      alert('Error al cambiar el estado del material');
     }
   };
 
@@ -206,6 +216,36 @@ export default function AdminMaterialesPage() {
     } catch (error) {
       console.error('Error al agregar oferta:', error);
       alert('Error al agregar oferta');
+    }
+  };
+
+  // Función para crear proveedores
+  const handleCreateProveedor = async () => {
+    try {
+      const response = await api.post('/proveedores', newProveedor);
+      const proveedorCreado = response.data.data;
+
+      // Agregar el nuevo proveedor a la lista
+      setProveedores(prev => [...prev, proveedorCreado]);
+
+      // Seleccionar automáticamente el nuevo proveedor
+      setOfertaForm(prev => ({ ...prev, proveedorId: proveedorCreado.id }));
+
+      // Cerrar modal y resetear formulario
+      setShowCreateProveedorModal(false);
+      setNewProveedor({
+        nombre: '',
+        email: '',
+        telefono: '',
+        ciudad: '',
+        departamento: ''
+      });
+
+      alert('Proveedor creado exitosamente');
+    } catch (error: any) {
+      console.error('Error creating proveedor:', error);
+      const errorMessage = error.response?.data?.error || 'Error al crear proveedor';
+      alert(`Error: ${errorMessage}`);
     }
   };
 
@@ -648,19 +688,29 @@ export default function AdminMaterialesPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Proveedor *
                   </label>
-                  <select
-                    value={ofertaForm.proveedorId}
-                    onChange={(e) => setOfertaForm({...ofertaForm, proveedorId: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  >
-                    <option value="">Seleccionar proveedor...</option>
-                    {proveedores.map((proveedor: any) => (
-                      <option key={proveedor.id} value={proveedor.id}>
-                        {proveedor.nombre} - {proveedor.ciudad || 'Sin ciudad'}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex gap-2">
+                    <select
+                      value={ofertaForm.proveedorId}
+                      onChange={(e) => setOfertaForm({...ofertaForm, proveedorId: e.target.value})}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    >
+                      <option value="">Seleccionar proveedor...</option>
+                      {proveedores.map((proveedor: any) => (
+                        <option key={proveedor.id} value={proveedor.id}>
+                          {proveedor.nombre} - {proveedor.ciudad || 'Sin ciudad'}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateProveedorModal(true)}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors whitespace-nowrap"
+                      title="Crear nuevo proveedor"
+                    >
+                      + Nuevo
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -767,6 +817,112 @@ export default function AdminMaterialesPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para crear proveedor */}
+      {showCreateProveedorModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Crear Nuevo Proveedor</h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre del Proveedor *
+                  </label>
+                  <input
+                    type="text"
+                    value={newProveedor.nombre}
+                    onChange={(e) => setNewProveedor(prev => ({ ...prev, nombre: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Ej: Ferretería Central"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    value={newProveedor.email}
+                    onChange={(e) => setNewProveedor(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="contacto@proveedor.com"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Teléfono
+                  </label>
+                  <input
+                    type="tel"
+                    value={newProveedor.telefono}
+                    onChange={(e) => setNewProveedor(prev => ({ ...prev, telefono: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="+595 21 123456"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ciudad
+                  </label>
+                  <input
+                    type="text"
+                    value={newProveedor.ciudad}
+                    onChange={(e) => setNewProveedor(prev => ({ ...prev, ciudad: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Asunción"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Departamento
+                  </label>
+                  <input
+                    type="text"
+                    value={newProveedor.departamento}
+                    onChange={(e) => setNewProveedor(prev => ({ ...prev, departamento: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Central"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateProveedorModal(false)
+                    setNewProveedor({
+                      nombre: '',
+                      email: '',
+                      telefono: '',
+                      ciudad: '',
+                      departamento: ''
+                    })
+                  }}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateProveedor}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                >
+                  Crear Proveedor
+                </button>
+              </div>
             </div>
           </div>
         </div>
