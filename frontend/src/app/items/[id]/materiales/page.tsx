@@ -1056,7 +1056,7 @@ export default function MaterialesItemPage() {
                             {getEstadoPagoLabel(materialItem.id).label}
                           </button>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 text-sm text-gray-500 max-w-48 overflow-hidden">
                           {editingMaterial?.id === materialItem.material.id ? (
                             <input
                               type="text"
@@ -1069,7 +1069,9 @@ export default function MaterialesItemPage() {
                               placeholder="Observaciones"
                             />
                           ) : (
-                            materialItem.observaciones || '-'
+                            <span title={materialItem.observaciones || '-'} className="block truncate whitespace-nowrap">
+                              {materialItem.observaciones || '-'}
+                            </span>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
