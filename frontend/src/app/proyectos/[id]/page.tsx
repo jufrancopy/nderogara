@@ -207,9 +207,17 @@ function SortableItem({
             <div className="flex items-center space-x-2 ml-4">
               {item.esDinamico && (
                 <button
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.stopPropagation()
-                    setPagoModal({ isOpen: true, presupuestoItem: item })
+                    try {
+                      // Cargar pagos del item antes de abrir el modal
+                      const response = await api.get(`/proyectos/${proyectoId}/presupuesto/${item.id}/pagos`)
+                      const pagos = response.data.data || []
+                      setPagoModal({ isOpen: true, presupuestoItem: item, pagos })
+                    } catch (error) {
+                      console.error('Error loading pagos:', error)
+                      setPagoModal({ isOpen: true, presupuestoItem: item, pagos: [] })
+                    }
                   }}
                   className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition-colors"
                   title="Gestionar pagos"
@@ -307,11 +315,25 @@ function SortableItem({
 }
 
 // Componente para mostrar el historial de pagos de un item
-function PagoHistorialItem({ presupuestoItemId, proyectoId }: { presupuestoItemId: string, proyectoId: string }) {
-  const [pagos, setPagos] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+function PagoHistorialItem({
+  presupuestoItemId,
+  proyectoId,
+  pagosIniciales
+}: {
+  presupuestoItemId: string
+  proyectoId: string
+  pagosIniciales?: any[]
+}) {
+  const [pagos, setPagos] = useState<any[]>(pagosIniciales || [])
+  const [loading, setLoading] = useState(!pagosIniciales)
 
   useEffect(() => {
+    // Si ya tenemos pagos iniciales, no cargar desde API
+    if (pagosIniciales) {
+      setLoading(false)
+      return
+    }
+
     const fetchPagos = async () => {
       try {
         const response = await api.get(`/proyectos/${proyectoId}/presupuesto/${presupuestoItemId}/pagos`)
@@ -325,7 +347,7 @@ function PagoHistorialItem({ presupuestoItemId, proyectoId }: { presupuestoItemI
     }
 
     fetchPagos()
-  }, [presupuestoItemId, proyectoId])
+  }, [presupuestoItemId, proyectoId, pagosIniciales])
 
   if (loading) {
     return <div className="text-center py-4">Cargando historial...</div>
@@ -665,7 +687,8 @@ export default function ProyectoDetallePage() {
     isOpen: boolean
     presupuestoItem?: any
     pagos?: any[]
-  }>({ isOpen: false })
+    loading?: boolean
+  }>({ isOpen: false, loading: false })
 
   // Configuración de drag and drop
   const sensors = useSensors(
@@ -1989,7 +2012,11 @@ export default function ProyectoDetallePage() {
               <div className="mb-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Historial de Pagos</h3>
                 <div className="space-y-3">
-                  <PagoHistorialItem presupuestoItemId={pagoModal.presupuestoItem.id} proyectoId={proyectoId} />
+                  <PagoHistorialItem
+                    presupuestoItemId={pagoModal.presupuestoItem.id}
+                    proyectoId={proyectoId}
+                    pagosIniciales={pagoModal.pagos}
+                  />
                 </div>
               </div>
 
