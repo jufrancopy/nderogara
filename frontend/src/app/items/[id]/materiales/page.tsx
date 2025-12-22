@@ -2442,27 +2442,44 @@ export default function MaterialesItemPage() {
                             <div className="flex items-start gap-4 flex-1">
                               {/* Imagen del material */}
                               <div className="flex-shrink-0">
-                                {oferta.material?.imagenUrl ? (
-                                  <img
-                                    src={oferta.material.imagenUrl.startsWith('http')
-                                      ? oferta.material.imagenUrl
-                                      : `${API_BASE_URL}${oferta.material.imagenUrl}`}
-                                    alt={oferta.material.nombre || 'Material'}
-                                    className="w-16 h-16 rounded-lg object-cover border border-gray-300"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.style.display = 'none';
-                                      const parent = target.parentElement;
-                                      if (parent) {
-                                        parent.innerHTML = '<div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center"><span class="text-xs text-gray-500">Sin imagen</span></div>';
-                                      }
-                                    }}
-                                  />
-                                ) : (
-                                  <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                                    <span className="text-xs text-gray-500">Sin imagen</span>
-                                  </div>
-                                )}
+                                {(() => {
+                                  console.log('Oferta data:', oferta);
+                                  console.log('Material info:', oferta.material);
+
+                                  const imageUrl = oferta.material?.imagenUrl;
+                                  console.log('Image URL:', imageUrl);
+
+                                  if (imageUrl) {
+                                    const fullUrl = imageUrl.startsWith('http')
+                                      ? imageUrl
+                                      : `${API_BASE_URL}${imageUrl}`;
+
+                                    console.log('Full URL:', fullUrl);
+
+                                    return (
+                                      <img
+                                        src={fullUrl}
+                                        alt={oferta.material?.nombre || 'Material'}
+                                        className="w-16 h-16 rounded-lg object-cover border border-gray-300"
+                                        onError={(e) => {
+                                          console.error('Image load error for:', fullUrl);
+                                          const target = e.target as HTMLImageElement;
+                                          target.style.display = 'none';
+                                          const parent = target.parentElement;
+                                          if (parent) {
+                                            parent.innerHTML = '<div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center"><span class="text-xs text-gray-500">Sin imagen</span></div>';
+                                          }
+                                        }}
+                                      />
+                                    );
+                                  } else {
+                                    return (
+                                      <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+                                        <span className="text-xs text-gray-500">Sin imagen</span>
+                                      </div>
+                                    );
+                                  }
+                                })()}
                               </div>
 
                               {/* Información de la oferta */}
