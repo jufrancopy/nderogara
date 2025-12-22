@@ -244,7 +244,7 @@ export default function MaterialesItemPage() {
 
   // Calcular costos totales
   const costoTotalMateriales = filteredMaterialesPorItem.reduce((total, materialItem) => {
-    const costoMaterial = materialItem.material.precioUnitario * materialItem.cantidadPorUnidad
+    const costoMaterial = (materialItem.material?.precioUnitario || 0) * materialItem.cantidadPorUnidad
     return total + costoMaterial
   }, 0)
 
