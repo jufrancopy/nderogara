@@ -3,16 +3,35 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { 
-  Building2, ArrowLeft, Edit, Calendar, MapPin, User, 
+import {
+  Building2, ArrowLeft, Edit, Calendar, MapPin, User,
   Phone, Mail, DollarSign, Ruler, FileText, Package,
-  Calculator, Plus
+  Calculator, Plus, GripVertical
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api, { API_BASE_URL } from '@/lib/api'
 import { formatPrice } from '@/lib/formatters'
 import jsPDF from 'jspdf'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import {
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface Proyecto {
   id: string
@@ -95,6 +114,172 @@ const estadoLabels = {
   CANCELADO: 'Cancelado'
 }
 
+interface SortableItemProps {
+  item: PresupuestoItem
+  index: number
+  expandedItem: string | null
+  toggleItemExpansion: (itemId: string) => void
+  handleRemoveItem: (itemId: string) => void
+  materialesPorItem: Record<string, any[]>
+  getUnidadLabel: (unidad: string) => string
+  formatPrice: (price: number) => string
+  API_BASE_URL: string
+  proyectoId: string
+}
+
+function SortableItem({
+  item,
+  index,
+  expandedItem,
+  toggleItemExpansion,
+  handleRemoveItem,
+  materialesPorItem,
+  getUnidadLabel,
+  formatPrice,
+  API_BASE_URL,
+  proyectoId
+}: SortableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`border border-gray-200 rounded-lg ${isDragging ? 'opacity-50' : ''}`}
+    >
+      {/* Header del acordeón */}
+      <div
+        className="px-6 py-4 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors flex items-center justify-between"
+        onClick={() => toggleItemExpansion(item.id)}
+      >
+        <div className="flex items-center space-x-4 flex-1">
+          {/* Drag Handle */}
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded"
+            title="Arrastrar para reordenar"
+          >
+            <GripVertical className="h-4 w-4 text-gray-500" />
+          </div>
+
+          <div className="flex-1">
+            <h4 className="text-lg font-medium text-gray-900">{item.item.nombre}</h4>
+            <p className="text-sm text-gray-500">
+              {item.cantidadMedida} {getUnidadLabel(item.item.unidadMedida)}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-lg font-bold text-gray-900">
+              {formatPrice(Number(item.costoTotal))}
+            </p>
+            <p className="text-sm text-gray-500">
+              Mat: {formatPrice(Number(item.costoMateriales))} | MO: {formatPrice(Number(item.costoManoObra))}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2 ml-4">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              handleRemoveItem(item.item.id)
+            }}
+            className="text-red-600 hover:text-red-900 transition-colors p-1"
+            title="Eliminar item"
+          >
+            ✕
+          </button>
+          <span className="text-gray-400">
+            {expandedItem === item.id ? '▼' : '▶'}
+          </span>
+        </div>
+      </div>
+
+      {/* Contenido expandible - Materiales */}
+      {expandedItem === item.id && (
+        <div className="px-6 py-4 border-t border-gray-200 bg-white">
+          <div className="flex items-center justify-between mb-3">
+            <h5 className="text-sm font-medium text-gray-700">Materiales utilizados:</h5>
+            <Link
+              href={`/items/${item.item.id}/materiales?from=proyecto&proyectoId=${proyectoId}`}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+            >
+              <Package className="h-4 w-4 mr-1" />
+              Gestionar Materiales
+            </Link>
+          </div>
+          {materialesPorItem[item.item.id]?.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {materialesPorItem[item.item.id].map((materialItem: any) => (
+                <div key={materialItem.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                  <div className="flex items-center space-x-3">
+                    {materialItem.material.imagenUrl && (
+                      <img
+                        src={materialItem.material.imagenUrl}
+                        alt={materialItem.material.nombre}
+                        className="w-8 h-8 object-cover rounded"
+                        onError={(e) => e.currentTarget.style.display = 'none'}
+                      />
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {materialItem.material.nombre}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {materialItem.cantidadPorUnidad} {getUnidadLabel(materialItem.material.unidad)} por {getUnidadLabel(item.item.unidadMedida)}
+                      </p>
+                      {materialItem.material.marca && (
+                        <p className="text-xs text-blue-600 font-medium">
+                          {materialItem.material.marca}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-gray-900">
+                      {formatPrice(Number(materialItem.material.precioUnitario))}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Total: {formatPrice(Number(materialItem.material.precioUnitario) * Number(materialItem.cantidadPorUnidad) * Number(item.cantidadMedida))}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4 bg-gray-50 rounded-lg">
+              <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-500 italic mb-3">No hay materiales asociados a este item</p>
+              <p className="text-xs text-gray-400 mb-3">
+                Agrega materiales del catálogo con precio base para estimaciones iniciales
+              </p>
+              <Link
+                href={`/items/${item.item.id}/materiales`}
+                className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Agregar Materiales
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ProyectoDetallePage() {
   const params = useParams()
   const proyectoId = params.id as string
@@ -124,6 +309,36 @@ export default function ProyectoDetallePage() {
     descripcion: ''
   })
   const [financiacionToDelete, setFinanciacionToDelete] = useState<any>(null)
+
+  // Configuración de drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  // Función para manejar el final del arrastre
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+      const oldIndex = proyecto?.presupuestoItems?.findIndex((item) => item.id === active.id)
+      const newIndex = proyecto?.presupuestoItems?.findIndex((item) => item.id === over.id)
+
+      if (oldIndex !== undefined && newIndex !== undefined && proyecto?.presupuestoItems) {
+        const newItems = arrayMove(proyecto.presupuestoItems, oldIndex, newIndex)
+        setProyecto({
+          ...proyecto,
+          presupuestoItems: newItems
+        })
+      }
+    }
+  }
 
   // Efecto para manejar la tecla Escape en el modal de imagen
   useEffect(() => {
@@ -906,129 +1121,44 @@ export default function ProyectoDetallePage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {proyecto.presupuestoItems.map((item) => (
-                      <div key={item.id} className="border border-gray-200 rounded-lg">
-                        {/* Header del acordeón */}
-                        <div 
-                          className="px-6 py-4 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors flex items-center justify-between"
-                          onClick={() => toggleItemExpansion(item.id)}
-                        >
-                          <div className="flex items-center space-x-4 flex-1">
-                            <div className="flex-1">
-                              <h4 className="text-lg font-medium text-gray-900">{item.item.nombre}</h4>
-                              <p className="text-sm text-gray-500">
-                                {item.cantidadMedida} {getUnidadLabel(item.item.unidadMedida)}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-lg font-bold text-gray-900">
-                                {formatPrice(Number(item.costoTotal))}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                Mat: {formatPrice(Number(item.costoMateriales))} | MO: {formatPrice(Number(item.costoManoObra))}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2 ml-4">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleRemoveItem(item.item.id)
-                              }}
-                              className="text-red-600 hover:text-red-900 transition-colors p-1"
-                              title="Eliminar item"
-                            >
-                              ✕
-                            </button>
-                            <span className="text-gray-400">
-                              {expandedItem === item.id ? '▼' : '▶'}
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext
+                      items={proyecto.presupuestoItems.map(item => item.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-4">
+                        {proyecto.presupuestoItems.map((item, index) => (
+                          <SortableItem
+                            key={item.id}
+                            item={item}
+                            index={index}
+                            expandedItem={expandedItem}
+                            toggleItemExpansion={toggleItemExpansion}
+                            handleRemoveItem={handleRemoveItem}
+                            materialesPorItem={materialesPorItem}
+                            getUnidadLabel={getUnidadLabel}
+                            formatPrice={formatPrice}
+                            API_BASE_URL={API_BASE_URL}
+                            proyectoId={proyectoId}
+                          />
+                        ))}
+
+                        {/* Total */}
+                        <div className="bg-gray-50 px-6 py-4 rounded-lg">
+                          <div className="flex justify-between items-center">
+                            <span className="text-lg font-medium text-gray-900">Total del Proyecto:</span>
+                            <span className="text-xl font-bold text-gray-900">
+                              {formatPrice(calcularCostoTotal())}
                             </span>
                           </div>
                         </div>
-                        
-                        {/* Contenido expandible - Materiales */}
-                        {expandedItem === item.id && (
-                          <div className="px-6 py-4 border-t border-gray-200 bg-white">
-                            <div className="flex items-center justify-between mb-3">
-                              <h5 className="text-sm font-medium text-gray-700">Materiales utilizados:</h5>
-                              <Link
-                                href={`/items/${item.item.id}/materiales?from=proyecto&proyectoId=${proyectoId}`}
-                                className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
-                              >
-                                <Package className="h-4 w-4 mr-1" />
-                                Gestionar Materiales
-                              </Link>
-                            </div>
-                            {materialesPorItem[item.item.id]?.length > 0 ? (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {materialesPorItem[item.item.id].map((materialItem: any) => (
-                                  <div key={materialItem.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                                    <div className="flex items-center space-x-3">
-                                      {materialItem.material.imagenUrl && (
-                                        <img
-                                          src={materialItem.material.imagenUrl}
-                                          alt={materialItem.material.nombre}
-                                          className="w-8 h-8 object-cover rounded"
-                                          onError={(e) => e.currentTarget.style.display = 'none'}
-                                        />
-                                      )}
-                                      <div>
-                                        <p className="text-sm font-medium text-gray-900">
-                                          {materialItem.material.nombre}
-                                        </p>
-                                        <p className="text-xs text-gray-500">
-                                          {materialItem.cantidadPorUnidad} {getUnidadLabel(materialItem.material.unidad)} por {getUnidadLabel(item.item.unidadMedida)}
-                                        </p>
-                                        {materialItem.material.marca && (
-                                          <p className="text-xs text-blue-600 font-medium">
-                                            {materialItem.material.marca}
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="text-sm font-medium text-gray-900">
-                                        {formatPrice(Number(materialItem.material.precioUnitario))}
-                                      </p>
-                                      <p className="text-xs text-gray-500">
-                                        Total: {formatPrice(Number(materialItem.material.precioUnitario) * Number(materialItem.cantidadPorUnidad) * Number(item.cantidadMedida))}
-                                      </p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="text-center py-4 bg-gray-50 rounded-lg">
-                                <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                                <p className="text-sm text-gray-500 italic mb-3">No hay materiales asociados a este item</p>
-                                <p className="text-xs text-gray-400 mb-3">
-                                  Agrega materiales del catálogo con precio base para estimaciones iniciales
-                                </p>
-                                <Link
-                                  href={`/items/${item.item.id}/materiales`}
-                                  className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
-                                >
-                                  <Plus className="h-4 w-4 mr-1" />
-                                  Agregar Materiales
-                                </Link>
-                              </div>
-                            )}
-                          </div>
-                        )}
                       </div>
-                    ))}
-                    
-                    {/* Total */}
-                    <div className="bg-gray-50 px-6 py-4 rounded-lg">
-                      <div className="flex justify-between items-center">
-                        <span className="text-lg font-medium text-gray-900">Total del Proyecto:</span>
-                        <span className="text-xl font-bold text-gray-900">
-                          {formatPrice(calcularCostoTotal())}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                    </SortableContext>
+                  </DndContext>
                 )}
               </div>
             </div>
