@@ -130,10 +130,10 @@ export const materialesController = {
     try {
       const { id } = request.params;
 
-      // Verificar que el material existe
+      // Verificar que el material existe y obtener su imagen
       const material = await prisma.material.findUnique({
         where: { id },
-        select: { id: true, nombre: true }
+        select: { id: true, nombre: true, imagenUrl: true }
       });
 
       if (!material) {
@@ -159,7 +159,13 @@ export const materialesController = {
         ]
       });
 
-      reply.send({ success: true, data: ofertas });
+      // Incluir información del material para cada oferta (para mostrar imagen)
+      const ofertasConMaterial = ofertas.map(oferta => ({
+        ...oferta,
+        material: material // Agregar información del material a cada oferta
+      }));
+
+      reply.send({ success: true, data: ofertasConMaterial });
     } catch (error) {
       console.error('Error fetching ofertas by material:', error);
       reply.status(500).send({ success: false, error: 'Error al cargar ofertas del material' });

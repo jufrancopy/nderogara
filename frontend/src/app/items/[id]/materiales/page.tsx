@@ -587,9 +587,12 @@ export default function MaterialesItemPage() {
     setShowOfertasModal(true)
 
     try {
-      // Cargar ofertas del material
+      // Cargar ofertas del material con información actualizada
       const response = await api.get(`/materiales/${materialItem.material.id}/ofertas`)
       setOfertasMaterial(response.data.data || [])
+
+      // También recargar la información del item para obtener datos actualizados del material
+      await fetchItem()
     } catch (error) {
       console.error('Error fetching ofertas:', error)
       setOfertasMaterial([])
@@ -2329,7 +2332,7 @@ export default function MaterialesItemPage() {
                     <h3 className="text-lg font-semibold text-blue-900">{selectedMaterialForOfertas.material.nombre}</h3>
                     <p className="text-sm text-blue-700">{getUnidadLabel(selectedMaterialForOfertas.material.unidad)}</p>
                     <p className="text-xs text-blue-600 mt-1">
-                      Precio base: {selectedMaterialForOfertas.material.precioBase ? formatPrice(selectedMaterialForOfertas.material.precioBase) : 'No definido'}
+                      Precio unitario: {formatPrice(selectedMaterialForOfertas.material.precioUnitario)}
                     </p>
                   </div>
                 </div>
@@ -2375,30 +2378,58 @@ export default function MaterialesItemPage() {
                       {ofertasMaterial.map((oferta: any) => (
                         <div key={oferta.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                           <div className="flex justify-between items-start mb-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <h4 className="text-lg font-semibold text-gray-900">
-                                  {formatPrice(oferta.precio)}
-                                </h4>
-                                <span className={`px-2 py-1 text-xs rounded-full ${
-                                  oferta.stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {oferta.stock ? 'En Stock' : 'Sin Stock'}
-                                </span>
-                                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                                  {oferta.tipoCalidad}
-                                </span>
-                              </div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                                <p><strong>Proveedor:</strong> {oferta.proveedor?.nombre || 'No especificado'}</p>
-                                {oferta.marca && <p><strong>Marca:</strong> {oferta.marca}</p>}
-                                {oferta.comisionPorcentaje > 0 && (
-                                  <p><strong>Comisión:</strong> {oferta.comisionPorcentaje}%</p>
+                            <div className="flex items-start gap-4 flex-1">
+                              {/* Imagen del material */}
+                              <div className="flex-shrink-0">
+                                {oferta.material?.imagenUrl ? (
+                                  <img
+                                    src={oferta.material.imagenUrl.startsWith('http')
+                                      ? oferta.material.imagenUrl
+                                      : `${API_BASE_URL}${oferta.material.imagenUrl}`}
+                                    alt={oferta.material.nombre || 'Material'}
+                                    className="w-16 h-16 rounded-lg object-cover border border-gray-300"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      const parent = target.parentElement;
+                                      if (parent) {
+                                        parent.innerHTML = '<div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center"><span class="text-xs text-gray-500">Sin imagen</span></div>';
+                                      }
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+                                    <span className="text-xs text-gray-500">Sin imagen</span>
+                                  </div>
                                 )}
                               </div>
-                              {oferta.observaciones && (
-                                <p className="text-sm text-gray-600 mt-2">{oferta.observaciones}</p>
-                              )}
+
+                              {/* Información de la oferta */}
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <h4 className="text-lg font-semibold text-gray-900">
+                                    {formatPrice(oferta.precio)}
+                                  </h4>
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    oferta.stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {oferta.stock ? 'En Stock' : 'Sin Stock'}
+                                  </span>
+                                  <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                                    {oferta.tipoCalidad}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                                  <p><strong>Proveedor:</strong> {oferta.proveedor?.nombre || 'No especificado'}</p>
+                                  {oferta.marca && <p><strong>Marca:</strong> {oferta.marca}</p>}
+                                  {oferta.comisionPorcentaje > 0 && (
+                                    <p><strong>Comisión:</strong> {oferta.comisionPorcentaje}%</p>
+                                  )}
+                                </div>
+                                {oferta.observaciones && (
+                                  <p className="text-sm text-gray-600 mt-2">{oferta.observaciones}</p>
+                                )}
+                              </div>
                             </div>
                           </div>
 
