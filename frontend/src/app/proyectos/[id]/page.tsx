@@ -793,8 +793,38 @@ export default function ProyectoDetallePage() {
     try {
       const response = await api.get(`/proyectos/${proyectoId}`)
       const proyectoData = response.data.data
+
+      // Para items dinámicos, obtener el costo actual (suma de pagos)
+      if (proyectoData.presupuestoItems) {
+        const itemsConCostoActualizado = await Promise.all(
+          proyectoData.presupuestoItems.map(async (item: any) => {
+            if (item.esDinamico) {
+              try {
+                // Obtener pagos del item dinámico para calcular costo actual
+                const pagosResponse = await api.get(`/proyectos/${proyectoId}/presupuesto/${item.id}/pagos`)
+                const pagos = pagosResponse.data.data || []
+                const costoActual = pagos
+                  .filter((p: any) => p.estado === 'APROBADO')
+                  .reduce((sum: number, p: any) => sum + Number(p.montoPagado), 0)
+
+                return {
+                  ...item,
+                  costoTotal: costoActual
+                }
+              } catch (error) {
+                console.error(`Error fetching pagos for item ${item.id}:`, error)
+                return item
+              }
+            }
+            return item
+          })
+        )
+
+        proyectoData.presupuestoItems = itemsConCostoActualizado
+      }
+
       setProyecto(proyectoData)
-      
+
       // Obtener materiales para cada item del presupuesto
       if (proyectoData.presupuestoItems) {
         const materialesPromises = proyectoData.presupuestoItems.map(async (presupuestoItem: any) => {
@@ -812,13 +842,13 @@ export default function ProyectoDetallePage() {
             }
           }
         })
-        
+
         const materialesResults = await Promise.all(materialesPromises)
         const materialesMap = materialesResults.reduce((acc, result) => {
           acc[result.itemId] = result.materiales
           return acc
         }, {} as Record<string, any[]>)
-        
+
         setMaterialesPorItem(materialesMap)
       }
     } catch (error) {
