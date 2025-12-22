@@ -67,6 +67,7 @@ interface PresupuestoItem {
   costoMateriales: number
   costoManoObra: number
   costoTotal: number
+  esDinamico?: boolean
   item: {
     id: string
     nombre: string
@@ -182,7 +183,14 @@ function SortableItem({
           </div>
 
           <div className="flex-1">
-            <h4 className="text-lg font-medium text-gray-900">{item.item.nombre}</h4>
+            <h4 className="text-lg font-medium text-gray-900 flex items-center">
+              {item.item.nombre}
+              {item.esDinamico && (
+                <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                  Dinámico
+                </span>
+              )}
+            </h4>
             <p className="text-sm text-gray-500">
               {item.cantidadMedida} {getUnidadLabel(item.item.unidadMedida)}
             </p>
@@ -197,16 +205,18 @@ function SortableItem({
           </div>
         </div>
             <div className="flex items-center space-x-2 ml-4">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setPagoModal({ isOpen: true, presupuestoItem: item })
-                }}
-                className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition-colors"
-                title="Gestionar pagos"
-              >
-                💰 Pago
-              </button>
+              {item.esDinamico && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setPagoModal({ isOpen: true, presupuestoItem: item })
+                  }}
+                  className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition-colors"
+                  title="Gestionar pagos"
+                >
+                  💰 Pago
+                </button>
+              )}
               <button
                 onClick={(e) => {
                   e.stopPropagation()
@@ -472,12 +482,13 @@ function PagoFormItem({
       return
     }
 
-    // Validar que no exceda el pendiente
+    // Para items dinámicos, no hay límite de pago
     const numericValue = parseInt(value, 10)
-    if (numericValue > pendientePago) {
-      toast.error(`El monto no puede exceder ${formatPrice(pendientePago)}`)
-      return
-    }
+    // Solo validar límite para items no dinámicos
+    // if (!presupuestoItem?.esDinamico && numericValue > pendientePago) {
+    //   toast.error(`El monto no puede exceder ${formatPrice(pendientePago)}`)
+    //   return
+    // }
 
     setMontoPago(value)
   }
@@ -630,6 +641,7 @@ export default function ProyectoDetallePage() {
   const [searchItemTerm, setSearchItemTerm] = useState('')
   const [showItemDropdown, setShowItemDropdown] = useState(false)
   const [cantidad, setCantidad] = useState('')
+  const [esDinamico, setEsDinamico] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<string | null>(null)
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
   const [materialesPorItem, setMaterialesPorItem] = useState<Record<string, any[]>>({})
@@ -795,7 +807,8 @@ export default function ProyectoDetallePage() {
     try {
       await api.post(`/proyectos/${proyectoId}/presupuesto`, {
         itemId: selectedItem.id,
-        cantidadMedida: Number(cantidad)
+        cantidadMedida: Number(cantidad),
+        esDinamico: esDinamico
       })
 
       toast.success('Item agregado al presupuesto')
@@ -803,6 +816,7 @@ export default function ProyectoDetallePage() {
       setSelectedItem(null)
       setSearchItemTerm('')
       setCantidad('')
+      setEsDinamico(false)
       fetchProyecto() // Recargar proyecto
     } catch (error: any) {
       console.error('Error adding item:', error)
@@ -1446,28 +1460,42 @@ export default function ProyectoDetallePage() {
                           required
                         />
                       </div>
-                      <div className="flex items-end space-x-2">
-                        <button
-                          type="submit"
-                          className="text-white px-3 py-2 rounded text-sm transition-colors"
-                          style={{backgroundColor: '#38603B'}}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#633722'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#38603B'}
-                        >
-                          Agregar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowAddForm(false)
-                            setSelectedItem(null)
-                            setSearchItemTerm('')
-                            setCantidad('')
-                          }}
-                          className="bg-gray-300 text-gray-700 px-3 py-2 rounded text-sm hover:bg-gray-400 transition-colors"
-                        >
-                          Cancelar
-                        </button>
+                      <div className="flex flex-col space-y-2">
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={esDinamico}
+                            onChange={(e) => setEsDinamico(e.target.checked)}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <span className="text-sm font-medium text-gray-700">
+                            Costo Dinámico (pagos incrementales)
+                          </span>
+                        </label>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            type="submit"
+                            className="text-white px-3 py-2 rounded text-sm transition-colors"
+                            style={{backgroundColor: '#38603B'}}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#633722'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#38603B'}
+                          >
+                            Agregar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowAddForm(false)
+                              setSelectedItem(null)
+                              setSearchItemTerm('')
+                              setCantidad('')
+                              setEsDinamico(false)
+                            }}
+                            className="bg-gray-300 text-gray-700 px-3 py-2 rounded text-sm hover:bg-gray-400 transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
                       </div>
                     </form>
                   </div>

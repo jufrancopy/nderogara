@@ -6,10 +6,24 @@ const prisma = new PrismaClient()
 
 const addItemSchema = z.object({
   itemId: z.string(),
-  cantidadMedida: z.number().positive()
+  cantidadMedida: z.number().positive(),
+  esDinamico: z.boolean().optional().default(false)
 })
 
 export const presupuestoController = {
+  // Función helper para calcular costo dinámico
+  async calcularCostoDinamico(presupuestoItemId: string) {
+    const pagos = await prisma.pagoPresupuestoItem.findMany({
+      where: {
+        presupuestoItemId,
+        estado: 'APROBADO' // Solo pagos aprobados cuentan para el costo
+      }
+    })
+
+    const totalPagos = pagos.reduce((sum, pago) => sum + Number(pago.montoPagado), 0)
+    return totalPagos
+  },
+
   // POST /proyectos/:id/presupuesto
   async addItemToPresupuesto(request: FastifyRequest<{
     Params: { id: string }
@@ -110,8 +124,9 @@ export const presupuestoController = {
       
       console.log('💵 Costo materiales total:', costoMateriales)
 
-      const costoManoObra = Number(item.manoObraUnitaria || 0) * validatedData.cantidadMedida
-      const costoTotal = costoMateriales + costoManoObra
+      // Para items dinámicos, el costo inicial es 0 y se calcula posteriormente con los pagos
+      const costoManoObra = validatedData.esDinamico ? 0 : Number(item.manoObraUnitaria || 0) * validatedData.cantidadMedida
+      const costoTotal = validatedData.esDinamico ? 0 : costoMateriales + costoManoObra
 
       // Crear el item del presupuesto
       const presupuestoItem = await prisma.presupuestoItem.create({
@@ -119,9 +134,10 @@ export const presupuestoController = {
           proyectoId,
           itemId: validatedData.itemId,
           cantidadMedida: validatedData.cantidadMedida,
-          costoMateriales,
+          costoMateriales: validatedData.esDinamico ? 0 : costoMateriales,
           costoManoObra,
-          costoTotal
+          costoTotal,
+          esDinamico: validatedData.esDinamico
         },
         include: {
           item: true
@@ -357,6 +373,16 @@ export const presupuestoController = {
         where: { id: pagoId },
         data: { estado }
       })
+
+      // Si el item es dinámico y el pago se aprobó, recalcular el costo total
+      if (estado === 'APROBADO') {
+        const costoDinamico = await this.calcularCostoDinamico(presupuestoItemId)
+
+        await prisma.presupuestoItem.update({
+          where: { id: presupuestoItemId },
+          data: { costoTotal: costoDinamico }
+        })
+      }
 
       return reply.send({
         success: true,
