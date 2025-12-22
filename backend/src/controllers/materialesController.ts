@@ -123,5 +123,46 @@ export const materialesController = {
       console.error('Error fetching material:', error);
       reply.status(500).send({ success: false, error: 'Error al cargar material' });
     }
+  },
+
+  // GET /materiales/:id/ofertas - Lista todas las ofertas de un material
+  async getOfertasByMaterial(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    try {
+      const { id } = request.params;
+
+      // Verificar que el material existe
+      const material = await prisma.material.findUnique({
+        where: { id },
+        select: { id: true, nombre: true }
+      });
+
+      if (!material) {
+        return reply.status(404).send({ success: false, error: 'Material no encontrado' });
+      }
+
+      // Obtener todas las ofertas del material
+      const ofertas = await prisma.ofertaProveedor.findMany({
+        where: { materialId: id },
+        include: {
+          proveedor: {
+            select: {
+              id: true,
+              nombre: true,
+              ciudad: true,
+              telefono: true
+            }
+          }
+        },
+        orderBy: [
+          { precio: 'asc' },
+          { updatedAt: 'desc' }
+        ]
+      });
+
+      reply.send({ success: true, data: ofertas });
+    } catch (error) {
+      console.error('Error fetching ofertas by material:', error);
+      reply.status(500).send({ success: false, error: 'Error al cargar ofertas del material' });
+    }
   }
 };

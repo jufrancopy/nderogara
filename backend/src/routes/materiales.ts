@@ -15,6 +15,7 @@ export async function materialesRoutes(fastify: FastifyInstance) {
 
   fastify.get('/', materialesController.getMateriales);
   fastify.get('/:id', materialesController.getMaterialById);
+  fastify.get('/:id/ofertas', materialesController.getOfertasByMaterial);
 
   // PUT /materiales/:id - Actualizar material (redirige según tipo)
   fastify.put('/:id', async (request: any, reply: any) => {
