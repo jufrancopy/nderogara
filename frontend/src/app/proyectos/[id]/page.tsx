@@ -190,21 +190,31 @@ function SortableItem({
             </p>
           </div>
         </div>
-        <div className="flex items-center space-x-2 ml-4">
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              handleRemoveItem(item.item.id)
-            }}
-            className="text-red-600 hover:text-red-900 transition-colors p-1"
-            title="Eliminar item"
-          >
-            ✕
-          </button>
-          <span className="text-gray-400">
-            {expandedItem === item.id ? '▼' : '▶'}
-          </span>
-        </div>
+            <div className="flex items-center space-x-2 ml-4">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setPagoModal({ isOpen: true, presupuestoItem: item })
+                }}
+                className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition-colors"
+                title="Gestionar pagos"
+              >
+                💰 Pago
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleRemoveItem(item.item.id)
+                }}
+                className="text-red-600 hover:text-red-900 transition-colors p-1"
+                title="Eliminar item"
+              >
+                ✕
+              </button>
+              <span className="text-gray-400">
+                {expandedItem === item.id ? '▼' : '▶'}
+              </span>
+            </div>
       </div>
 
       {/* Contenido expandible - Materiales */}
@@ -280,6 +290,328 @@ function SortableItem({
   )
 }
 
+// Componente para mostrar el historial de pagos de un item
+function PagoHistorialItem({ presupuestoItemId }: { presupuestoItemId: string }) {
+  const [pagos, setPagos] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchPagos = async () => {
+      try {
+        const response = await api.get(`/proyectos/presupuesto/${presupuestoItemId}/pagos`)
+        setPagos(response.data.data || [])
+      } catch (error) {
+        console.error('Error fetching pagos:', error)
+        setPagos([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchPagos()
+  }, [presupuestoItemId])
+
+  if (loading) {
+    return <div className="text-center py-4">Cargando historial...</div>
+  }
+
+  if (pagos.length === 0) {
+    return (
+      <div className="text-center py-4 text-gray-500">
+        <p className="text-sm">No hay pagos registrados para este item</p>
+      </div>
+    )
+  }
+
+  const totalPagado = pagos
+    .filter(p => p.estado === 'APROBADO')
+    .reduce((sum, p) => sum + Number(p.montoPagado), 0)
+
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+        <span className="text-sm font-medium text-blue-900">Total pagado:</span>
+        <span className="text-lg font-bold text-blue-600">{formatPrice(totalPagado)}</span>
+      </div>
+
+      {pagos.map((pago: any) => (
+        <div key={pago.id} className="border rounded-lg p-3 bg-white">
+          <div className="flex justify-between items-start mb-2">
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <span className="font-medium text-gray-900">
+                  {formatPrice(pago.montoPagado)}
+                </span>
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  pago.estado === 'APROBADO' ? 'bg-green-100 text-green-800' :
+                  pago.estado === 'RECHAZADO' ? 'bg-red-100 text-red-800' :
+                  'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {pago.estado}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {new Date(pago.fechaPago).toLocaleDateString('es-PY')}
+              </p>
+              {pago.notas && (
+                <p className="text-sm text-gray-600 mt-2">{pago.notas}</p>
+              )}
+            </div>
+          </div>
+
+          {pago.comprobanteUrl && (
+            <div className="mt-3 pt-3 border-t">
+              <div className="flex items-center space-x-2 mb-2">
+                <span className="text-gray-600 text-sm font-medium">Comprobante:</span>
+                {pago.comprobanteUrl.toLowerCase().endsWith('.pdf') ? (
+                  <span className="text-red-600 text-sm">📄 PDF</span>
+                ) : (
+                  <span className="text-green-600 text-sm">🖼️ Imagen</span>
+                )}
+              </div>
+              {pago.comprobanteUrl.toLowerCase().endsWith('.pdf') ? (
+                <div className="flex items-center justify-center p-4 bg-red-50 rounded">
+                  <a
+                    href={`${API_BASE_URL}${pago.comprobanteUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 text-sm underline"
+                  >
+                    Ver comprobante PDF
+                  </a>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <img
+                    src={`${API_BASE_URL}${pago.comprobanteUrl}`}
+                    alt="Comprobante de pago"
+                    className="w-full max-w-md h-auto rounded border shadow-sm"
+                    onError={(e) => {
+                      ;(e.target as HTMLImageElement).style.display = 'none'
+                    }}
+                  />
+                  <div className="flex items-center space-x-2">
+                    <span className="text-green-600 text-sm">🖼️</span>
+                    <a
+                      href={`${API_BASE_URL}${pago.comprobanteUrl}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 text-sm underline"
+                    >
+                      Ver imagen completa
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Componente para el formulario de pago
+function PagoFormItem({
+  presupuestoItemId,
+  proyectoId,
+  costoTotal,
+  onPagoSuccess
+}: {
+  presupuestoItemId: string
+  proyectoId: string
+  costoTotal: number
+  onPagoSuccess: () => void
+}) {
+  const [montoPago, setMontoPago] = useState('')
+  const [comprobanteFile, setComprobanteFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string>('')
+  const [notas, setNotas] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  // Calcular cuánto se ha pagado ya
+  const [pagosExistentes, setPagosExistentes] = useState<any[]>([])
+  const totalPagado = pagosExistentes
+    .filter(p => p.estado === 'APROBADO')
+    .reduce((sum, p) => sum + Number(p.montoPagado), 0)
+  const pendientePago = costoTotal - totalPagado
+
+  useEffect(() => {
+    const fetchPagos = async () => {
+      try {
+        const response = await api.get(`/proyectos/presupuesto/${presupuestoItemId}/pagos`)
+        setPagosExistentes(response.data.data || [])
+      } catch (error) {
+        console.error('Error fetching pagos existentes:', error)
+      }
+    }
+    fetchPagos()
+  }, [presupuestoItemId])
+
+  const handleMontoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    let value = event.target.value
+
+    // Si el campo está vacío, mostrar 0
+    if (!value) {
+      setMontoPago('')
+      return
+    }
+
+    // Permitir solo números
+    value = value.replace(/[^\d]/g, '')
+
+    // Si después de limpiar no hay valor, mostrar vacío
+    if (!value) {
+      setMontoPago('')
+      return
+    }
+
+    // Validar que no exceda el pendiente
+    const numericValue = parseInt(value, 10)
+    if (numericValue > pendientePago) {
+      toast.error(`El monto no puede exceder ${formatPrice(pendientePago)}`)
+      return
+    }
+
+    setMontoPago(value)
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setComprobanteFile(file)
+      const url = URL.createObjectURL(file)
+      setPreviewUrl(url)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!comprobanteFile) {
+      toast.error('Debes subir un comprobante de pago')
+      return
+    }
+    if (!montoPago || parseFloat(montoPago) <= 0) {
+      toast.error('Debes ingresar un monto válido')
+      return
+    }
+
+    setLoading(true)
+    try {
+      // Subir comprobante
+      const formData = new FormData()
+      formData.append('file', comprobanteFile)
+
+      const uploadResponse = await fetch(`${API_BASE_URL}/upload/comprobante`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      })
+
+      if (!uploadResponse.ok) {
+        throw new Error('Error al subir comprobante')
+      }
+
+      const uploadData = await uploadResponse.json()
+      if (!uploadData.data?.url) {
+        throw new Error('Respuesta del servidor inválida')
+      }
+
+      // Crear pago
+      await api.post(`/proyectos/${proyectoId}/presupuesto/${presupuestoItemId}/pagos`, {
+        montoPagado: parseFloat(montoPago),
+        comprobanteUrl: uploadData.data.url,
+        notas: notas || undefined
+      })
+
+      toast.success('Pago registrado exitosamente')
+      onPagoSuccess()
+
+      // Limpiar formulario
+      setMontoPago('')
+      setComprobanteFile(null)
+      setPreviewUrl('')
+      setNotas('')
+
+    } catch (error: any) {
+      console.error('Error creating pago:', error)
+      toast.error(error.response?.data?.error || 'Error al registrar pago')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Monto a Pagar (₲)
+          </label>
+          <input
+            type="text"
+            value={montoPago ? parseFloat(montoPago).toLocaleString('es-PY') : ''}
+            onChange={handleMontoChange}
+            placeholder="0"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Máximo pendiente: {formatPrice(pendientePago)}
+          </p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Comprobante de Pago
+          </label>
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            onChange={handleFileChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+        </div>
+      </div>
+
+      {previewUrl && (
+        <div className="mt-2">
+          {comprobanteFile?.type.startsWith('image/') ? (
+            <img src={previewUrl} alt="Comprobante" className="w-32 h-32 object-cover rounded border" />
+          ) : (
+            <div className="w-32 h-32 bg-gray-200 rounded border flex items-center justify-center">
+              <span className="text-sm text-gray-600">📄 PDF</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Notas (opcional)
+        </label>
+        <textarea
+          value={notas}
+          onChange={(e) => setNotas(e.target.value)}
+          placeholder="Notas adicionales sobre este pago..."
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+          rows={3}
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+      >
+        {loading ? 'Registrando...' : `Registrar Pago de ${montoPago ? formatPrice(parseFloat(montoPago)) : '₲0'}`}
+      </button>
+    </form>
+  )
+}
+
 export default function ProyectoDetallePage() {
   const params = useParams()
   const proyectoId = params.id as string
@@ -309,6 +641,13 @@ export default function ProyectoDetallePage() {
     descripcion: ''
   })
   const [financiacionToDelete, setFinanciacionToDelete] = useState<any>(null)
+
+  // Estado para modal de pagos por item
+  const [pagoModal, setPagoModal] = useState<{
+    isOpen: boolean
+    presupuestoItem?: any
+    pagos?: any[]
+  }>({ isOpen: false })
 
   // Configuración de drag and drop
   const sensors = useSensors(
@@ -1570,6 +1909,77 @@ export default function ProyectoDetallePage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de pagos por item */}
+      {pagoModal.isOpen && pagoModal.presupuestoItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Pagos por Item</h2>
+                  <p className="text-gray-600">{pagoModal.presupuestoItem.item.nombre}</p>
+                </div>
+                <button
+                  onClick={() => setPagoModal({ isOpen: false })}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Información del item */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Costo Total:</span>
+                    <p className="font-bold text-lg text-green-600">
+                      {formatPrice(Number(pagoModal.presupuestoItem.costoTotal))}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Cantidad:</span>
+                    <p className="font-medium">
+                      {pagoModal.presupuestoItem.cantidadMedida} {getUnidadLabel(pagoModal.presupuestoItem.item.unidadMedida)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Historial de pagos */}
+              <div className="mb-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Historial de Pagos</h3>
+                <div className="space-y-3">
+                  <PagoHistorialItem presupuestoItemId={pagoModal.presupuestoItem.id} />
+                </div>
+              </div>
+
+              {/* Formulario para nuevo pago */}
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Registrar Nuevo Pago</h3>
+                <PagoFormItem
+                  presupuestoItemId={pagoModal.presupuestoItem.id}
+                  proyectoId={proyectoId}
+                  costoTotal={Number(pagoModal.presupuestoItem.costoTotal)}
+                  onPagoSuccess={() => {
+                    // Recargar datos del proyecto para actualizar costos
+                    fetchProyecto()
+                  }}
+                />
+              </div>
+
+              <div className="flex justify-end mt-6 pt-4 border-t">
+                <button
+                  onClick={() => setPagoModal({ isOpen: false })}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
         </div>

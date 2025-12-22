@@ -41,4 +41,13 @@ export async function proyectosRoutes(fastify: FastifyInstance) {
 
   // DELETE /proyectos/:proyectoId/presupuesto/:itemId
   fastify.delete('/:proyectoId/presupuesto/:itemId', presupuestoController.removeItemFromPresupuesto)
+
+  // POST /proyectos/:id/presupuesto/:presupuestoItemId/pagos
+  fastify.post('/:id/presupuesto/:presupuestoItemId/pagos', presupuestoController.crearPagoPresupuestoItem)
+
+  // GET /proyectos/:id/presupuesto/:presupuestoItemId/pagos
+  fastify.get('/:id/presupuesto/:presupuestoItemId/pagos', presupuestoController.obtenerPagosPresupuestoItem)
+
+  // PUT /proyectos/:id/presupuesto/:presupuestoItemId/pagos/:pagoId/estado
+  fastify.put('/:id/presupuesto/:presupuestoItemId/pagos/:pagoId/estado', presupuestoController.actualizarEstadoPagoPresupuestoItem)
 }

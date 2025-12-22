@@ -233,5 +233,143 @@ export const presupuestoController = {
         error: 'Error interno del servidor'
       })
     }
+  },
+
+  // POST /proyectos/:id/presupuesto/:presupuestoItemId/pagos
+  async crearPagoPresupuestoItem(request: FastifyRequest<{
+    Params: { id: string, presupuestoItemId: string }
+    Body: { montoPagado: number, comprobanteUrl: string, notas?: string }
+  }>, reply: FastifyReply) {
+    try {
+      const { id: proyectoId, presupuestoItemId } = request.params
+      const { montoPagado, comprobanteUrl, notas } = request.body
+
+      // Verificar que el presupuestoItem pertenece al proyecto
+      const presupuestoItem = await prisma.presupuestoItem.findFirst({
+        where: {
+          id: presupuestoItemId,
+          proyectoId
+        }
+      })
+
+      if (!presupuestoItem) {
+        return reply.status(404).send({
+          success: false,
+          error: 'Item del presupuesto no encontrado'
+        })
+      }
+
+      // Crear el pago
+      const pago = await prisma.pagoPresupuestoItem.create({
+        data: {
+          presupuestoItemId,
+          proyectoId,
+          montoPagado,
+          comprobanteUrl,
+          notas
+        }
+      })
+
+      return reply.status(201).send({
+        success: true,
+        data: pago,
+        message: 'Pago registrado exitosamente'
+      })
+
+    } catch (error) {
+      console.error('Error creando pago de presupuesto item:', error)
+      return reply.status(500).send({
+        success: false,
+        error: 'Error interno del servidor'
+      })
+    }
+  },
+
+  // GET /proyectos/:id/presupuesto/:presupuestoItemId/pagos
+  async obtenerPagosPresupuestoItem(request: FastifyRequest<{
+    Params: { id: string, presupuestoItemId: string }
+  }>, reply: FastifyReply) {
+    try {
+      const { id: proyectoId, presupuestoItemId } = request.params
+
+      // Verificar que el presupuestoItem pertenece al proyecto
+      const presupuestoItem = await prisma.presupuestoItem.findFirst({
+        where: {
+          id: presupuestoItemId,
+          proyectoId
+        }
+      })
+
+      if (!presupuestoItem) {
+        return reply.status(404).send({
+          success: false,
+          error: 'Item del presupuesto no encontrado'
+        })
+      }
+
+      // Obtener todos los pagos del item
+      const pagos = await prisma.pagoPresupuestoItem.findMany({
+        where: { presupuestoItemId },
+        orderBy: { fechaPago: 'desc' }
+      })
+
+      return reply.send({
+        success: true,
+        data: pagos
+      })
+
+    } catch (error) {
+      console.error('Error obteniendo pagos de presupuesto item:', error)
+      return reply.status(500).send({
+        success: false,
+        error: 'Error interno del servidor'
+      })
+    }
+  },
+
+  // PUT /proyectos/:id/presupuesto/:presupuestoItemId/pagos/:pagoId/estado
+  async actualizarEstadoPagoPresupuestoItem(request: FastifyRequest<{
+    Params: { id: string, presupuestoItemId: string, pagoId: string }
+    Body: { estado: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' }
+  }>, reply: FastifyReply) {
+    try {
+      const { id: proyectoId, presupuestoItemId, pagoId } = request.params
+      const { estado } = request.body
+
+      // Verificar que el pago pertenece al proyecto y presupuestoItem
+      const pago = await prisma.pagoPresupuestoItem.findFirst({
+        where: {
+          id: pagoId,
+          presupuestoItemId,
+          proyectoId
+        }
+      })
+
+      if (!pago) {
+        return reply.status(404).send({
+          success: false,
+          error: 'Pago no encontrado'
+        })
+      }
+
+      // Actualizar el estado del pago
+      const pagoActualizado = await prisma.pagoPresupuestoItem.update({
+        where: { id: pagoId },
+        data: { estado }
+      })
+
+      return reply.send({
+        success: true,
+        data: pagoActualizado,
+        message: 'Estado del pago actualizado exitosamente'
+      })
+
+    } catch (error) {
+      console.error('Error actualizando estado de pago:', error)
+      return reply.status(500).send({
+        success: false,
+        error: 'Error interno del servidor'
+      })
+    }
   }
 }
