@@ -90,20 +90,14 @@ fastify.register(async function (fastify) {
   await fastify.register(proyectosReferenciaRoutes, { prefix: '/proyectos' })
   await fastify.register(materialesRoutes, { prefix: '/materiales' })
   await fastify.register(categoriasRoutes, { prefix: '/categorias' })
+  await fastify.register(financiacionRoutes.default, { prefix: '/proyectos' })
   await fastify.register(proyectosRoutes, { prefix: '/proyectos' })
   await fastify.register(itemsRoutes, { prefix: '/items' })
   await fastify.register(etapasObraRoutes, { prefix: '/proyectos' })
   await fastify.register(pagosRoutes)
   await fastify.register(constructorRoutes, { prefix: '/constructor' })
   await fastify.register(notificacionesRoutes, { prefix: '/notificaciones' })
-  await fastify.register(financiacionRoutes.default)
   await fastify.register(pagoMaterialRoutes.default)
-
-  // Ruta de respaldo para financiaciones (maneja llamadas incorrectas del frontend)
-  fastify.get('/financiaciones', async (request, reply) => {
-    console.log('⚠️  Llamada a /financiaciones detectada - devolviendo array vacío')
-    reply.send({ success: true, data: [] })
-  })
 
   // Ruta pública para proveedores (sin autenticación requerida)
   fastify.get('/proveedores', async (request, reply) => {

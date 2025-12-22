@@ -18,10 +18,10 @@ export default async function financiacionRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', authenticate);
 
   // Obtener todas las financiaciones de un proyecto
-  fastify.get('/proyectos/:proyectoId/financiaciones', getFinanciaciones);
+  fastify.get('/:proyectoId/financiaciones', getFinanciaciones);
 
   // Crear nueva financiación
-  fastify.post('/proyectos/:proyectoId/financiaciones', createFinanciacion);
+  fastify.post('/:proyectoId/financiaciones', createFinanciacion);
 
   // Actualizar financiación
   fastify.put('/financiaciones/:id', updateFinanciacion);
@@ -30,5 +30,5 @@ export default async function financiacionRoutes(fastify: FastifyInstance) {
   fastify.delete('/financiaciones/:id', deleteFinanciacion);
 
   // Obtener presupuesto total de un proyecto
-  fastify.get('/proyectos/:proyectoId/presupuesto-total', getPresupuestoTotal);
+  fastify.get('/:proyectoId/presupuesto-total', getPresupuestoTotal);
 }
