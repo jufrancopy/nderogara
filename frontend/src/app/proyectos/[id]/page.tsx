@@ -200,7 +200,11 @@ function SortableItem({
               {formatPrice(Number(item.costoTotal))}
             </p>
             <p className="text-sm text-gray-500">
-              Mat: {formatPrice(Number(item.costoMateriales))} | MO: {formatPrice(Number(item.costoManoObra))}
+              {item.esDinamico ? (
+                'Pagos incrementales'
+              ) : (
+                `Mat: ${formatPrice(Number(item.costoMateriales))} | MO: ${formatPrice(Number(item.costoManoObra))}`
+              )}
             </p>
           </div>
         </div>
