@@ -177,5 +177,61 @@ export const presupuestoController = {
         error: 'Error interno del servidor'
       })
     }
+  },
+
+  // PUT /proyectos/:id/presupuesto/reordenar
+  async reordenarPresupuestoItems(request: FastifyRequest<{
+    Params: { id: string }
+    Body: { itemIds: string[] }
+  }>, reply: FastifyReply) {
+    try {
+      const { id: proyectoId } = request.params
+      const { itemIds } = request.body
+
+      // Validar que itemIds sea un array
+      if (!Array.isArray(itemIds) || itemIds.length === 0) {
+        return reply.status(400).send({
+          success: false,
+          error: 'itemIds debe ser un array no vacío'
+        })
+      }
+
+      // Verificar que todos los itemIds pertenecen al proyecto
+      const presupuestoItems = await prisma.presupuestoItem.findMany({
+        where: {
+          proyectoId,
+          id: { in: itemIds }
+        }
+      })
+
+      if (presupuestoItems.length !== itemIds.length) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Algunos items no pertenecen a este proyecto'
+        })
+      }
+
+      // Actualizar el orden de cada item usando una transacción
+      const updatePromises = itemIds.map((itemId, index) =>
+        prisma.presupuestoItem.update({
+          where: { id: itemId },
+          data: { orden: index }
+        })
+      )
+
+      await prisma.$transaction(updatePromises)
+
+      return reply.send({
+        success: true,
+        message: 'Orden del presupuesto actualizado exitosamente'
+      })
+
+    } catch (error) {
+      console.error('Error reordenando presupuesto items:', error)
+      return reply.status(500).send({
+        success: false,
+        error: 'Error interno del servidor'
+      })
+    }
   }
 }

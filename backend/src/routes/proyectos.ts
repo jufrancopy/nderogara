@@ -36,6 +36,9 @@ export async function proyectosRoutes(fastify: FastifyInstance) {
   // POST /proyectos/:id/presupuesto
   fastify.post('/:id/presupuesto', presupuestoController.addItemToPresupuesto)
 
+  // PUT /proyectos/:id/presupuesto/reordenar
+  fastify.put('/:id/presupuesto/reordenar', presupuestoController.reordenarPresupuestoItems)
+
   // DELETE /proyectos/:proyectoId/presupuesto/:itemId
   fastify.delete('/:proyectoId/presupuesto/:itemId', presupuestoController.removeItemFromPresupuesto)
 }

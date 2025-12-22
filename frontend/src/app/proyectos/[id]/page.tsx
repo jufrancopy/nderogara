@@ -323,7 +323,7 @@ export default function ProyectoDetallePage() {
   )
 
   // Función para manejar el final del arrastre
-  function handleDragEnd(event: DragEndEvent) {
+  async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
 
     if (over && active.id !== over.id) {
@@ -332,10 +332,26 @@ export default function ProyectoDetallePage() {
 
       if (oldIndex !== undefined && newIndex !== undefined && proyecto?.presupuestoItems) {
         const newItems = arrayMove(proyecto.presupuestoItems, oldIndex, newIndex)
+
+        // Actualizar el estado local inmediatamente para mejor UX
         setProyecto({
           ...proyecto,
           presupuestoItems: newItems
         })
+
+        // Guardar el nuevo orden en la base de datos
+        try {
+          const itemIds = newItems.map(item => item.id)
+          await api.put(`/proyectos/${proyectoId}/presupuesto/reordenar`, {
+            itemIds
+          })
+          // No mostrar toast de éxito para no interrumpir la experiencia
+        } catch (error) {
+          console.error('Error saving order:', error)
+          // Revertir el cambio si falla la API
+          toast.error('Error al guardar el orden')
+          fetchProyecto() // Recargar para revertir
+        }
       }
     }
   }

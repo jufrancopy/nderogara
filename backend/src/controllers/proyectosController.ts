@@ -107,6 +107,9 @@ export const proyectosController = {
           presupuestoItems: {
             include: {
               item: true
+            },
+            orderBy: {
+              orden: 'asc'
             }
           },
           cotizaciones: {
@@ -427,6 +430,80 @@ export const proyectosController = {
         success: false,
         error: 'Error interno del servidor',
       });
+    }
+  },
+
+  // PUT /proyectos/:id/presupuesto/reordenar
+  async reordenarPresupuestoItems(request: FastifyRequest<{
+    Params: { id: string }
+    Body: { itemIds: string[] }
+  }>, reply: FastifyReply) {
+    try {
+      if (!request.user) {
+        return reply.status(401).send({
+          success: false,
+          error: 'No autenticado'
+        })
+      }
+
+      const { id: proyectoId } = request.params
+      const { itemIds } = request.body
+
+      // Validar que itemIds sea un array
+      if (!Array.isArray(itemIds) || itemIds.length === 0) {
+        return reply.status(400).send({
+          success: false,
+          error: 'itemIds debe ser un array no vacío'
+        })
+      }
+
+      // Verificar que el usuario tiene acceso al proyecto
+      const projectAuthClause = getAuthWhereClause(request.user, proyectoId)
+      const proyecto = await prisma.proyecto.findFirst({ where: projectAuthClause })
+
+      if (!proyecto) {
+        return reply.status(404).send({
+          success: false,
+          error: 'Proyecto no encontrado o sin permisos'
+        })
+      }
+
+      // Verificar que todos los itemIds pertenecen al proyecto
+      const presupuestoItems = await prisma.presupuestoItem.findMany({
+        where: {
+          proyectoId: proyecto.id,
+          id: { in: itemIds }
+        }
+      })
+
+      if (presupuestoItems.length !== itemIds.length) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Algunos items no pertenecen a este proyecto'
+        })
+      }
+
+      // Actualizar el orden de cada item usando una transacción
+      const updatePromises = itemIds.map((itemId, index) =>
+        prisma.presupuestoItem.update({
+          where: { id: itemId },
+          data: { orden: index }
+        })
+      )
+
+      await prisma.$transaction(updatePromises)
+
+      return reply.send({
+        success: true,
+        message: 'Orden del presupuesto actualizado exitosamente'
+      })
+
+    } catch (error) {
+      console.error('Error reordenando presupuesto items:', error)
+      return reply.status(500).send({
+        success: false,
+        error: 'Error interno del servidor'
+      })
     }
   },
 }
