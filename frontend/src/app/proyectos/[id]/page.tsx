@@ -131,6 +131,7 @@ interface SortableItemProps {
   formatPrice: (price: number) => string
   API_BASE_URL: string
   proyectoId: string
+  onItemUpdate: () => void
 }
 
 function SortableItem({
@@ -144,7 +145,8 @@ function SortableItem({
   getUnidadLabel,
   formatPrice,
   API_BASE_URL,
-  proyectoId
+  proyectoId,
+  onItemUpdate
 }: SortableItemProps) {
   const {
     attributes,
@@ -245,6 +247,30 @@ function SortableItem({
                   💰 Pago
                 </button>
               )}
+              <div className="flex items-center space-x-2">
+                <label className="flex items-center space-x-1 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={item.esDinamico || false}
+                    onChange={async (e) => {
+                      e.stopPropagation()
+                      try {
+                        await api.put(`/proyectos/${proyectoId}/presupuesto/${item.id}`, {
+                          cantidadMedida: item.cantidadMedida,
+                          esDinamico: e.target.checked
+                        })
+                        toast.success(`Item ${e.target.checked ? 'configurado como' : 'configurado como'} costo ${e.target.checked ? 'dinámico' : 'fijo'}`)
+                        onItemUpdate()
+                      } catch (error) {
+                        console.error('Error updating item:', error)
+                        toast.error('Error al actualizar el item')
+                      }
+                    }}
+                    className="h-3 w-3 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <span className="text-xs text-gray-600">Dinámico</span>
+                </label>
+              </div>
               <button
                 onClick={(e) => {
                   e.stopPropagation()
@@ -691,6 +717,8 @@ export default function ProyectoDetallePage() {
     descripcion: ''
   })
   const [financiacionToDelete, setFinanciacionToDelete] = useState<any>(null)
+
+
 
   // Estado para modal de pagos por item
   const [pagoModal, setPagoModal] = useState<{
@@ -1604,6 +1632,7 @@ export default function ProyectoDetallePage() {
                             formatPrice={formatPrice}
                             API_BASE_URL={API_BASE_URL}
                             proyectoId={proyectoId}
+                            onItemUpdate={fetchProyecto}
                           />
                         ))}
 

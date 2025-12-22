@@ -198,6 +198,65 @@ export const presupuestoController = {
     }
   },
 
+  // PUT /proyectos/:proyectoId/presupuesto/:presupuestoItemId
+  async updatePresupuestoItem(request: FastifyRequest<{
+    Params: { proyectoId: string, presupuestoItemId: string }
+    Body: { cantidadMedida?: number, esDinamico?: boolean }
+  }>, reply: FastifyReply) {
+    try {
+      const { proyectoId, presupuestoItemId } = request.params
+      const { cantidadMedida, esDinamico } = request.body
+
+      // Verificar que el presupuestoItem pertenece al proyecto
+      const existingItem = await prisma.presupuestoItem.findFirst({
+        where: {
+          id: presupuestoItemId,
+          proyectoId
+        }
+      })
+
+      if (!existingItem) {
+        return reply.status(404).send({
+          success: false,
+          error: 'Item del presupuesto no encontrado'
+        })
+      }
+
+      // Preparar datos de actualización
+      const updateData: any = {}
+
+      if (cantidadMedida !== undefined) {
+        updateData.cantidadMedida = cantidadMedida
+      }
+
+      if (esDinamico !== undefined) {
+        updateData.esDinamico = esDinamico
+      }
+
+      // Actualizar el item
+      const presupuestoItem = await prisma.presupuestoItem.update({
+        where: { id: presupuestoItemId },
+        data: updateData,
+        include: {
+          item: true
+        }
+      })
+
+      return reply.send({
+        success: true,
+        data: presupuestoItem,
+        message: 'Item del presupuesto actualizado exitosamente'
+      })
+
+    } catch (error) {
+      console.error('Error updating presupuesto item:', error)
+      return reply.status(500).send({
+        success: false,
+        error: 'Error interno del servidor'
+      })
+    }
+  },
+
   // PUT /proyectos/:id/presupuesto/reordenar
   async reordenarPresupuestoItems(request: FastifyRequest<{
     Params: { id: string }
