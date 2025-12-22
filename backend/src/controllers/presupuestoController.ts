@@ -12,7 +12,7 @@ const addItemSchema = z.object({
 
 export const presupuestoController = {
   // Función helper para calcular costo dinámico
-  async calcularCostoDinamico(presupuestoItemId: string) {
+  calcularCostoDinamico: async function(presupuestoItemId: string) {
     // Obtener pagos aprobados - solo estos cuentan para el costo dinámico
     const pagos = await prisma.pagoPresupuestoItem.findMany({
       where: {
