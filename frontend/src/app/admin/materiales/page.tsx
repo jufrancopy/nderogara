@@ -6,6 +6,7 @@ import Link from 'next/link';
 import PageLoader from '@/components/PageLoader';
 import { API_BASE_URL } from '@/lib/api';
 import api from '@/lib/api';
+import toast from 'react-hot-toast';
 
 export default function AdminMaterialesPage() {
   const router = useRouter();
@@ -101,11 +102,11 @@ export default function AdminMaterialesPage() {
       } else {
         const errorText = await response.text();
         console.error('Error del servidor:', response.status, errorText);
-        alert('Error al cambiar el estado del material');
+        toast.error('Error al cambiar el estado del material');
       }
     } catch (error) {
       console.error('Error al actualizar material:', error);
-      alert('Error al cambiar el estado del material');
+      toast.error('Error al cambiar el estado del material');
     }
   };
 
@@ -207,15 +208,15 @@ export default function AdminMaterialesPage() {
       const data = await response.json();
 
       if (data.success) {
-        alert('Oferta agregada exitosamente');
+        toast.success('Oferta agregada exitosamente');
         setShowAddOfertaModal(false);
         fetchMateriales(); // Recargar materiales con las nuevas ofertas
       } else {
-        alert(data.error || 'Error al agregar oferta');
+        toast.error(data.error || 'Error al agregar oferta');
       }
     } catch (error) {
       console.error('Error al agregar oferta:', error);
-      alert('Error al agregar oferta');
+      toast.error('Error al agregar oferta');
     }
   };
 
@@ -241,11 +242,11 @@ export default function AdminMaterialesPage() {
         departamento: ''
       });
 
-      alert('Proveedor creado exitosamente');
+      toast.success('Proveedor creado exitosamente');
     } catch (error: any) {
       console.error('Error creating proveedor:', error);
       const errorMessage = error.response?.data?.error || 'Error al crear proveedor';
-      alert(`Error: ${errorMessage}`);
+      toast.error(`Error: ${errorMessage}`);
     }
   };
 
