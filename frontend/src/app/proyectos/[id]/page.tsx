@@ -422,7 +422,7 @@ function PagoHistorialItem({
                     src={`${API_BASE_URL}${pago.comprobanteUrl}`}
                     alt="Comprobante de pago"
                     className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all"
-                    onClick={() => window.open(`${API_BASE_URL}${pago.comprobanteUrl}`, '_blank')}
+                    onClick={() => setModalComprobante(`${API_BASE_URL}${pago.comprobanteUrl}`)}
                     onError={(e) => {
                       ;(e.target as HTMLImageElement).style.display = 'none'
                     }}
@@ -678,6 +678,9 @@ export default function ProyectoDetallePage() {
     loading?: boolean
   }>({ isOpen: false, loading: false })
 
+  // Estado para modal de imagen ampliada dentro del modal de pagos
+  const [modalComprobante, setModalComprobante] = useState<string | null>(null)
+
   // Configuración de drag and drop
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -724,15 +727,19 @@ export default function ProyectoDetallePage() {
     }
   }
 
-  // Efecto para manejar la tecla Escape en el modal de imagen
+  // Efecto para manejar la tecla Escape en los modales
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && modalImage) {
-        setModalImage(null)
+      if (event.key === 'Escape') {
+        if (modalComprobante) {
+          setModalComprobante(null)
+        } else if (modalImage) {
+          setModalImage(null)
+        }
       }
     }
 
-    if (modalImage) {
+    if (modalImage || modalComprobante) {
       document.addEventListener('keydown', handleKeyDown)
       // Prevenir scroll del body cuando el modal está abierto
       document.body.style.overflow = 'hidden'
@@ -744,7 +751,7 @@ export default function ProyectoDetallePage() {
       document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = 'unset'
     }
-  }, [modalImage])
+  }, [modalImage, modalComprobante])
 
   useEffect(() => {
     fetchProyecto()
@@ -2021,13 +2028,26 @@ export default function ProyectoDetallePage() {
                       const response = await api.get(`/proyectos/${proyectoId}/presupuesto/${pagoModal.presupuestoItem.id}/pagos`)
                       const pagosActualizados = response.data.data || []
 
-                      // Actualizar el estado del modal con los nuevos pagos
+                      // Calcular el nuevo costo total dinámico (solo para items dinámicos)
+                      let nuevoCostoTotal = pagoModal.presupuestoItem.costoTotal
+                      if (pagoModal.presupuestoItem.esDinamico) {
+                        const totalPagosAprobados = pagosActualizados
+                          .filter((p: any) => p.estado === 'APROBADO')
+                          .reduce((sum: number, p: any) => sum + Number(p.montoPagado), 0)
+                        nuevoCostoTotal = totalPagosAprobados
+                      }
+
+                      // Actualizar el estado del modal con los nuevos pagos y costo actualizado
                       setPagoModal(prev => ({
                         ...prev,
-                        pagos: pagosActualizados
+                        pagos: pagosActualizados,
+                        presupuestoItem: {
+                          ...prev.presupuestoItem,
+                          costoTotal: nuevoCostoTotal
+                        }
                       }))
 
-                      // Recargar datos del proyecto para actualizar costos
+                      // Recargar datos del proyecto para actualizar costos en la lista principal
                       fetchProyecto()
                     } catch (error) {
                       console.error('Error recargando pagos:', error)
@@ -2046,6 +2066,42 @@ export default function ProyectoDetallePage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de comprobante ampliado */}
+      {modalComprobante && (
+        <div className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50">
+          <div className="relative max-w-7xl max-h-full p-4">
+            {/* Botón de cerrar arriba a la derecha */}
+            <button
+              onClick={() => setModalComprobante(null)}
+              className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full w-12 h-12 flex items-center justify-center text-2xl font-bold transition-colors"
+              title="Cerrar (Esc)"
+            >
+              ×
+            </button>
+
+            {/* Botón de cerrar abajo al centro */}
+            <button
+              onClick={() => setModalComprobante(null)}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-black/50 hover:bg-black/70 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            >
+              Cerrar
+            </button>
+
+            <img
+              src={modalComprobante}
+              alt="Comprobante ampliado"
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            />
+
+            {/* Overlay clickeable para cerrar */}
+            <div
+              className="absolute inset-0 -z-10 cursor-pointer"
+              onClick={() => setModalComprobante(null)}
+            />
           </div>
         </div>
       )}
