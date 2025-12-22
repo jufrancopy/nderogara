@@ -150,7 +150,15 @@ export default function ProyectoDetallePage() {
   useEffect(() => {
     fetchProyecto()
     fetchItems()
-    fetchFinanciaciones()
+
+    // Solo cargar financiaciones si el usuario no es cliente
+    const userData = localStorage.getItem('user')
+    const user = userData ? JSON.parse(userData) : null
+    const isCliente = user?.rol === 'CLIENTE'
+
+    if (!isCliente) {
+      fetchFinanciaciones()
+    }
   }, [proyectoId])
 
   const fetchProyecto = async () => {
@@ -418,8 +426,15 @@ export default function ProyectoDetallePage() {
       // Calcular presupuesto total
       const responsePresupuesto = await api.get(`/proyectos/${proyectoId}/presupuesto-total`)
       setPresupuestoTotal(responsePresupuesto.data.data.presupuestoTotal)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching financiaciones:', error)
+      // Si es 403 (CLIENTE intentando acceder), no mostrar error al usuario
+      if (error.response?.status !== 403) {
+        console.error('Error inesperado al obtener financiaciones:', error)
+      }
+      // Para CLIENTE, dejar valores por defecto (empty array y 0)
+      setFinanciaciones([])
+      setPresupuestoTotal(0)
     }
   }
 
@@ -1128,83 +1143,94 @@ export default function ProyectoDetallePage() {
                 </div>
               </div>
 
-              {/* Financiaciones del Proyecto */}
-              <div className="bg-white shadow rounded-lg p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                  <DollarSign className="h-5 w-5 mr-2" />
-                  Financiaciones
-                </h3>
+              {/* Financiaciones del Proyecto - Solo para constructores */}
+              {(() => {
+                const userData = localStorage.getItem('user')
+                const user = userData ? JSON.parse(userData) : null
+                const isCliente = user?.rol === 'CLIENTE'
 
-                <div className="space-y-4">
-                  {/* Resumen del presupuesto */}
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-green-800">Presupuesto Total</p>
-                        <p className="text-2xl font-bold text-green-900">{formatPrice(presupuestoTotal)}</p>
-                      </div>
-                      <button
-                        onClick={() => setShowFinanciacionForm(true)}
-                        className="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center text-sm"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Agregar
-                      </button>
-                    </div>
-                    <p className="text-xs text-green-600 mt-2">
-                      {financiaciones.length} fuente{financiaciones.length !== 1 ? 's' : ''} de financiamiento
-                    </p>
-                  </div>
+                if (!isCliente) {
+                  return (
+                    <div className="bg-white shadow rounded-lg p-6">
+                      <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                        <DollarSign className="h-5 w-5 mr-2" />
+                        Financiaciones
+                      </h3>
 
-                  {/* Lista de financiaciones */}
-                  <div className="space-y-3">
-                    {financiaciones.length === 0 ? (
-                      <div className="text-center py-6 text-gray-500">
-                        <DollarSign className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm">No hay financiaciones registradas</p>
-                        <button
-                          onClick={() => setShowFinanciacionForm(true)}
-                          className="mt-2 text-green-600 hover:text-green-700 underline text-sm"
-                        >
-                          Agregar primera financiación
-                        </button>
-                      </div>
-                    ) : (
-                      financiaciones.map((financiacion) => (
-                        <div key={financiacion.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium text-gray-900">{financiacion.fuente}</span>
-                                <span className="text-xs text-gray-500">
-                                  {new Date(financiacion.fecha).toLocaleDateString('es-PY')}
-                                </span>
-                              </div>
-                              {financiacion.descripcion && (
-                                <p className="text-sm text-gray-600">{financiacion.descripcion}</p>
-                              )}
+                      <div className="space-y-4">
+                        {/* Resumen del presupuesto */}
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-green-800">Presupuesto Total</p>
+                              <p className="text-2xl font-bold text-green-900">{formatPrice(presupuestoTotal)}</p>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <div className="text-right">
-                                <p className="text-lg font-bold text-green-600">{formatPrice(financiacion.monto)}</p>
-                              </div>
+                            <button
+                              onClick={() => setShowFinanciacionForm(true)}
+                              className="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center text-sm"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Agregar
+                            </button>
+                          </div>
+                          <p className="text-xs text-green-600 mt-2">
+                            {financiaciones.length} fuente{financiaciones.length !== 1 ? 's' : ''} de financiamiento
+                          </p>
+                        </div>
+
+                        {/* Lista de financiaciones */}
+                        <div className="space-y-3">
+                          {financiaciones.length === 0 ? (
+                            <div className="text-center py-6 text-gray-500">
+                              <DollarSign className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                              <p className="text-sm">No hay financiaciones registradas</p>
                               <button
-                                onClick={() => setFinanciacionToDelete(financiacion)}
-                                className="text-red-600 hover:text-red-900 transition-colors p-1"
-                                title="Eliminar financiación"
+                                onClick={() => setShowFinanciacionForm(true)}
+                                className="mt-2 text-green-600 hover:text-green-700 underline text-sm"
                               >
-                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
+                                Agregar primera financiación
                               </button>
                             </div>
-                          </div>
+                          ) : (
+                            financiaciones.map((financiacion) => (
+                              <div key={financiacion.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="font-medium text-gray-900">{financiacion.fuente}</span>
+                                      <span className="text-xs text-gray-500">
+                                        {new Date(financiacion.fecha).toLocaleDateString('es-PY')}
+                                      </span>
+                                    </div>
+                                    {financiacion.descripcion && (
+                                      <p className="text-sm text-gray-600">{financiacion.descripcion}</p>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="text-right">
+                                      <p className="text-lg font-bold text-green-600">{formatPrice(financiacion.monto)}</p>
+                                    </div>
+                                    <button
+                                      onClick={() => setFinanciacionToDelete(financiacion)}
+                                      className="text-red-600 hover:text-red-900 transition-colors p-1"
+                                      title="Eliminar financiación"
+                                    >
+                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          )}
                         </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
+                      </div>
+                    </div>
+                  )
+                }
+                return null
+              })()}
 
               {/* Información del Constructor */}
               <div className="bg-white shadow rounded-lg p-6">

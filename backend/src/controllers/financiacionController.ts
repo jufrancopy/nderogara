@@ -5,11 +5,36 @@ const prisma = new PrismaClient();
 
 // Obtener todas las financiaciones de un proyecto
 export const getFinanciaciones = async (request: FastifyRequest, reply: FastifyReply) => {
+  console.log("getFinanciaciones called with proyectoId:", request.params);
   try {
     const { proyectoId } = request.params as any;
+    const user = request.user as any;
+
+    // Find the proyecto by id or nombre
+    const proyecto = await prisma.proyecto.findFirst({
+      where: {
+        OR: [{ id: proyectoId }, { nombre: proyectoId }]
+      }
+    });
+
+    if (!proyecto) {
+      return reply.status(404).send({ success: false, error: 'Proyecto no encontrado' });
+    }
+
+    // Verificar si el usuario tiene acceso al proyecto
+    // Para CLIENTE: pueden ver proyectos pero NO financiaciones
+    // Para ADMIN/CONSTRUCTOR: pueden ver todo
+    if (user.rol === 'CLIENTE') {
+      return reply.status(403).send({ success: false, error: 'No tienes permiso para ver financiaciones' });
+    }
+
+    // Para otros roles, verificar que el proyecto les pertenezca o sean admin
+    if (user.rol !== 'ADMIN' && proyecto.usuarioId !== user.id) {
+      return reply.status(404).send({ success: false, error: 'Proyecto no encontrado' });
+    }
 
     const financiaciones = await prisma.financiacion.findMany({
-      where: { proyectoId },
+      where: { proyectoId: proyecto.id },
       orderBy: { fecha: 'desc' }
     });
 
@@ -36,7 +61,7 @@ export const createFinanciacion = async (request: FastifyRequest, reply: Fastify
     // Verificar que el proyecto existe y pertenece al usuario
     const proyecto = await prisma.proyecto.findFirst({
       where: {
-        id: finalProyectoId,
+        OR: [{ id: finalProyectoId }, { nombre: finalProyectoId }],
         usuarioId: (request.user as any).id
       }
     });
@@ -47,7 +72,7 @@ export const createFinanciacion = async (request: FastifyRequest, reply: Fastify
 
     const financiacion = await prisma.financiacion.create({
       data: {
-        proyectoId: finalProyectoId,
+        proyectoId: proyecto.id,
         monto: parseFloat(monto),
         fuente,
         descripcion
@@ -123,12 +148,12 @@ export const deleteFinanciacion = async (request: FastifyRequest, reply: Fastify
 export const getPresupuestoTotal = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const { proyectoId } = request.params as any;
+    const user = request.user as any;
 
-    // Verificar que el proyecto pertenece al usuario
+    // Find the proyecto by id or nombre
     const proyecto = await prisma.proyecto.findFirst({
       where: {
-        id: proyectoId,
-        usuarioId: (request.user as any).id
+        OR: [{ id: proyectoId }, { nombre: proyectoId }]
       }
     });
 
@@ -136,8 +161,20 @@ export const getPresupuestoTotal = async (request: FastifyRequest, reply: Fastif
       return reply.status(404).send({ success: false, error: 'Proyecto no encontrado' });
     }
 
+    // Verificar si el usuario tiene acceso al proyecto
+    // Para CLIENTE: pueden ver proyectos pero NO financiaciones
+    // Para ADMIN/CONSTRUCTOR: pueden ver todo
+    if (user.rol === 'CLIENTE') {
+      return reply.status(403).send({ success: false, error: 'No tienes permiso para ver financiaciones' });
+    }
+
+    // Para otros roles, verificar que el proyecto les pertenezca o sean admin
+    if (user.rol !== 'ADMIN' && proyecto.usuarioId !== user.id) {
+      return reply.status(404).send({ success: false, error: 'Proyecto no encontrado' });
+    }
+
     const financiaciones = await prisma.financiacion.findMany({
-      where: { proyectoId },
+      where: { proyectoId: proyecto.id },
       select: { monto: true }
     });
 

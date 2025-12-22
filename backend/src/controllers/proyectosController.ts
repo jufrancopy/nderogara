@@ -24,10 +24,10 @@ const createProyectoSchema = z.object({
 
 // Helper para construir la cláusula de autorización basada en el rol del usuario
 const getAuthWhereClause = (user: any, id?: string) => {
-  const where: { id?: string; usuarioId?: string; clienteEmail?: string } = {}
+  const where: { OR?: { id: string }[] | { nombre: string }[]; usuarioId?: string; clienteEmail?: string } = {}
 
   if (id) {
-    where.id = id
+    where.OR = [{ id }, { nombre: id }]
   }
 
   switch (user.rol) {
