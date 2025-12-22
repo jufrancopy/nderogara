@@ -282,13 +282,17 @@ export default function MisMaterialesPage() {
     if (!createOfferMaterial || !offerForm.precio) return;
 
     try {
-      let finalImageUrl = offerForm.imagenUrl || createOfferMaterial.imagenUrl; // Priorizar imagen de galería, luego base
-      console.log('Imagen base del material:', createOfferMaterial.imagenUrl);
-      console.log('Imagen de formulario (galería):', offerForm.imagenUrl);
-      console.log('¿Hay archivo subido?', !!offerImageFile);
+      let finalImageUrl = null; // Inicializar como null
+
+      console.log('🔍 Debug de imagen:');
+      console.log('- Imagen base del material:', createOfferMaterial.imagenUrl);
+      console.log('- Imagen de formulario (galería):', offerForm.imagenUrl);
+      console.log('- ¿Hay archivo subido?', !!offerImageFile);
+      console.log('- offerForm.imagenUrl es blob?', offerForm.imagenUrl?.startsWith('blob:'));
 
       // Si el proveedor subió una imagen personalizada, subirla primero
       if (offerImageFile) {
+        console.log('📤 Subiendo archivo al servidor...');
         const formData = new FormData();
         formData.append('file', offerImageFile);
 
@@ -304,15 +308,27 @@ export default function MisMaterialesPage() {
         if (uploadResponse.ok) {
           const uploadData = await uploadResponse.json();
           finalImageUrl = uploadData.data.url;
-          console.log('Imagen subida exitosamente:', finalImageUrl);
+          console.log('✅ Imagen subida exitosamente:', finalImageUrl);
+          console.log('   - Tipo de URL:', typeof finalImageUrl);
+          console.log('   - Empieza con /:', finalImageUrl?.startsWith('/'));
         } else {
-          console.log('Error en subida de imagen:', uploadResponse.status);
+          console.log('❌ Error en subida de imagen:', uploadResponse.status);
+          const errorData = await uploadResponse.json();
+          console.log('   Detalles del error:', errorData);
           toast.error('Error al subir la imagen');
           return;
         }
+      } else if (offerForm.imagenUrl && !offerForm.imagenUrl.startsWith('blob:')) {
+        // Usar imagen de galería (no blob)
+        finalImageUrl = offerForm.imagenUrl;
+        console.log('🖼️ Usando imagen de galería:', finalImageUrl);
+      } else if (createOfferMaterial.imagenUrl && !createOfferMaterial.imagenUrl.startsWith('blob:')) {
+        // Usar imagen base del material (no blob)
+        finalImageUrl = createOfferMaterial.imagenUrl;
+        console.log('📊 Usando imagen base del material:', finalImageUrl);
       }
 
-      console.log('ImagenUrl final a enviar:', finalImageUrl);
+      console.log('🎯 ImagenUrl final a enviar al backend:', finalImageUrl);
 
       console.log('Enviando datos al backend:');
       console.log('- materialBaseId:', createOfferMaterial.id);
@@ -737,7 +753,8 @@ export default function MisMaterialesPage() {
                                 setOfferImageFile(file);
                                 const preview = URL.createObjectURL(file);
                                 setOfferImagePreview(preview);
-                                setOfferForm({ ...offerForm, imagenUrl: preview });
+                                // NO guardar la URL de blob en el formulario - solo usar para preview
+                                // La URL real del servidor se obtendrá después de subir
                               }
                             }}
                             className="hidden"

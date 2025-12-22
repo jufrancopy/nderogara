@@ -99,12 +99,24 @@ export const materialesPorItemController = {
       const { itemId, materialId } = request.params
       const { cantidadPorUnidad, observaciones } = request.body
 
+      // Verificar que el registro existe y pertenece al item
+      const existingRecord = await prisma.materialPorItem.findFirst({
+        where: {
+          id: materialId,
+          itemId: itemId
+        }
+      })
+
+      if (!existingRecord) {
+        return reply.status(404).send({
+          success: false,
+          error: 'Material no encontrado en este item'
+        })
+      }
+
       const materialPorItem = await prisma.materialPorItem.update({
         where: {
-          itemId_materialId: {
-            itemId,
-            materialId
-          }
+          id: materialId
         },
         data: {
           cantidadPorUnidad,
@@ -129,10 +141,10 @@ export const materialesPorItemController = {
       let precioUnitario = 0
 
       // Buscar ofertas activas con stock
-      const ofertasActivas = materialPorItem.material.ofertas?.filter(oferta => oferta.stock === true) || []
+      const ofertasActivas = materialPorItem.material.ofertas?.filter((oferta: any) => oferta.stock === true) || []
       if (ofertasActivas.length > 0) {
         // Usar la oferta más económica
-        precioUnitario = Math.min(...ofertasActivas.map(o => Number(o.precio)))
+        precioUnitario = Math.min(...ofertasActivas.map((o: any) => Number(o.precio)))
       } else if (materialPorItem.material.precioBase) {
         // Usar precio base si no hay ofertas
         precioUnitario = Number(materialPorItem.material.precioBase)
@@ -171,12 +183,25 @@ export const materialesPorItemController = {
     try {
       const { itemId, materialId } = request.params
 
+      // Verificar que el registro existe y pertenece al item
+      const materialPorItem = await prisma.materialPorItem.findFirst({
+        where: {
+          id: materialId,
+          itemId: itemId
+        }
+      })
+
+      if (!materialPorItem) {
+        return reply.status(404).send({
+          success: false,
+          error: 'Material no encontrado en este item'
+        })
+      }
+
+      // Eliminar el registro
       await prisma.materialPorItem.delete({
         where: {
-          itemId_materialId: {
-            itemId,
-            materialId
-          }
+          id: materialId
         }
       })
 
