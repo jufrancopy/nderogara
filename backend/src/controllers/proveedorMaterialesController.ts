@@ -313,7 +313,8 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
             marca: marca,
             comisionPorcentaje: 10.00,
             stock: true,
-            observaciones: observaciones
+            observaciones: observaciones,
+            imagenUrl: imagenUrl || null // Agregar imagen específica de la oferta
           }
         });
         console.log('Oferta actualizada con marca:', oferta.marca);
@@ -328,7 +329,8 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
             marca: marca,
             comisionPorcentaje: 10.00,
             stock: true,
-            observaciones: observaciones
+            observaciones: observaciones,
+            imagenUrl: imagenUrl || null // Agregar imagen específica de la oferta
           }
         });
         console.log('Oferta creada:', oferta.id);

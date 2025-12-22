@@ -331,6 +331,7 @@ interface CreateOfertaAdminBody {
   comisionPorcentaje?: number;
   stock?: boolean;
   observaciones?: string;
+  imagenUrl?: string;
 }
 
 export const createOfertaAdmin = async (
@@ -339,7 +340,7 @@ export const createOfertaAdmin = async (
 ) => {
   try {
     const { materialId } = request.params;
-    const { proveedorId, precio, tipoCalidad, marca, comisionPorcentaje, stock, observaciones } = request.body;
+    const { proveedorId, precio, tipoCalidad, marca, comisionPorcentaje, stock, observaciones, imagenUrl } = request.body;
 
     // Verificar que el material existe y es del catálogo
     const material = await prisma.material.findUnique({
@@ -382,7 +383,8 @@ export const createOfertaAdmin = async (
         comisionPorcentaje: comisionPorcentaje ? parseFloat(comisionPorcentaje.toString()) : 0,
         stock: stock !== undefined ? stock : true,
         vigenciaHasta: null, // Sin límite de tiempo
-        observaciones: observaciones || null
+        observaciones: observaciones || null,
+        imagenUrl: imagenUrl || null // Imagen específica de la oferta
       },
       include: {
         proveedor: true

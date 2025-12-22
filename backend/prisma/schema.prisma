@@ -176,6 +176,7 @@ model OfertaProveedor {
   stock             Boolean     @default(true)
   vigenciaHasta     DateTime?   // Hasta cuándo es válida la oferta
   observaciones     String?
+  imagenUrl         String?     // Imagen específica de la oferta del proveedor
   material          Material    @relation(fields: [materialId], references: [id], onDelete: Cascade)
   proveedor         Proveedor   @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
   historialPrecios  HistorialPrecioOferta[]

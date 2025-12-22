@@ -681,7 +681,8 @@ export default function MaterialesItemPage() {
         marca: ofertaForm.marca,
         comisionPorcentaje: parseFloat(ofertaForm.comisionPorcentaje) || 0,
         stock: ofertaForm.stock,
-        observaciones: ofertaForm.observaciones
+        observaciones: ofertaForm.observaciones,
+        imagenUrl: ofertaForm.imagenUrl // Imagen específica de la oferta
       }
 
       const response = await api.post(`/admin/materiales/${selectedMaterialForOferta.material.id}/ofertas`, ofertaData)
@@ -2440,46 +2441,55 @@ export default function MaterialesItemPage() {
                         <div key={oferta.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                           <div className="flex justify-between items-start mb-3">
                             <div className="flex items-start gap-4 flex-1">
-                              {/* Imagen del material */}
+                              {/* Imagen específica de la oferta o del material */}
                               <div className="flex-shrink-0">
-                                {(() => {
-                                  console.log('Oferta data:', oferta);
-                                  console.log('Material info:', oferta.material);
-
-                                  const imageUrl = oferta.material?.imagenUrl;
-                                  console.log('Image URL:', imageUrl);
-
-                                  if (imageUrl) {
-                                    const fullUrl = imageUrl.startsWith('http')
-                                      ? imageUrl
-                                      : `${API_BASE_URL}${imageUrl}`;
-
-                                    console.log('Full URL:', fullUrl);
-
-                                    return (
-                                      <img
-                                        src={fullUrl}
-                                        alt={oferta.material?.nombre || 'Material'}
-                                        className="w-16 h-16 rounded-lg object-cover border border-gray-300"
-                                        onError={(e) => {
-                                          console.error('Image load error for:', fullUrl);
-                                          const target = e.target as HTMLImageElement;
-                                          target.style.display = 'none';
-                                          const parent = target.parentElement;
-                                          if (parent) {
-                                            parent.innerHTML = '<div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center"><span class="text-xs text-gray-500">Sin imagen</span></div>';
-                                          }
-                                        }}
-                                      />
-                                    );
-                                  } else {
-                                    return (
-                                      <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                                        <span className="text-xs text-gray-500">Sin imagen</span>
-                                      </div>
-                                    );
-                                  }
-                                })()}
+                                <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                                  {oferta.imagenUrl ? (
+                                    // Imagen específica de la oferta del proveedor
+                                    <img
+                                      src={oferta.imagenUrl.startsWith('http')
+                                        ? oferta.imagenUrl
+                                        : `${API_BASE_URL}${oferta.imagenUrl}`}
+                                      alt={`Oferta de ${oferta.proveedor?.nombre || 'Proveedor'}`}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                        const parent = target.parentElement;
+                                        if (parent && !parent.querySelector('.error-text')) {
+                                          const errorDiv = document.createElement('div');
+                                          errorDiv.className = 'flex items-center justify-center w-full h-full';
+                                          errorDiv.innerHTML = '<span class="text-xs text-gray-500">Sin imagen</span>';
+                                          errorDiv.classList.add('error-text');
+                                          parent.appendChild(errorDiv);
+                                        }
+                                      }}
+                                    />
+                                  ) : oferta.material?.imagenUrl ? (
+                                    // Imagen genérica del material del catálogo
+                                    <img
+                                      src={oferta.material.imagenUrl.startsWith('http')
+                                        ? oferta.material.imagenUrl
+                                        : `${API_BASE_URL}${oferta.material.imagenUrl}`}
+                                      alt={oferta.material.nombre || 'Material'}
+                                      className="w-full h-full object-cover opacity-60"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                        const parent = target.parentElement;
+                                        if (parent && !parent.querySelector('.error-text')) {
+                                          const errorDiv = document.createElement('div');
+                                          errorDiv.className = 'flex items-center justify-center w-full h-full';
+                                          errorDiv.innerHTML = '<span class="text-xs text-gray-500">Sin imagen</span>';
+                                          errorDiv.classList.add('error-text');
+                                          parent.appendChild(errorDiv);
+                                        }
+                                      }}
+                                    />
+                                  ) : (
+                                    <span className="text-xs text-gray-500">Sin imagen</span>
+                                  )}
+                                </div>
                               </div>
 
                               {/* Información de la oferta */}
