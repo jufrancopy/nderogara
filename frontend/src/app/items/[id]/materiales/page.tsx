@@ -1651,6 +1651,31 @@ export default function MaterialesItemPage() {
               </div>
 
               <div className="space-y-4">
+                {/* Imagen del Material */}
+                <div className="flex justify-center">
+                  {selectedMaterialForDetail.imagenUrl ? (
+                    <img
+                      src={selectedMaterialForDetail.imagenUrl.startsWith('http')
+                        ? selectedMaterialForDetail.imagenUrl
+                        : `${API_BASE_URL}${selectedMaterialForDetail.imagenUrl}`}
+                      alt={selectedMaterialForDetail.nombre}
+                      className="w-48 h-48 object-cover rounded-lg shadow-md"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = '<div class="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center"><span class="text-gray-500 text-sm">Imagen no disponible</span></div>';
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <span className="text-gray-500 text-sm">Sin imagen</span>
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">{selectedMaterialForDetail.nombre}</h3>
                   <p className="text-sm text-gray-600">{getUnidadLabel(selectedMaterialForDetail.unidad)}</p>
