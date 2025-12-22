@@ -849,7 +849,7 @@ export default function MaterialesItemPage() {
                         {materialItem.material?.nombre || 'Material sin nombre'} ({materialItem.cantidadPorUnidad}x)
                       </span>
                       <span className="font-medium text-gray-900">
-                        {formatPrice(materialItem.material.precioUnitario * materialItem.cantidadPorUnidad)}
+                        {formatPrice((materialItem.material?.precioUnitario || 0) * materialItem.cantidadPorUnidad)}
                       </span>
                     </div>
                   ))}
