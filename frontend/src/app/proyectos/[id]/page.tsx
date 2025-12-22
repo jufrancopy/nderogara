@@ -2049,7 +2049,7 @@ export default function ProyectoDetallePage() {
                       }))
 
                       // Recargar datos del proyecto para actualizar costos en la lista principal
-                      fetchProyecto()
+                      await fetchProyecto()
                     } catch (error) {
                       console.error('Error recargando pagos:', error)
                       fetchProyecto() // Fallback

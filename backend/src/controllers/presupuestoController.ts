@@ -277,16 +277,31 @@ export const presupuestoController = {
         })
       }
 
-      // Crear el pago
+      // Crear el pago y marcarlo como aprobado automáticamente
       const pago = await prisma.pagoPresupuestoItem.create({
         data: {
           presupuestoItemId,
           proyectoId,
           montoPagado,
           comprobanteUrl,
-          notas
+          notas,
+          estado: 'APROBADO' // Marcar como aprobado automáticamente
         }
       })
+
+      // Si el item es dinámico, recalcular el costo total inmediatamente
+      const itemDinamico = await prisma.presupuestoItem.findUnique({
+        where: { id: presupuestoItemId },
+        select: { esDinamico: true }
+      })
+
+      if (itemDinamico?.esDinamico) {
+        const costoDinamico = await this.calcularCostoDinamico(presupuestoItemId)
+        await prisma.presupuestoItem.update({
+          where: { id: presupuestoItemId },
+          data: { costoTotal: costoDinamico }
+        })
+      }
 
       return reply.status(201).send({
         success: true,
