@@ -178,6 +178,9 @@ export const updateMaterialCatalogo = async (
     if (observaciones !== undefined) updateData.descripcion = observaciones;
     if (categoriaId !== undefined) updateData.categoriaId = categoriaId;
 
+    // Manejar específicamente esActivo (puede venir solo este campo)
+    if (body.esActivo !== undefined) updateData.esActivo = body.esActivo;
+
     // Actualizar el material
     const updated = await prisma.material.update({
       where: { id },
