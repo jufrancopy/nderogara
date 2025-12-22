@@ -771,6 +771,29 @@ export default function MaterialesItemPage() {
     }
   }
 
+  // Función para agregar material directamente desde el dropdown
+  const handleAddMaterialFromDropdown = async (material: Material) => {
+    try {
+      await api.post(`/items/${itemId}/materiales`, {
+        materialId: material.id,
+        cantidadPorUnidad: 1, // Valor por defecto
+        observaciones: `Agregado desde lista - ${new Date().toLocaleDateString('es-PY')}`
+      })
+
+      toast.success(`Material "${material.nombre}" agregado exitosamente`)
+      setShowDropdown(false)
+      setSearchTerm('')
+      setSelectedMaterial(null)
+      setCantidad('1')
+      setObservaciones('')
+      fetchItem() // Recargar item
+    } catch (error: any) {
+      console.error('Error adding material:', error)
+      const errorMessage = error.response?.data?.error || 'Error al agregar material'
+      toast.error(errorMessage)
+    }
+  }
+
 
 
 
@@ -969,20 +992,42 @@ export default function MaterialesItemPage() {
                             <div
                               key={material.id}
                               onClick={() => {
-                                setSelectedMaterial(material)
-                                setSearchTerm(material.nombre)
-                                setShowDropdown(false)
-                                setSelectedIndex(-1)
+                                // Agregar el material directamente al item
+                                handleAddMaterialFromDropdown(material)
                               }}
-                              className={`px-3 py-2 cursor-pointer border-b border-gray-100 last:border-b-0 ${
+                              className={`px-3 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 ${
                                 selectedIndex === index
                                   ? 'bg-blue-100 text-blue-900'
                                   : 'hover:bg-gray-100'
                               }`}
                             >
-                              <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                {/* Imagen del material */}
+                                <div className="w-10 h-10 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                                  {material.imagenUrl ? (
+                                    <img
+                                      src={material.imagenUrl.startsWith('http')
+                                        ? material.imagenUrl
+                                        : `${API_BASE_URL}${material.imagenUrl}`}
+                                      alt={material.nombre}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                        const parent = target.parentElement;
+                                        if (parent) {
+                                          parent.innerHTML = '<span class="text-gray-400 text-xs">📷</span>';
+                                        }
+                                      }}
+                                    />
+                                  ) : (
+                                    <span className="text-gray-400 text-xs">📷</span>
+                                  )}
+                                </div>
+
+                                {/* Información del material */}
                                 <div className="flex-1">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 mb-1">
                                     <div className="text-sm font-medium text-gray-900">
                                       {material.nombre}
                                     </div>
@@ -1013,21 +1058,19 @@ export default function MaterialesItemPage() {
                                   </div>
                                   {yaEstaAgregado && (
                                     <div className="text-xs text-orange-600 mt-1">
-                                      💡 Puedes agregar múltiples instancias para comparar ofertas
+                                      💡 Click para agregar otra instancia y comparar ofertas
                                     </div>
                                   )}
                                 </div>
+
+                                {/* Botones/Indicadores */}
                                 <div className="flex items-center gap-2">
                                   {material.precioBase && (
                                     <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
                                       📊 Base
                                     </span>
                                   )}
-                                  {yaEstaAgregado && (
-                                    <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
-                                      🔄 Repetir
-                                    </span>
-                                  )}
+                                  <span className="text-green-600 text-lg">➕</span>
                                 </div>
                               </div>
                             </div>
