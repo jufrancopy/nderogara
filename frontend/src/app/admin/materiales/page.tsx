@@ -654,7 +654,7 @@ export default function AdminMaterialesPage() {
       {/* Modal para agregar oferta */}
       {showAddOfertaModal && selectedMaterialForOferta && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <h2 className="text-xl font-bold text-gray-900">Agregar Oferta</h2>
@@ -688,29 +688,27 @@ export default function AdminMaterialesPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Proveedor *
                   </label>
-                  <div className="flex gap-2">
-                    <select
-                      value={ofertaForm.proveedorId}
-                      onChange={(e) => setOfertaForm({...ofertaForm, proveedorId: e.target.value})}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      required
-                    >
-                      <option value="">Seleccionar proveedor...</option>
-                      {proveedores.map((proveedor: any) => (
-                        <option key={proveedor.id} value={proveedor.id}>
-                          {proveedor.nombre} - {proveedor.ciudad || 'Sin ciudad'}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => setShowCreateProveedorModal(true)}
-                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors whitespace-nowrap"
-                      title="Crear nuevo proveedor"
-                    >
-                      + Nuevo
-                    </button>
-                  </div>
+                  <select
+                    value={ofertaForm.proveedorId}
+                    onChange={(e) => setOfertaForm({...ofertaForm, proveedorId: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 mb-2"
+                    required
+                  >
+                    <option value="">Seleccionar proveedor...</option>
+                    {proveedores.map((proveedor: any) => (
+                      <option key={proveedor.id} value={proveedor.id}>
+                        {proveedor.nombre} - {proveedor.ciudad || 'Sin ciudad'}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateProveedorModal(true)}
+                    className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                    title="Crear nuevo proveedor"
+                  >
+                    + Crear Nuevo Proveedor
+                  </button>
                 </div>
 
                 <div>
