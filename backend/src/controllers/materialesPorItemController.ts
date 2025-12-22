@@ -20,22 +20,8 @@ export const materialesPorItemController = {
       const { id: itemId } = request.params
       const validatedData = addMaterialSchema.parse(request.body)
 
-      // Verificar si ya existe la relación
-      const existing = await prisma.materialPorItem.findUnique({
-        where: {
-          itemId_materialId: {
-            itemId,
-            materialId: validatedData.materialId
-          }
-        }
-      })
-
-      if (existing) {
-        return reply.status(400).send({
-          success: false,
-          error: 'Este material ya está asociado al item'
-        })
-      }
+      // Permitir múltiples instancias del mismo material (cada una puede tener diferentes ofertas)
+      // No hay validación de unicidad aquí - se permite agregar el mismo material múltiples veces
 
       const materialPorItem = await prisma.materialPorItem.create({
         data: {

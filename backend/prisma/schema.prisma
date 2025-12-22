@@ -232,7 +232,8 @@ model MaterialPorItem {
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
-  @@unique([itemId, materialId])
+  // Removida restricción única para permitir múltiples instancias del mismo material
+  // @@unique([itemId, materialId])
 }
 
 model Proyecto {
