@@ -42,6 +42,7 @@ interface MaterialPorItem {
     nombre: string
     unidad: string
     precioUnitario: number
+    imagenUrl?: string
   }
 }
 interface Material {
@@ -49,6 +50,7 @@ interface Material {
   nombre: string
   unidad: string
   precioBase?: number
+  imagenUrl?: string
   ofertas?: Array<{
     precio: number
     stock: boolean
@@ -984,10 +986,27 @@ export default function MaterialesItemPage() {
                     {currentMaterialesPorItem.map((materialItem) => (
                       <tr key={materialItem.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="w-12 h-12 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer"
+                          <div className="w-12 h-12 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer overflow-hidden"
                                onClick={() => handleShowDetail(materialItem.material)}>
-                            {/* Aquí iría la imagen del material si estuviera disponible */}
-                            <span className="text-gray-400 text-xs">Sin imagen</span>
+                            {materialItem.material.imagenUrl ? (
+                              <img
+                                src={materialItem.material.imagenUrl.startsWith('http')
+                                  ? materialItem.material.imagenUrl
+                                  : `${API_BASE_URL}${materialItem.material.imagenUrl}`}
+                                alt={materialItem.material.nombre}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    parent.innerHTML = '<span class="text-gray-400 text-xs">Sin imagen</span>';
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <span className="text-gray-400 text-xs">Sin imagen</span>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
