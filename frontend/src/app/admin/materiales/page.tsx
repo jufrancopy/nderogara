@@ -16,6 +16,20 @@ export default function AdminMaterialesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Estados para gestión de ofertas
+  const [showAddOfertaModal, setShowAddOfertaModal] = useState(false);
+  const [selectedMaterialForOferta, setSelectedMaterialForOferta] = useState<any>(null);
+  const [proveedores, setProveedores] = useState<any[]>([]);
+  const [ofertaForm, setOfertaForm] = useState({
+    proveedorId: '',
+    precio: '',
+    tipoCalidad: 'COMUN',
+    marca: '',
+    comisionPorcentaje: '0',
+    stock: true,
+    observaciones: ''
+  });
+
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (user.rol !== 'ADMIN') {
@@ -132,6 +146,67 @@ export default function AdminMaterialesPage() {
 
   const goToPage = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  // Funciones para gestión de ofertas
+  const handleAddOferta = async (material: any) => {
+    setSelectedMaterialForOferta(material);
+    setOfertaForm({
+      proveedorId: '',
+      precio: '',
+      tipoCalidad: 'COMUN',
+      marca: '',
+      comisionPorcentaje: '0',
+      stock: true,
+      observaciones: ''
+    });
+
+    // Cargar proveedores
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/proveedores`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (data.success) {
+        setProveedores(data.data);
+      }
+    } catch (error) {
+      console.error('Error al cargar proveedores:', error);
+      setProveedores([]);
+    }
+
+    setShowAddOfertaModal(true);
+  };
+
+  const handleOfertaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedMaterialForOferta || !ofertaForm.proveedorId || !ofertaForm.precio) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/admin/materiales/${selectedMaterialForOferta.id}/ofertas`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(ofertaForm)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Oferta agregada exitosamente');
+        setShowAddOfertaModal(false);
+        fetchMateriales(); // Recargar materiales con las nuevas ofertas
+      } else {
+        alert(data.error || 'Error al agregar oferta');
+      }
+    } catch (error) {
+      console.error('Error al agregar oferta:', error);
+      alert('Error al agregar oferta');
+    }
   };
 
   if (loading) return <PageLoader />;
@@ -288,6 +363,13 @@ export default function AdminMaterialesPage() {
                               title="Ver ofertas"
                             >
                               👁️
+                            </button>
+                            <button
+                              onClick={() => handleAddOferta(material)}
+                              className="text-green-600 hover:text-green-900 px-2 py-1 rounded text-sm"
+                              title="Agregar oferta"
+                            >
+                              💰
                             </button>
                             <button
                               onClick={() => toggleActivo(material.id, material.esActivo)}
@@ -524,6 +606,167 @@ export default function AdminMaterialesPage() {
                   Eliminar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para agregar oferta */}
+      {showAddOfertaModal && selectedMaterialForOferta && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Agregar Oferta</h2>
+                <button
+                  onClick={() => setShowAddOfertaModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">Material Seleccionado</h3>
+                <div className="flex items-center">
+                  {selectedMaterialForOferta.imagenUrl && (
+                    <img
+                      src={selectedMaterialForOferta.imagenUrl.startsWith('http') ? selectedMaterialForOferta.imagenUrl : `${API_BASE_URL}${selectedMaterialForOferta.imagenUrl}`}
+                      alt={selectedMaterialForOferta.nombre}
+                      className="w-12 h-12 rounded-lg object-cover mr-3"
+                    />
+                  )}
+                  <div>
+                    <div className="font-semibold text-blue-900">{selectedMaterialForOferta.nombre}</div>
+                    <div className="text-sm text-blue-700">{selectedMaterialForOferta.unidad}</div>
+                  </div>
+                </div>
+              </div>
+
+              <form onSubmit={handleOfertaSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Proveedor *
+                  </label>
+                  <select
+                    value={ofertaForm.proveedorId}
+                    onChange={(e) => setOfertaForm({...ofertaForm, proveedorId: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  >
+                    <option value="">Seleccionar proveedor...</option>
+                    {proveedores.map((proveedor: any) => (
+                      <option key={proveedor.id} value={proveedor.id}>
+                        {proveedor.nombre} - {proveedor.ciudad || 'Sin ciudad'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Precio (₲) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={ofertaForm.precio}
+                    onChange={(e) => setOfertaForm({...ofertaForm, precio: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="25000.00"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de Calidad
+                  </label>
+                  <select
+                    value={ofertaForm.tipoCalidad}
+                    onChange={(e) => setOfertaForm({...ofertaForm, tipoCalidad: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="COMUN">Común</option>
+                    <option value="PREMIUM">Premium</option>
+                    <option value="INDUSTRIAL">Industrial</option>
+                    <option value="ARTESANAL">Artesanal</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Marca
+                  </label>
+                  <input
+                    type="text"
+                    value={ofertaForm.marca}
+                    onChange={(e) => setOfertaForm({...ofertaForm, marca: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Marca del producto"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Comisión (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={ofertaForm.comisionPorcentaje}
+                    onChange={(e) => setOfertaForm({...ofertaForm, comisionPorcentaje: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.0"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Observaciones
+                  </label>
+                  <textarea
+                    value={ofertaForm.observaciones}
+                    onChange={(e) => setOfertaForm({...ofertaForm, observaciones: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Observaciones adicionales..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="stock"
+                    checked={ofertaForm.stock}
+                    onChange={(e) => setOfertaForm({...ofertaForm, stock: e.target.checked})}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="stock" className="ml-2 block text-sm text-gray-900">
+                    Disponible en stock
+                  </label>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddOfertaModal(false)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center"
+                  >
+                    <span className="mr-2">💰</span>
+                    Agregar Oferta
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

@@ -318,6 +318,183 @@ export const deleteMaterialCatalogo = async (
   }
 };
 
+// ========== FUNCIONES PARA GESTIÓN DE OFERTAS DESDE ADMIN ==========
+
+interface CreateOfertaAdminBody {
+  proveedorId: string;
+  precio: number;
+  tipoCalidad?: string;
+  marca?: string;
+  comisionPorcentaje?: number;
+  stock?: boolean;
+  observaciones?: string;
+}
+
+export const createOfertaAdmin = async (
+  request: FastifyRequest<{ Params: { materialId: string }; Body: CreateOfertaAdminBody }>,
+  reply: FastifyReply
+) => {
+  try {
+    const { materialId } = request.params;
+    const { proveedorId, precio, tipoCalidad, marca, comisionPorcentaje, stock, observaciones } = request.body;
+
+    // Verificar que el material existe y es del catálogo
+    const material = await prisma.material.findUnique({
+      where: { id: materialId }
+    });
+
+    if (!material) {
+      return reply.status(404).send({ success: false, error: 'Material no encontrado' });
+    }
+
+    // Verificar que el proveedor existe
+    const proveedor = await prisma.proveedor.findUnique({
+      where: { id: proveedorId }
+    });
+
+    if (!proveedor) {
+      return reply.status(404).send({ success: false, error: 'Proveedor no encontrado' });
+    }
+
+    // Verificar que no existe ya una oferta de este proveedor para este material
+    const ofertaExistente = await prisma.ofertaProveedor.findFirst({
+      where: {
+        materialId,
+        proveedorId
+      }
+    });
+
+    if (ofertaExistente) {
+      return reply.status(400).send({ success: false, error: 'Ya existe una oferta de este proveedor para este material' });
+    }
+
+    // Crear la oferta
+    const oferta = await prisma.ofertaProveedor.create({
+      data: {
+        materialId,
+        proveedorId,
+        precio: parseFloat(precio.toString()),
+        tipoCalidad: (tipoCalidad as any) || 'COMUN',
+        marca: marca || null,
+        comisionPorcentaje: comisionPorcentaje ? parseFloat(comisionPorcentaje.toString()) : 0,
+        stock: stock !== undefined ? stock : true,
+        vigenciaHasta: null, // Sin límite de tiempo
+        observaciones: observaciones || null
+      },
+      include: {
+        proveedor: true
+      }
+    });
+
+    console.log(`✅ Oferta creada por admin: ${oferta.proveedor.nombre} - ₲${oferta.precio}`);
+
+    reply.send({ success: true, data: oferta });
+  } catch (error) {
+    console.error('Error al crear oferta desde admin:', error);
+    reply.status(500).send({ success: false, error: 'Error al crear oferta' });
+  }
+};
+
+export const getOfertasByMaterial = async (
+  request: FastifyRequest<{ Params: { materialId: string } }>,
+  reply: FastifyReply
+) => {
+  try {
+    const { materialId } = request.params;
+
+    const ofertas = await prisma.ofertaProveedor.findMany({
+      where: { materialId },
+      include: {
+        proveedor: true,
+        material: true
+      },
+      orderBy: { precio: 'asc' }
+    });
+
+    reply.send({ success: true, data: ofertas });
+  } catch (error) {
+    console.error('Error al obtener ofertas por material:', error);
+    reply.status(500).send({ success: false, error: 'Error al obtener ofertas' });
+  }
+};
+
+export const updateOfertaAdmin = async (
+  request: FastifyRequest<{ Params: { ofertaId: string }; Body: Partial<CreateOfertaAdminBody> }>,
+  reply: FastifyReply
+) => {
+  try {
+    const { ofertaId } = request.params;
+    const updateData = request.body;
+
+    // Verificar que la oferta existe
+    const ofertaExistente = await prisma.ofertaProveedor.findUnique({
+      where: { id: ofertaId }
+    });
+
+    if (!ofertaExistente) {
+      return reply.status(404).send({ success: false, error: 'Oferta no encontrada' });
+    }
+
+    // Preparar datos de actualización
+    const data: any = {};
+
+    if (updateData.proveedorId !== undefined) data.proveedorId = updateData.proveedorId;
+    if (updateData.precio !== undefined) data.precio = parseFloat(updateData.precio.toString());
+    if (updateData.tipoCalidad !== undefined) data.tipoCalidad = updateData.tipoCalidad;
+    if (updateData.marca !== undefined) data.marca = updateData.marca;
+    if (updateData.comisionPorcentaje !== undefined) data.comisionPorcentaje = parseFloat(updateData.comisionPorcentaje.toString());
+    if (updateData.stock !== undefined) data.stock = updateData.stock;
+    if (updateData.observaciones !== undefined) data.observaciones = updateData.observaciones;
+
+    // Actualizar oferta
+    const ofertaActualizada = await prisma.ofertaProveedor.update({
+      where: { id: ofertaId },
+      data,
+      include: {
+        proveedor: true,
+        material: true
+      }
+    });
+
+    console.log(`✅ Oferta actualizada por admin: ${ofertaActualizada.proveedor.nombre} - ₲${ofertaActualizada.precio}`);
+
+    reply.send({ success: true, data: ofertaActualizada });
+  } catch (error) {
+    console.error('Error al actualizar oferta desde admin:', error);
+    reply.status(500).send({ success: false, error: 'Error al actualizar oferta' });
+  }
+};
+
+export const deleteOfertaAdmin = async (
+  request: FastifyRequest<{ Params: { ofertaId: string } }>,
+  reply: FastifyReply
+) => {
+  try {
+    const { ofertaId } = request.params;
+
+    // Verificar que la oferta existe
+    const oferta = await prisma.ofertaProveedor.findUnique({
+      where: { id: ofertaId }
+    });
+
+    if (!oferta) {
+      return reply.status(404).send({ success: false, error: 'Oferta no encontrada' });
+    }
+
+    // Eliminar oferta
+    await prisma.ofertaProveedor.delete({
+      where: { id: ofertaId }
+    });
+
+    console.log(`✅ Oferta eliminada por admin: ID ${ofertaId}`);
+
+    reply.send({ success: true, message: 'Oferta eliminada exitosamente' });
+  } catch (error) {
+    console.error('Error al eliminar oferta desde admin:', error);
+    reply.status(500).send({ success: false, error: 'Error al eliminar oferta' });
+  }
+};
+
 export const getAdminDashboard = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     // Estadísticas generales
