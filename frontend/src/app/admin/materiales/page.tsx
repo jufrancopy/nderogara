@@ -42,6 +42,11 @@ export default function AdminMaterialesPage() {
     departamento: ''
   });
 
+  // Estados para búsqueda de proveedores
+  const [proveedorSearchTerm, setProveedorSearchTerm] = useState('');
+  const [showProveedorDropdown, setShowProveedorDropdown] = useState(false);
+  const [selectedProveedor, setSelectedProveedor] = useState<any>(null);
+
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (user.rol !== 'ADMIN') {
@@ -689,23 +694,81 @@ export default function AdminMaterialesPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Proveedor *
                   </label>
-                  <select
-                    value={ofertaForm.proveedorId}
-                    onChange={(e) => setOfertaForm({...ofertaForm, proveedorId: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 mb-2"
-                    required
-                  >
-                    <option value="">Seleccionar proveedor...</option>
-                    {proveedores.map((proveedor: any) => (
-                      <option key={proveedor.id} value={proveedor.id}>
-                        {proveedor.nombre} - {proveedor.ciudad || 'Sin ciudad'}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={proveedorSearchTerm}
+                      onChange={(e) => {
+                        setProveedorSearchTerm(e.target.value)
+                        setShowProveedorDropdown(true)
+                        if (selectedProveedor && e.target.value !== selectedProveedor.nombre) {
+                          setSelectedProveedor(null)
+                          setOfertaForm(prev => ({ ...prev, proveedorId: '' }))
+                        }
+                      }}
+                      onFocus={() => setShowProveedorDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowProveedorDropdown(false), 200)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Buscar proveedor..."
+                      required
+                    />
+                    {selectedProveedor && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedProveedor(null)
+                          setProveedorSearchTerm('')
+                          setOfertaForm(prev => ({ ...prev, proveedorId: '' }))
+                        }}
+                        className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
+                      >
+                        ×
+                      </button>
+                    )}
+
+                    {/* Dropdown de proveedores */}
+                    {showProveedorDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        {proveedores
+                          .filter(proveedor =>
+                            proveedor.nombre.toLowerCase().includes(proveedorSearchTerm.toLowerCase()) ||
+                            proveedor.ciudad?.toLowerCase().includes(proveedorSearchTerm.toLowerCase())
+                          )
+                          .map((proveedor) => (
+                            <div
+                              key={proveedor.id}
+                              onClick={() => {
+                                setSelectedProveedor(proveedor)
+                                setProveedorSearchTerm(proveedor.nombre)
+                                setOfertaForm(prev => ({ ...prev, proveedorId: proveedor.id }))
+                                setShowProveedorDropdown(false)
+                              }}
+                              className="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="font-medium text-gray-900">{proveedor.nombre}</div>
+                              {proveedor.ciudad && (
+                                <div className="text-sm text-gray-500">📍 {proveedor.ciudad}</div>
+                              )}
+                              {proveedor.telefono && (
+                                <div className="text-sm text-gray-500">📞 {proveedor.telefono}</div>
+                              )}
+                            </div>
+                          ))}
+                        {proveedores.filter(proveedor =>
+                          proveedor.nombre.toLowerCase().includes(proveedorSearchTerm.toLowerCase()) ||
+                          proveedor.ciudad?.toLowerCase().includes(proveedorSearchTerm.toLowerCase())
+                        ).length === 0 && (
+                          <div className="px-3 py-2 text-gray-500 text-center">
+                            No se encontraron proveedores
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={() => setShowCreateProveedorModal(true)}
-                    className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                    className="w-full mt-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
                     title="Crear nuevo proveedor"
                   >
                     + Crear Nuevo Proveedor
