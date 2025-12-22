@@ -2238,8 +2238,8 @@ export default function MaterialesItemPage() {
                     </div>
                   )}
                   <div>
-                    <div className="font-semibold text-blue-900">{selectedMaterialForOferta.material.nombre}</div>
-                    <div className="text-sm text-blue-700">{getUnidadLabel(selectedMaterialForOferta.material.unidad)}</div>
+                    <div className="font-semibold text-blue-900">{selectedMaterialForOferta.material?.nombre || 'Material sin nombre'}</div>
+                    <div className="text-sm text-blue-700">{selectedMaterialForOferta.material ? getUnidadLabel(selectedMaterialForOferta.material.unidad) : 'Sin unidad'}</div>
                   </div>
                 </div>
               </div>
