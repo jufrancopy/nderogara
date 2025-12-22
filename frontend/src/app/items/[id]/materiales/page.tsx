@@ -1125,10 +1125,10 @@ export default function MaterialesItemPage() {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatPrice(materialItem.material.precioUnitario)}
+                          {formatPrice(materialItem.material?.precioUnitario || 0)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {formatPrice(materialItem.material.precioUnitario * materialItem.cantidadPorUnidad)}
+                          {formatPrice((materialItem.material?.precioUnitario || 0) * materialItem.cantidadPorUnidad)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <button
