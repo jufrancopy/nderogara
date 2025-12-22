@@ -9,7 +9,7 @@ import {
 import { authenticate } from '../middleware/auth';
 
 export default async function financiacionRoutes(fastify: FastifyInstance) {
-  // Ruta básica para evitar errores 404 (temporal) - SIN AUTENTICACIÓN
+  // Ruta básica para evitar errores 404 (temporal) - COMPLETAMENTE PÚBLICA
   fastify.get('/financiaciones', async (request, reply) => {
     return { data: [], success: true };
   });
