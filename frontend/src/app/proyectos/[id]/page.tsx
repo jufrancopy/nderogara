@@ -2031,12 +2031,11 @@ export default function ProyectoDetallePage() {
                       // Calcular el nuevo costo total dinámico (solo para items dinámicos)
                       let nuevoCostoTotal = pagoModal.presupuestoItem.costoTotal
                       if (pagoModal.presupuestoItem.esDinamico) {
+                        // Costo dinámico = suma de todos los pagos aprobados realizados
                         const totalPagosAprobados = pagosActualizados
                           .filter((p: any) => p.estado === 'APROBADO')
                           .reduce((sum: number, p: any) => sum + Number(p.montoPagado), 0)
-                        // Costo dinámico = costo base (mano de obra) + suma de pagos realizados
-                        const costoBase = Number(pagoModal.presupuestoItem.costoManoObra)
-                        nuevoCostoTotal = costoBase + totalPagosAprobados
+                        nuevoCostoTotal = totalPagosAprobados
                       }
 
                       // Actualizar el estado del modal con los nuevos pagos y costo actualizado
