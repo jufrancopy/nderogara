@@ -120,6 +120,11 @@ interface SortableItemProps {
   expandedItem: string | null
   toggleItemExpansion: (itemId: string) => void
   handleRemoveItem: (itemId: string) => void
+  setPagoModal: React.Dispatch<React.SetStateAction<{
+    isOpen: boolean
+    presupuestoItem?: any
+    pagos?: any[]
+  }>>
   materialesPorItem: Record<string, any[]>
   getUnidadLabel: (unidad: string) => string
   formatPrice: (price: number) => string
@@ -133,6 +138,7 @@ function SortableItem({
   expandedItem,
   toggleItemExpansion,
   handleRemoveItem,
+  setPagoModal,
   materialesPorItem,
   getUnidadLabel,
   formatPrice,
@@ -1494,6 +1500,7 @@ export default function ProyectoDetallePage() {
                             expandedItem={expandedItem}
                             toggleItemExpansion={toggleItemExpansion}
                             handleRemoveItem={handleRemoveItem}
+                            setPagoModal={setPagoModal}
                             materialesPorItem={materialesPorItem}
                             getUnidadLabel={getUnidadLabel}
                             formatPrice={formatPrice}
