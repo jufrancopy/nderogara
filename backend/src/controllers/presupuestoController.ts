@@ -10,21 +10,22 @@ const addItemSchema = z.object({
   esDinamico: z.boolean().optional().default(false)
 })
 
-export const presupuestoController = {
-  // Función helper para calcular costo dinámico
-  calcularCostoDinamico: async function(presupuestoItemId: string) {
-    // Obtener pagos aprobados - solo estos cuentan para el costo dinámico
-    const pagos = await prisma.pagoPresupuestoItem.findMany({
-      where: {
-        presupuestoItemId,
-        estado: 'APROBADO' // Solo pagos aprobados cuentan para el costo
-      }
-    })
+// Función helper para calcular costo dinámico
+async function calcularCostoDinamico(presupuestoItemId: string) {
+  // Obtener pagos aprobados - solo estos cuentan para el costo dinámico
+  const pagos = await prisma.pagoPresupuestoItem.findMany({
+    where: {
+      presupuestoItemId,
+      estado: 'APROBADO' // Solo pagos aprobados cuentan para el costo
+    }
+  })
 
-    // Costo dinámico = suma de todos los pagos realizados
-    const totalPagos = pagos.reduce((sum, pago) => sum + Number(pago.montoPagado), 0)
-    return totalPagos
-  },
+  // Costo dinámico = suma de todos los pagos realizados
+  const totalPagos = pagos.reduce((sum, pago) => sum + Number(pago.montoPagado), 0)
+  return totalPagos
+}
+
+export const presupuestoController = {
 
   // POST /proyectos/:id/presupuesto
   async addItemToPresupuesto(request: FastifyRequest<{
@@ -296,7 +297,7 @@ export const presupuestoController = {
       })
 
       if (itemDinamico?.esDinamico) {
-        const costoDinamico = await this.calcularCostoDinamico(presupuestoItemId)
+        const costoDinamico = await calcularCostoDinamico(presupuestoItemId)
         await prisma.presupuestoItem.update({
           where: { id: presupuestoItemId },
           data: { costoTotal: costoDinamico }
@@ -393,7 +394,7 @@ export const presupuestoController = {
 
       // Si el item es dinámico y el pago se aprobó, recalcular el costo total
       if (estado === 'APROBADO') {
-        const costoDinamico = await this.calcularCostoDinamico(presupuestoItemId)
+        const costoDinamico = await calcularCostoDinamico(presupuestoItemId)
 
         await prisma.presupuestoItem.update({
           where: { id: presupuestoItemId },
