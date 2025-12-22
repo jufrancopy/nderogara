@@ -13,6 +13,20 @@ const addItemSchema = z.object({
 export const presupuestoController = {
   // Función helper para calcular costo dinámico
   async calcularCostoDinamico(presupuestoItemId: string) {
+    // Obtener el item del presupuesto con su costo base
+    const presupuestoItem = await prisma.presupuestoItem.findUnique({
+      where: { id: presupuestoItemId },
+      select: {
+        costoManoObra: true,
+        costoMateriales: true
+      }
+    })
+
+    if (!presupuestoItem) {
+      throw new Error('Item del presupuesto no encontrado')
+    }
+
+    // Obtener pagos aprobados
     const pagos = await prisma.pagoPresupuestoItem.findMany({
       where: {
         presupuestoItemId,
@@ -21,7 +35,10 @@ export const presupuestoController = {
     })
 
     const totalPagos = pagos.reduce((sum, pago) => sum + Number(pago.montoPagado), 0)
-    return totalPagos
+
+    // Costo dinámico = costo base (mano de obra + materiales) + suma de pagos
+    const costoBase = Number(presupuestoItem.costoManoObra) + Number(presupuestoItem.costoMateriales)
+    return costoBase + totalPagos
   },
 
   // POST /proyectos/:id/presupuesto
@@ -124,9 +141,9 @@ export const presupuestoController = {
       
       console.log('💵 Costo materiales total:', costoMateriales)
 
-      // Para items dinámicos, el costo inicial es 0 y se calcula posteriormente con los pagos
-      const costoManoObra = validatedData.esDinamico ? 0 : Number(item.manoObraUnitaria || 0) * validatedData.cantidadMedida
-      const costoTotal = validatedData.esDinamico ? 0 : costoMateriales + costoManoObra
+      // Para items dinámicos, mantenemos el costo base y se suma posteriormente con los pagos
+      const costoManoObra = Number(item.manoObraUnitaria || 0) * validatedData.cantidadMedida
+      const costoTotal = costoMateriales + costoManoObra
 
       // Crear el item del presupuesto
       const presupuestoItem = await prisma.presupuestoItem.create({

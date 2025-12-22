@@ -2034,7 +2034,9 @@ export default function ProyectoDetallePage() {
                         const totalPagosAprobados = pagosActualizados
                           .filter((p: any) => p.estado === 'APROBADO')
                           .reduce((sum: number, p: any) => sum + Number(p.montoPagado), 0)
-                        nuevoCostoTotal = totalPagosAprobados
+                        // Costo dinámico = costo base (mano de obra) + suma de pagos realizados
+                        const costoBase = Number(pagoModal.presupuestoItem.costoManoObra)
+                        nuevoCostoTotal = costoBase + totalPagosAprobados
                       }
 
                       // Actualizar el estado del modal con los nuevos pagos y costo actualizado
