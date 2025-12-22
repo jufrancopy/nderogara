@@ -108,6 +108,21 @@ export default function MaterialesItemPage() {
 
   // Estados para crear nuevo material
   const [showCreateMaterialModal, setShowCreateMaterialModal] = useState(false)
+
+  // Estados para agregar ofertas
+  const [showAddOfertaModal, setShowAddOfertaModal] = useState(false)
+  const [selectedMaterialForOferta, setSelectedMaterialForOferta] = useState<MaterialPorItem | null>(null)
+  const [ofertaForm, setOfertaForm] = useState({
+    proveedorId: '',
+    precio: '',
+    tipoCalidad: 'COMUN',
+    marca: '',
+    comisionPorcentaje: '0',
+    stock: true,
+    observaciones: '',
+    imagenUrl: ''
+  })
+  const [loadingOferta, setLoadingOferta] = useState(false)
   const [categorias, setCategorias] = useState<any[]>([])
   const [galeria, setGaleria] = useState<any[]>([])
   const [showGallery, setShowGallery] = useState(false)
@@ -552,6 +567,22 @@ export default function MaterialesItemPage() {
     }
   }
 
+  // Función para agregar oferta a material existente
+  const handleAddOferta = (materialItem: MaterialPorItem) => {
+    setSelectedMaterialForOferta(materialItem)
+    setOfertaForm({
+      proveedorId: '',
+      precio: '',
+      tipoCalidad: 'COMUN',
+      marca: '',
+      comisionPorcentaje: '0',
+      stock: true,
+      observaciones: '',
+      imagenUrl: ''
+    })
+    setShowAddOfertaModal(true)
+  }
+
   // Función para crear proveedores
   const handleCreateProveedor = async () => {
     try {
@@ -565,6 +596,7 @@ export default function MaterialesItemPage() {
       setSelectedProveedor(proveedorCreado)
       setProveedorSearchTerm(proveedorCreado.nombre)
       setCreateMaterialForm(prev => ({ ...prev, proveedorId: proveedorCreado.id }))
+      setOfertaForm(prev => ({ ...prev, proveedorId: proveedorCreado.id }))
       setShowProveedorDropdown(false)
 
       // Cerrar modal y resetear formulario
@@ -582,6 +614,61 @@ export default function MaterialesItemPage() {
       console.error('Error creating proveedor:', error)
       const errorMessage = error.response?.data?.error || 'Error al crear proveedor'
       toast.error(`Error: ${errorMessage}`)
+    }
+  }
+
+  // Función para enviar oferta
+  const handleSubmitOferta = async () => {
+    if (!selectedMaterialForOferta || !ofertaForm.proveedorId || !ofertaForm.precio) {
+      toast.error('Por favor completa todos los campos requeridos')
+      return
+    }
+
+    setLoadingOferta(true)
+
+    try {
+      // Crear la oferta usando la API de admin
+      const ofertaData = {
+        proveedorId: ofertaForm.proveedorId,
+        precio: parseFloat(ofertaForm.precio.replace(/\./g, '').replace(',', '.')),
+        tipoCalidad: ofertaForm.tipoCalidad,
+        marca: ofertaForm.marca,
+        comisionPorcentaje: parseFloat(ofertaForm.comisionPorcentaje) || 0,
+        stock: ofertaForm.stock,
+        observaciones: ofertaForm.observaciones
+      }
+
+      const response = await api.post(`/admin/materiales/${selectedMaterialForOferta.material.id}/ofertas`, ofertaData)
+
+      if (response.data.success) {
+        toast.success('Oferta agregada exitosamente')
+
+        // Cerrar modal y resetear formulario
+        setShowAddOfertaModal(false)
+        setOfertaForm({
+          proveedorId: '',
+          precio: '',
+          tipoCalidad: 'COMUN',
+          marca: '',
+          comisionPorcentaje: '0',
+          stock: true,
+          observaciones: '',
+          imagenUrl: ''
+        })
+        setSelectedProveedor(null)
+        setProveedorSearchTerm('')
+
+        // Recargar materiales para mostrar la nueva oferta
+        fetchMateriales()
+      } else {
+        toast.error(response.data.error || 'Error al agregar oferta')
+      }
+    } catch (error: any) {
+      console.error('Error creating oferta:', error)
+      const errorMessage = error.response?.data?.error || 'Error al agregar oferta'
+      toast.error(`Error: ${errorMessage}`)
+    } finally {
+      setLoadingOferta(false)
     }
   }
 
@@ -1096,6 +1183,13 @@ export default function MaterialesItemPage() {
                             ) : (
                               <>
                                 <button
+                                  onClick={() => handleAddOferta(materialItem)}
+                                  className="text-purple-600 hover:text-purple-800"
+                                  title="Agregar Oferta"
+                                >
+                                  💰
+                                </button>
+                                <button
                                   onClick={() => handleEditClick(materialItem)}
                                   className="text-blue-600 hover:text-blue-800"
                                   title="Editar"
@@ -1107,7 +1201,7 @@ export default function MaterialesItemPage() {
                                   className="text-green-600 hover:text-green-800"
                                   title="Agregar Comprobante de Pago"
                                 >
-                                  💰
+                                  🧾
                                 </button>
                                 <button
                                   onClick={() => handleDeleteClick(materialItem.material.id, materialItem.material.nombre)}
@@ -2107,6 +2201,252 @@ export default function MaterialesItemPage() {
                   Crear Proveedor
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para agregar oferta */}
+      {showAddOfertaModal && selectedMaterialForOferta && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Agregar Oferta</h2>
+                <button
+                  onClick={() => setShowAddOfertaModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">Material Seleccionado</h3>
+                <div className="flex items-center">
+                  {selectedMaterialForOferta.material.imagenUrl ? (
+                    <img
+                      src={selectedMaterialForOferta.material.imagenUrl.startsWith('http')
+                        ? selectedMaterialForOferta.material.imagenUrl
+                        : `${API_BASE_URL}${selectedMaterialForOferta.material.imagenUrl}`}
+                      alt={selectedMaterialForOferta.material.nombre}
+                      className="w-12 h-12 rounded-lg object-cover mr-3"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-gray-400 text-xs">Sin imagen</span>
+                    </div>
+                  )}
+                  <div>
+                    <div className="font-semibold text-blue-900">{selectedMaterialForOferta.material.nombre}</div>
+                    <div className="text-sm text-blue-700">{getUnidadLabel(selectedMaterialForOferta.material.unidad)}</div>
+                  </div>
+                </div>
+              </div>
+
+              <form className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Proveedor *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={proveedorSearchTerm}
+                      onChange={(e) => {
+                        setProveedorSearchTerm(e.target.value)
+                        setShowProveedorDropdown(true)
+                        if (selectedProveedor && e.target.value !== selectedProveedor.nombre) {
+                          setSelectedProveedor(null)
+                          setOfertaForm(prev => ({ ...prev, proveedorId: '' }))
+                        }
+                      }}
+                      onFocus={() => setShowProveedorDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowProveedorDropdown(false), 200)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Buscar proveedor..."
+                      required
+                    />
+                    {selectedProveedor && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedProveedor(null)
+                          setProveedorSearchTerm('')
+                          setOfertaForm(prev => ({ ...prev, proveedorId: '' }))
+                        }}
+                        className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
+                      >
+                        ×
+                      </button>
+                    )}
+
+                    {/* Dropdown de proveedores */}
+                    {showProveedorDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        {proveedores
+                          .filter(proveedor =>
+                            proveedor.nombre.toLowerCase().includes(proveedorSearchTerm.toLowerCase()) ||
+                            proveedor.ciudad?.toLowerCase().includes(proveedorSearchTerm.toLowerCase())
+                          )
+                          .map((proveedor) => (
+                            <div
+                              key={proveedor.id}
+                              onClick={() => {
+                                setSelectedProveedor(proveedor)
+                                setProveedorSearchTerm(proveedor.nombre)
+                                setOfertaForm(prev => ({ ...prev, proveedorId: proveedor.id }))
+                                setShowProveedorDropdown(false)
+                              }}
+                              className="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="font-medium text-gray-900">{proveedor.nombre}</div>
+                              {proveedor.ciudad && (
+                                <div className="text-sm text-gray-500">📍 {proveedor.ciudad}</div>
+                              )}
+                              {proveedor.telefono && (
+                                <div className="text-sm text-gray-500">📞 {proveedor.telefono}</div>
+                              )}
+                            </div>
+                          ))}
+                        {proveedores.filter(proveedor =>
+                          proveedor.nombre.toLowerCase().includes(proveedorSearchTerm.toLowerCase()) ||
+                          proveedor.ciudad?.toLowerCase().includes(proveedorSearchTerm.toLowerCase())
+                        ).length === 0 && (
+                          <div className="px-3 py-2 text-gray-500 text-center">
+                            No se encontraron proveedores
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateProveedorModal(true)}
+                    className="w-full mt-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                    title="Crear nuevo proveedor"
+                  >
+                    + Crear Nuevo Proveedor
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Precio (₲) *
+                  </label>
+                  <input
+                    type="text"
+                    value={ofertaForm.precio}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, '')
+                      const numValue = parseInt(value) || 0
+                      setOfertaForm(prev => ({ ...prev, precio: numValue.toLocaleString('es-PY') }))
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="25000"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de Calidad
+                  </label>
+                  <select
+                    value={ofertaForm.tipoCalidad}
+                    onChange={(e) => setOfertaForm(prev => ({ ...prev, tipoCalidad: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="COMUN">Común</option>
+                    <option value="PREMIUM">Premium</option>
+                    <option value="INDUSTRIAL">Industrial</option>
+                    <option value="ARTESANAL">Artesanal</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Marca
+                  </label>
+                  <input
+                    type="text"
+                    value={ofertaForm.marca}
+                    onChange={(e) => setOfertaForm(prev => ({ ...prev, marca: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Marca del producto"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Comisión (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={ofertaForm.comisionPorcentaje}
+                    onChange={(e) => setOfertaForm(prev => ({ ...prev, comisionPorcentaje: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.0"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Observaciones
+                  </label>
+                  <textarea
+                    value={ofertaForm.observaciones}
+                    onChange={(e) => setOfertaForm(prev => ({ ...prev, observaciones: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Observaciones adicionales..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="oferta-stock"
+                    checked={ofertaForm.stock}
+                    onChange={(e) => setOfertaForm(prev => ({ ...prev, stock: e.target.checked }))}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="oferta-stock" className="ml-2 block text-sm text-gray-900">
+                    Disponible en stock
+                  </label>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddOfertaModal(false)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSubmitOferta}
+                    disabled={loadingOferta}
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center disabled:opacity-50"
+                  >
+                    {loadingOferta ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Creando...
+                      </>
+                    ) : (
+                      <>
+                        <span className="mr-2">💰</span>
+                        Agregar Oferta
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
