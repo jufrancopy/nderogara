@@ -2116,6 +2116,9 @@ export default function ProyectoDetallePage() {
 
                       // Recargar datos del proyecto para actualizar costos en la lista principal
                       await fetchProyecto()
+
+                      // Cerrar el modal después de procesar exitosamente el pago
+                      setPagoModal({ isOpen: false })
                     } catch (error) {
                       console.error('Error recargando pagos:', error)
                       fetchProyecto() // Fallback
