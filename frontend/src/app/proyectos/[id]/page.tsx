@@ -297,7 +297,7 @@ function SortableItem({
 }
 
 // Componente para mostrar el historial de pagos de un item
-function PagoHistorialItem({ presupuestoItemId }: { presupuestoItemId: string }) {
+function PagoHistorialItem({ presupuestoItemId, proyectoId }: { presupuestoItemId: string, proyectoId: string }) {
   const [pagos, setPagos] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -1961,7 +1961,7 @@ export default function ProyectoDetallePage() {
               <div className="mb-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Historial de Pagos</h3>
                 <div className="space-y-3">
-                  <PagoHistorialItem presupuestoItemId={pagoModal.presupuestoItem.id} />
+                  <PagoHistorialItem presupuestoItemId={pagoModal.presupuestoItem.id} proyectoId={proyectoId} />
                 </div>
               </div>
 
