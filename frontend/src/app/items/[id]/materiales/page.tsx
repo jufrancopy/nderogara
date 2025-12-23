@@ -478,7 +478,7 @@ export default function MaterialesItemPage() {
   const handleEditClick = (materialItem: MaterialPorItem) => {
     setEditingMaterial(materialItem)
     setEditForm({
-      cantidadPorUnidad: materialItem.cantidadPorUnidad.toString(),
+      cantidadPorUnidad: Number(materialItem.cantidadPorUnidad).toLocaleString('es-PY'),
       observaciones: materialItem.observaciones || ''
     })
     setShowEditModal(true)
@@ -3134,17 +3134,24 @@ export default function MaterialesItemPage() {
                     Cantidad por {item && getUnidadLabel(item.unidadMedida)} *
                   </label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
+                    type="text"
                     value={editForm.cantidadPorUnidad}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, cantidadPorUnidad: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9.,]/g, '')
+                      const numericValue = value.replace(/\./g, '').replace(',', '.')
+                      const number = parseFloat(numericValue)
+                      if (!isNaN(number)) {
+                        setEditForm(prev => ({ ...prev, cantidadPorUnidad: number.toLocaleString('es-PY') }))
+                      } else if (value === '') {
+                        setEditForm(prev => ({ ...prev, cantidadPorUnidad: '' }))
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="1.5"
+                    placeholder="1.500"
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Ingresa la cantidad (puede ser decimal)
+                    Ingresa la cantidad con separadores de miles (ej: 2.500)
                   </p>
                 </div>
 
