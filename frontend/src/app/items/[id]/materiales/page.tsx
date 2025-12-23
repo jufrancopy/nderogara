@@ -2645,18 +2645,31 @@ export default function MaterialesItemPage() {
                               </span>
                               {/* Indicador de oferta seleccionada */}
                               {(() => {
+                                // Solo mostrar como seleccionada si el material tiene un precio específico de oferta
+                                // y ese precio coincide exactamente con el precio de esta oferta
+                                const materialTienePrecioEspecifico = selectedMaterialForOfertas?.precioUnitario &&
+                                                                     selectedMaterialForOfertas.precioUnitario !== selectedMaterialForOfertas.material?.precioUnitario;
+
                                 const materialPrecio = Number(selectedMaterialForOfertas?.precioUnitario || 0);
                                 const ofertaPrecio = Number(oferta.precio || 0);
-                                const esSeleccionada = materialPrecio === ofertaPrecio;
+                                const preciosCoinciden = materialPrecio === ofertaPrecio;
 
-                                console.log('Comparación de precios:', {
+                                // Solo considerar seleccionada si:
+                                // 1. El material tiene un precio específico (no el precio base)
+                                // 2. Los precios coinciden exactamente
+                                // 3. El material pertenece al mismo proveedor que la oferta
+                                const esSeleccionada = materialTienePrecioEspecifico && preciosCoinciden &&
+                                                      selectedMaterialForOfertas?.material?.id === oferta.materialId;
+
+                                console.log('Comparación de selección de oferta:', {
+                                  materialTienePrecioEspecifico,
                                   materialPrecio,
                                   ofertaPrecio,
-                                  esSeleccionada,
-                                  materialPrecioUnitario: selectedMaterialForOfertas?.precioUnitario,
-                                  ofertaPrecioRaw: oferta.precio,
-                                  materialPrecioType: typeof selectedMaterialForOfertas?.precioUnitario,
-                                  ofertaPrecioType: typeof oferta.precio
+                                  preciosCoinciden,
+                                  materialProveedorId: selectedMaterialForOfertas?.material?.id,
+                                  ofertaMaterialId: oferta.materialId,
+                                  ofertaProveedorId: oferta.proveedorId,
+                                  esSeleccionada
                                 });
 
                                 return esSeleccionada ? (
