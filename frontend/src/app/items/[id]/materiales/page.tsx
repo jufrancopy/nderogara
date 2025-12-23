@@ -161,6 +161,16 @@ export default function MaterialesItemPage() {
   })
   const [loadingCreate, setLoadingCreate] = useState(false)
 
+  // Estados para edición de materiales
+  const [editingMaterial, setEditingMaterial] = useState<MaterialPorItem | null>(null)
+
+  // Estados para modal de edición
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editForm, setEditForm] = useState({
+    cantidadPorUnidad: '',
+    observaciones: ''
+  })
+
   // Estados para búsqueda y paginación
   const [materialSearchTerm, setMaterialSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -466,11 +476,12 @@ export default function MaterialesItemPage() {
   }
 
   const handleEditClick = (materialItem: MaterialPorItem) => {
-    setEditingMaterial({
-      id: materialItem.material.id,
-      cantidadPorUnidad: materialItem.cantidadPorUnidad,
+    setEditingMaterial(materialItem)
+    setEditForm({
+      cantidadPorUnidad: materialItem.cantidadPorUnidad.toString(),
       observaciones: materialItem.observaciones || ''
     })
+    setShowEditModal(true)
   }
 
   const handleUpdateMaterial = async (e: React.FormEvent) => {
@@ -489,6 +500,34 @@ export default function MaterialesItemPage() {
     } catch (error: any) {
       console.error('Error updating material:', error)
       const errorMessage = error.response?.data?.error || 'Error al actualizar material'
+      toast.error(errorMessage)
+    }
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingMaterial) return
+
+    const cantidadNumerica = parseFloat(editForm.cantidadPorUnidad)
+    if (isNaN(cantidadNumerica) || cantidadNumerica <= 0) {
+      toast.error('La cantidad debe ser un número mayor a 0')
+      return
+    }
+
+    try {
+      await api.put(`/items/${itemId}/materiales/${editingMaterial.id}`, {
+        cantidadPorUnidad: cantidadNumerica,
+        observaciones: editForm.observaciones || undefined
+      })
+
+      toast.success('Cantidad actualizada exitosamente')
+      setShowEditModal(false)
+      setEditingMaterial(null)
+      setEditForm({ cantidadPorUnidad: '', observaciones: '' })
+      fetchItem()
+    } catch (error: any) {
+      console.error('Error updating material:', error)
+      const errorMessage = error.response?.data?.error || 'Error al actualizar cantidad'
       toast.error(errorMessage)
     }
   }
@@ -1374,6 +1413,13 @@ export default function MaterialesItemPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleEditClick(materialItem)}
+                              className="text-blue-600 hover:text-blue-800"
+                              title="Editar Cantidad"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
                             <button
                               onClick={() => handleGestionarOfertas(materialItem)}
                               className="text-purple-600 hover:text-purple-800"
@@ -3032,6 +3078,107 @@ export default function MaterialesItemPage() {
                         Agregar Oferta
                       </>
                     )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para editar cantidad */}
+      {showEditModal && editingMaterial && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Editar Cantidad</h2>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setEditingMaterial(null)
+                    setEditForm({ cantidadPorUnidad: '', observaciones: '' })
+                  }}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">Material Seleccionado</h3>
+                <div className="flex items-center">
+                  {editingMaterial.material.imagenUrl ? (
+                    <img
+                      src={editingMaterial.material.imagenUrl.startsWith('http')
+                        ? editingMaterial.material.imagenUrl
+                        : `${API_BASE_URL}${editingMaterial.material.imagenUrl}`}
+                      alt={editingMaterial.material.nombre}
+                      className="w-12 h-12 rounded-lg object-cover mr-3"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-gray-400 text-xs">Sin imagen</span>
+                    </div>
+                  )}
+                  <div>
+                    <div className="font-semibold text-blue-900">{editingMaterial.material?.nombre || 'Material sin nombre'}</div>
+                    <div className="text-sm text-blue-700">{editingMaterial.material ? getUnidadLabel(editingMaterial.material.unidad) : 'Sin unidad'}</div>
+                  </div>
+                </div>
+              </div>
+
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Cantidad por {item && getUnidadLabel(item.unidadMedida)} *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={editForm.cantidadPorUnidad}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, cantidadPorUnidad: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="1.5"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Ingresa la cantidad (puede ser decimal)
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Observaciones
+                  </label>
+                  <textarea
+                    value={editForm.observaciones}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, observaciones: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Observaciones adicionales..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditModal(false)
+                      setEditingMaterial(null)
+                      setEditForm({ cantidadPorUnidad: '', observaciones: '' })
+                    }}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center"
+                  >
+                    <span className="mr-2">💾</span>
+                    Actualizar Cantidad
                   </button>
                 </div>
               </form>
