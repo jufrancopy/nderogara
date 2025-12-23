@@ -1379,12 +1379,12 @@ export default function MaterialesItemPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
                             {(() => {
-                              // Mostrar proveedor de la oferta seleccionada
-                              if (materialItem.precioUnitario && materialItem.material?.ofertas) {
-                                const ofertaSeleccionada = materialItem.material.ofertas.find((oferta: any) =>
-                                  Number(oferta.precio) === Number(materialItem.precioUnitario)
-                                );
-                                return ofertaSeleccionada?.proveedor?.nombre || 'Sin proveedor';
+                              // Mostrar proveedor de la oferta seleccionada desde las observaciones
+                              if (materialItem.observaciones && materialItem.observaciones.includes('Oferta seleccionada:')) {
+                                const match = materialItem.observaciones.match(/Oferta seleccionada:\s*([^-]+(?:\s+[^-\s]+)*)/);
+                                if (match && match[1]) {
+                                  return match[1].trim();
+                                }
                               }
                               return 'Sin proveedor';
                             })()}
