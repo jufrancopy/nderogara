@@ -628,7 +628,7 @@ export default function MaterialesItemPage() {
       // Obtener la información actualizada del material del item recargado
       const updatedItem = await api.get(`/items/${itemId}`)
       const updatedMaterialItem = updatedItem.data.data.materialesPorItem.find(
-        (m: MaterialPorItem) => m.material.id === materialItem.material.id
+        (m: MaterialPorItem) => m.id === materialItem.id
       )
 
       console.log('🔄 Material actualizado:', {
@@ -2645,31 +2645,27 @@ export default function MaterialesItemPage() {
                               </span>
                               {/* Indicador de oferta seleccionada */}
                               {(() => {
-                                // Solo mostrar como seleccionada si el material tiene un precio específico de oferta
-                                // y ese precio coincide exactamente con el precio de esta oferta
-                                const materialTienePrecioEspecifico = selectedMaterialForOfertas?.precioUnitario &&
-                                                                     selectedMaterialForOfertas.precioUnitario !== selectedMaterialForOfertas.material?.precioUnitario;
+                                // Una oferta está seleccionada solo si:
+                                // 1. Esta instancia específica del material tiene un precioUnitario establecido
+                                // 2. Ese precio coincide exactamente con el precio de esta oferta
+                                const materialTienePrecioEspecifico = selectedMaterialForOfertas?.precioUnitario !== undefined &&
+                                                                     selectedMaterialForOfertas?.precioUnitario !== null;
 
                                 const materialPrecio = Number(selectedMaterialForOfertas?.precioUnitario || 0);
                                 const ofertaPrecio = Number(oferta.precio || 0);
                                 const preciosCoinciden = materialPrecio === ofertaPrecio;
 
-                                // Solo considerar seleccionada si:
-                                // 1. El material tiene un precio específico (no el precio base)
-                                // 2. Los precios coinciden exactamente
-                                // 3. El material pertenece al mismo proveedor que la oferta
-                                const esSeleccionada = materialTienePrecioEspecifico && preciosCoinciden &&
-                                                      selectedMaterialForOfertas?.material?.id === oferta.materialId;
+                                const esSeleccionada = materialTienePrecioEspecifico && preciosCoinciden;
 
-                                console.log('Comparación de selección de oferta:', {
+                                console.log('🔍 Comparación de selección para oferta:', oferta.id, {
+                                  materialInstanceId: selectedMaterialForOfertas?.id,
                                   materialTienePrecioEspecifico,
                                   materialPrecio,
                                   ofertaPrecio,
                                   preciosCoinciden,
-                                  materialProveedorId: selectedMaterialForOfertas?.material?.id,
-                                  ofertaMaterialId: oferta.materialId,
-                                  ofertaProveedorId: oferta.proveedorId,
-                                  esSeleccionada
+                                  esSeleccionada,
+                                  materialPrecioUnitario: selectedMaterialForOfertas?.precioUnitario,
+                                  materialPrecioBase: selectedMaterialForOfertas?.material?.precioUnitario
                                 });
 
                                 return esSeleccionada ? (
