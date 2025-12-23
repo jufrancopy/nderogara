@@ -312,9 +312,19 @@ export const deleteMaterialCatalogo = async (
       return reply.status(404).send({ success: false, error: 'Material del catálogo no encontrado' });
     }
 
-    await prisma.material.delete({ where: { id } });
+    // Eliminar todas las ofertas asociadas al material y luego el material
+    // Usar una transacción para asegurar integridad
+    await prisma.$transaction(async (tx) => {
+      // 1. Eliminar todas las ofertas que referencian este material
+      await tx.ofertaProveedor.deleteMany({
+        where: { materialId: id }
+      });
 
-    reply.send({ success: true, message: 'Material eliminado exitosamente' });
+      // 2. Eliminar el material
+      await tx.material.delete({ where: { id } });
+    });
+
+    reply.send({ success: true, message: 'Material y ofertas asociadas eliminados exitosamente' });
   } catch (error) {
     console.error('Error al eliminar material del catálogo:', error);
     reply.status(500).send({ success: false, error: 'Error al eliminar material' });
