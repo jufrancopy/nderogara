@@ -1042,7 +1042,7 @@ export default function MaterialesItemPage() {
                   {filteredMaterialesPorItem.slice(0, 5).map((materialItem) => (
                     <div key={materialItem.id} className="flex justify-between items-center text-sm">
                       <span className="text-gray-600">
-                        {materialItem.material?.nombre || 'Material sin nombre'} ({materialItem.cantidadPorUnidad}x)
+                        {materialItem.material?.nombre || 'Material sin nombre'} ({materialItem.cantidadPorUnidad.toLocaleString('es-PY')}x)
                         {materialItem.precioUnitario && (
                           <span className="text-xs text-green-600 ml-2">💰 Oferta seleccionada</span>
                         )}
@@ -1385,7 +1385,7 @@ export default function MaterialesItemPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {materialItem.cantidadPorUnidad}
+                          {materialItem.cantidadPorUnidad.toLocaleString('es-PY')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {formatPrice(materialItem.precioUnitario || materialItem.material?.precioUnitario || 0)}
