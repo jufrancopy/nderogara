@@ -171,6 +171,9 @@ export default function MaterialesItemPage() {
     observaciones: ''
   })
 
+  // Estados para desglose expandible
+  const [showAllMaterials, setShowAllMaterials] = useState(false)
+
   // Estados para búsqueda y paginación
   const [materialSearchTerm, setMaterialSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -1035,11 +1038,21 @@ export default function MaterialesItemPage() {
                 </div>
               </div>
 
-              {/* Breakdown por material */}
+              {/* Breakdown por material - Expandible */}
               <div className="mt-6">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Desglose por Material:</h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium text-gray-700">Desglose por Material:</h4>
+                  {filteredMaterialesPorItem.length > 5 && (
+                    <button
+                      onClick={() => setShowAllMaterials(!showAllMaterials)}
+                      className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                      {showAllMaterials ? 'Ver menos' : `Ver todos (${filteredMaterialesPorItem.length})`}
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-2">
-                  {filteredMaterialesPorItem.slice(0, 5).map((materialItem) => (
+                  {filteredMaterialesPorItem.slice(0, showAllMaterials ? filteredMaterialesPorItem.length : 5).map((materialItem) => (
                     <div key={materialItem.id} className="flex justify-between items-center text-sm">
                       <span className="text-gray-600">
                         {materialItem.material?.nombre || 'Material sin nombre'} ({materialItem.cantidadPorUnidad.toLocaleString('es-PY')}x)
@@ -1052,11 +1065,6 @@ export default function MaterialesItemPage() {
                       </span>
                     </div>
                   ))}
-                  {filteredMaterialesPorItem.length > 5 && (
-                    <div className="text-xs text-gray-500 text-center pt-2">
-                      ... y {filteredMaterialesPorItem.length - 5} materiales más
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
