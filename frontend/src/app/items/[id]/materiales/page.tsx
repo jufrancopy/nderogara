@@ -1296,7 +1296,7 @@ export default function MaterialesItemPage() {
                         Material
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Cantidad por {item && getUnidadLabel(item.unidadMedida)}
+                        Cantidad
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Precio Unitario
@@ -1385,7 +1385,7 @@ export default function MaterialesItemPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {materialItem.cantidadPorUnidad.toLocaleString('es-PY')}
+                          {Number(materialItem.cantidadPorUnidad).toLocaleString('es-PY')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {formatPrice(materialItem.precioUnitario || materialItem.material?.precioUnitario || 0)}
