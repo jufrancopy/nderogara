@@ -310,40 +310,20 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
       }
     }
 
-    // Crear el material del proveedor basado en el material base
-    const finalImagenUrl = imagenUrl || materialBase.imagenUrl;
-    console.log('Creando material con imagenUrl:', finalImagenUrl);
-
-    const materialProveedor = await prisma.material.create({
-      data: {
-        nombre: materialBase.nombre,
-        descripcion: materialBase.descripcion,
-        unidad: materialBase.unidad,
-        categoriaId: materialBase.categoriaId,
-        imagenUrl: finalImagenUrl,
-        precio: precio,
-        usuarioId: userId,
-        esActivo: true
-      },
-      include: { categoria: true }
-    });
-
-    console.log('Material creado con id:', materialProveedor.id, 'imagenUrl:', materialProveedor.imagenUrl);
-
-    // Crear la oferta solo para PROVEEDOR_MATERIALES
+    // Crear la oferta directamente ligada al material del catálogo
     let oferta = null;
     if (user.rol === 'PROVEEDOR_MATERIALES' && proveedorRecord) {
-      // Primero intentar actualizar una oferta existente para este material del proveedor
+      // Verificar si ya existe una oferta para este material del catálogo y proveedor
       const ofertaExistente = await prisma.ofertaProveedor.findFirst({
         where: {
-          materialId: materialProveedor.id,
+          materialId: materialBaseId, // ← Ahora usa el material del catálogo
           proveedorId: proveedorRecord.id
         }
       });
 
       if (ofertaExistente) {
         // Actualizar oferta existente
-        console.log('Actualizando oferta existente:', ofertaExistente.id);
+        console.log('Actualizando oferta existente para material del catálogo:', ofertaExistente.id);
         console.log('Nueva marca:', marca);
         oferta = await prisma.ofertaProveedor.update({
           where: { id: ofertaExistente.id },
@@ -359,10 +339,10 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
         });
         console.log('Oferta actualizada con marca:', oferta.marca);
       } else {
-        // Crear nueva oferta
+        // Crear nueva oferta ligada al material del catálogo
         oferta = await prisma.ofertaProveedor.create({
           data: {
-            materialId: materialProveedor.id, // ← Vincular al material del proveedor
+            materialId: materialBaseId, // ← Ahora usa el material del catálogo
             proveedorId: proveedorRecord.id,
             precio: precio,
             tipoCalidad: tipoCalidad || 'COMUN',
@@ -373,12 +353,12 @@ export const crearOfertaDesdeBase = async (request: FastifyRequest, reply: Fasti
             imagenUrl: imagenUrl || null // Agregar imagen específica de la oferta
           }
         });
-        console.log('Oferta creada:', oferta.id);
+        console.log('Oferta creada ligada al material del catálogo:', oferta.id);
       }
     }
 
     reply.status(201).send({
-      material: materialProveedor,
+      material: materialBase, // ← Devolver el material del catálogo, no el creado
       oferta: oferta
     });
   } catch (error) {
