@@ -853,6 +853,24 @@ export default function MaterialesItemPage() {
     setLoadingOferta(true)
 
     try {
+      let finalImageUrl = ofertaForm.imagenUrl
+
+      // Si hay un archivo seleccionado (blob URL), subirlo primero
+      if (selectedFile) {
+        const formData = new FormData()
+        formData.append('file', selectedFile)
+
+        const uploadResponse = await api.post('/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+
+        if (uploadResponse.data.success) {
+          finalImageUrl = uploadResponse.data.data.url
+        } else {
+          throw new Error('Error al subir la imagen')
+        }
+      }
+
       // Crear la oferta usando la API de admin
       const ofertaData = {
         proveedorId: ofertaForm.proveedorId,
@@ -862,7 +880,7 @@ export default function MaterialesItemPage() {
         comisionPorcentaje: parseFloat(ofertaForm.comisionPorcentaje) || 0,
         stock: ofertaForm.stock,
         observaciones: ofertaForm.observaciones,
-        imagenUrl: ofertaForm.imagenUrl // Imagen específica de la oferta
+        imagenUrl: finalImageUrl // Imagen subida al servidor o URL de galería
       }
 
       const response = await api.post(`/admin/materiales/${selectedMaterialForOferta.material.id}/ofertas`, ofertaData)
@@ -884,6 +902,8 @@ export default function MaterialesItemPage() {
         })
         setSelectedProveedor(null)
         setProveedorSearchTerm('')
+        setSelectedFile(null)
+        setCurrentImageUrl('')
 
         // Recargar materiales y ofertas del modal actual
         await fetchMateriales()
@@ -915,6 +935,24 @@ export default function MaterialesItemPage() {
     setLoadingEditOferta(true)
 
     try {
+      let finalImageUrl = editOfertaForm.imagenUrl
+
+      // Si hay un archivo seleccionado (blob URL), subirlo primero
+      if (selectedFile) {
+        const formData = new FormData()
+        formData.append('file', selectedFile)
+
+        const uploadResponse = await api.post('/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+
+        if (uploadResponse.data.success) {
+          finalImageUrl = uploadResponse.data.data.url
+        } else {
+          throw new Error('Error al subir la imagen')
+        }
+      }
+
       // Actualizar la oferta usando la API de admin
       const ofertaData = {
         proveedorId: editOfertaForm.proveedorId,
@@ -924,7 +962,7 @@ export default function MaterialesItemPage() {
         comisionPorcentaje: parseFloat(editOfertaForm.comisionPorcentaje) || 0,
         stock: editOfertaForm.stock,
         observaciones: editOfertaForm.observaciones,
-        imagenUrl: editOfertaForm.imagenUrl
+        imagenUrl: finalImageUrl // Imagen subida al servidor o URL de galería
       }
 
       const response = await api.put(`/admin/ofertas/${selectedOfertaForEdit.id}`, ofertaData)
@@ -947,6 +985,8 @@ export default function MaterialesItemPage() {
         })
         setSelectedProveedor(null)
         setProveedorSearchTerm('')
+        setSelectedFile(null)
+        setCurrentImageUrl('')
 
         // Si estamos en el modal de ofertas, recargar las ofertas
         if (showOfertasModal && selectedMaterialForOfertas) {
