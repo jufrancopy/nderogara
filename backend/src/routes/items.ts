@@ -50,12 +50,12 @@ export async function itemsRoutes(fastify: FastifyInstance) {
     }] 
   }, materialesPorItemController.addMaterialToItem)
 
-  // PUT /items/:itemId/materiales/:materialId - Solo administradores
-  fastify.put('/:itemId/materiales/:materialId', { 
+  // PUT /items/:itemId/materiales/:materialId - Administradores, constructores y proveedores de materiales
+  fastify.put('/:itemId/materiales/:materialId', {
     preHandler: [async (request, reply) => {
       await request.jwtVerify()
-      await hasRole(['ADMIN'])(request, reply)
-    }] 
+      await hasRole(['ADMIN', 'CONSTRUCTOR', 'PROVEEDOR_MATERIALES'])(request, reply)
+    }]
   }, materialesPorItemController.updateMaterialInItem)
 
   // DELETE /items/:itemId/materiales/:materialId - Solo administradores

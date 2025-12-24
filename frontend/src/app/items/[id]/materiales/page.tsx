@@ -727,8 +727,26 @@ export default function MaterialesItemPage() {
 
       toast.success('Selección de oferta quitada - Ahora usa precio base')
 
-      // Recargar el item y ofertas
-      await fetchItem()
+      // Recargar el item completo y actualizar el material seleccionado
+      const updatedItemResponse = await api.get(`/items/${itemId}`)
+      const updatedItem = updatedItemResponse.data.data
+      setItem(updatedItem)
+
+      // Buscar el material actualizado y actualizar el estado
+      const updatedMaterial = updatedItem.materialesPorItem.find(
+        (m) => m.id === selectedMaterialForOfertas.id
+      )
+
+      if (updatedMaterial) {
+        // Actualizar el estado del material seleccionado con los nuevos datos
+        // Forzar precioUnitario a null para asegurar que no hay selección
+        setSelectedMaterialForOfertas({
+          ...updatedMaterial,
+          precioUnitario: null as any // Forzar a null para asegurar que no hay selección
+        })
+      }
+
+      // Recargar las ofertas del modal si está abierto
       if (showOfertasModal && selectedMaterialForOfertas) {
         const ofertasResponse = await api.get(`/materiales/${selectedMaterialForOfertas.material.id}/ofertas`)
         setOfertasMaterial(ofertasResponse.data.data || [])
@@ -741,6 +759,10 @@ export default function MaterialesItemPage() {
 
   // Función para editar oferta existente
   const handleEditOferta = (oferta: any) => {
+    // Verificar si la imagen es una URL blob inválida
+    const isBlobUrl = oferta.imagenUrl?.startsWith('blob:');
+    const validImageUrl = isBlobUrl ? '' : (oferta.imagenUrl || '');
+
     setSelectedOfertaForEdit(oferta)
     setEditOfertaForm({
       proveedorId: oferta.proveedorId || '',
@@ -750,7 +772,7 @@ export default function MaterialesItemPage() {
       comisionPorcentaje: oferta.comisionPorcentaje?.toString() || '0',
       stock: oferta.stock !== false,
       observaciones: oferta.observaciones || '',
-      imagenUrl: oferta.imagenUrl || ''
+      imagenUrl: validImageUrl
     })
     setShowEditOfertaModal(true)
   }

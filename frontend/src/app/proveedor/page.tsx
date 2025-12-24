@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Building2, Package, Eye } from 'lucide-react'
+import { ArrowLeft, Building2, Package, Eye, Plus, Edit, Trash2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import api from '@/lib/api'
 import { formatPrice } from '@/lib/formatters'
+import { API_BASE_URL } from '@/lib/api'
 
 interface Proveedor {
   id: string
@@ -28,16 +30,85 @@ export default function ProveedoresPage() {
   const [ofertasProveedor, setOfertasProveedor] = useState<any[]>([])
   const [loadingOfertas, setLoadingOfertas] = useState(false)
 
+  // Estados para agregar ofertas
+  const [showAddOfertaModal, setShowAddOfertaModal] = useState(false)
+  const [selectedProveedorForOferta, setSelectedProveedorForOferta] = useState<Proveedor | null>(null)
+  const [addOfertaForm, setAddOfertaForm] = useState({
+    materialId: '',
+    precio: '',
+    marca: '',
+    tipoCalidad: 'COMUN' as 'COMUN' | 'PREMIUM' | 'INDUSTRIAL' | 'ARTESANAL',
+    comisionPorcentaje: '0',
+    stock: true,
+    observaciones: '',
+    imagenUrl: ''
+  })
+  const [loadingAddOferta, setLoadingAddOferta] = useState(false)
+
+  // Estados para editar ofertas
+  const [showEditOfertaModal, setShowEditOfertaModal] = useState(false)
+  const [selectedOfertaForEdit, setSelectedOfertaForEdit] = useState<any>(null)
+  const [editOfertaForm, setEditOfertaForm] = useState({
+    precio: '',
+    marca: '',
+    tipoCalidad: 'COMUN' as 'COMUN' | 'PREMIUM' | 'INDUSTRIAL' | 'ARTESANAL',
+    comisionPorcentaje: '0',
+    stock: true,
+    observaciones: '',
+    imagenUrl: ''
+  })
+  const [loadingEditOferta, setLoadingEditOferta] = useState(false)
+
+  // Estados adicionales
+  const [materiales, setMateriales] = useState<any[]>([])
+  const [galeria, setGaleria] = useState<any[]>([])
+  const [showGallery, setShowGallery] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+
+  // Estado para modal de eliminación
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [ofertaToDelete, setOfertaToDelete] = useState<any>(null)
+  const [loadingDelete, setLoadingDelete] = useState(false)
+
   useEffect(() => {
     fetchProveedores()
+    fetchMateriales()
+    fetchGaleria()
   }, [])
+
+  const fetchGaleria = async () => {
+    try {
+      const response = await api.get('/upload/galeria')
+      setGaleria(response.data.data || [])
+    } catch (error) {
+      console.error('Error al cargar galería:', error)
+      setGaleria([])
+    }
+  }
+
+  const fetchMateriales = async () => {
+    try {
+      const response = await api.get('/materiales')
+      setMateriales(response.data.data?.filter((m: any) => m && m.nombre) || [])
+    } catch (error) {
+      console.error('Error fetching materiales:', error)
+    }
+  }
 
   const fetchProveedores = async () => {
     try {
-      const response = await api.get('/proveedores')
+      // Temporarily use debug endpoint to test
+      const response = await api.get('/proveedor/debug')
       setProveedores(response.data.data?.filter((p: any) => p && p.nombre) || [])
     } catch (error) {
       console.error('Error fetching proveedores:', error)
+      // Fallback to authenticated endpoint
+      try {
+        const response = await api.get('/proveedores')
+        setProveedores(response.data.data?.filter((p: any) => p && p.nombre) || [])
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError)
+      }
     } finally {
       setLoading(false)
     }
@@ -57,6 +128,67 @@ export default function ProveedoresPage() {
       setOfertasProveedor([])
     } finally {
       setLoadingOfertas(false)
+    }
+  }
+
+  const handleAgregarOferta = (proveedor: Proveedor) => {
+    setSelectedProveedorForOferta(proveedor)
+    setAddOfertaForm({
+      materialId: '',
+      precio: '',
+      marca: '',
+      tipoCalidad: 'COMUN',
+      comisionPorcentaje: '0',
+      stock: true,
+      observaciones: '',
+      imagenUrl: ''
+    })
+    setShowAddOfertaModal(true)
+  }
+
+  const handleEditarOferta = (oferta: any) => {
+    setSelectedOfertaForEdit(oferta)
+    setEditOfertaForm({
+      precio: oferta.precio ? Number(oferta.precio).toLocaleString('es-PY') : '',
+      marca: oferta.marca || '',
+      tipoCalidad: oferta.tipoCalidad || 'COMUN',
+      comisionPorcentaje: oferta.comisionPorcentaje?.toString() || '0',
+      stock: oferta.stock !== false,
+      observaciones: oferta.observaciones || '',
+      imagenUrl: oferta.imagenUrl || ''
+    })
+    setShowEditOfertaModal(true)
+  }
+
+  const handleEliminarOferta = (oferta: any) => {
+    setOfertaToDelete(oferta)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDeleteOferta = async () => {
+    if (!ofertaToDelete) return
+
+    setLoadingDelete(true)
+    try {
+      await api.delete(`/admin/ofertas/${ofertaToDelete.id}`)
+      toast.success('Oferta eliminada exitosamente')
+
+      // Recargar las ofertas del proveedor actual
+      if (selectedProveedor) {
+        const response = await api.get(`/proveedor/${selectedProveedor.id}/ofertas`)
+        setOfertasProveedor(response.data.data || [])
+      }
+
+      // Recargar lista de proveedores para actualizar conteos
+      fetchProveedores()
+
+      setShowDeleteModal(false)
+      setOfertaToDelete(null)
+    } catch (error: any) {
+      console.error('Error deleting oferta:', error)
+      toast.error(error.response?.data?.error || 'Error al eliminar la oferta')
+    } finally {
+      setLoadingDelete(false)
     }
   }
 
@@ -194,12 +326,12 @@ export default function ProveedoresPage() {
                         <Building2 className="h-6 w-6 text-blue-600" />
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 flex-wrap">
                       <button
                         onClick={() => handleVerOfertas(proveedor)}
-                        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        className="inline-flex items-center px-2 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
-                        <Eye className="h-4 w-4 mr-1" />
+                        <Eye className="h-3 w-3 mr-1" />
                         Ver Ofertas
                       </button>
                     </div>
@@ -243,7 +375,7 @@ export default function ProveedoresPage() {
                           </span>
                         </div>
                         <span className="text-xs text-gray-500">
-                          Registrado: {new Date(proveedor.createdAt).toLocaleDateString('es-PY')}
+                          Registrado: {proveedor.createdAt ? new Date(proveedor.createdAt).toLocaleDateString('es-PY') : `Fecha no disponible (${typeof proveedor.createdAt})`}
                         </span>
                       </div>
                     </div>
@@ -278,16 +410,25 @@ export default function ProveedoresPage() {
                     {selectedProveedor.telefono && ` • 📞 ${selectedProveedor.telefono}`}
                   </p>
                 </div>
-                <button
-                  onClick={() => {
-                    setShowOfertasModal(false)
-                    setSelectedProveedor(null)
-                    setOfertasProveedor([])
-                  }}
-                  className="text-gray-400 hover:text-gray-600 text-2xl"
-                >
-                  ×
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleAgregarOferta(selectedProveedor)}
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Agregar Oferta
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowOfertasModal(false)
+                      setSelectedProveedor(null)
+                      setOfertasProveedor([])
+                    }}
+                    className="text-gray-400 hover:text-gray-600 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
 
               {loadingOfertas ? (
@@ -400,10 +541,26 @@ export default function ProveedoresPage() {
                           </div>
                         )}
 
-                        <div className="mt-2 pt-2 border-t border-gray-200">
+                        <div className="mt-2 pt-2 border-t border-gray-200 flex justify-between items-center">
                           <p className="text-xs text-gray-500">
-                            Actualizado: {new Date(oferta.updatedAt).toLocaleDateString('es-PY')}
+                            Actualizado: {oferta.updatedAt ? new Date(oferta.updatedAt).toLocaleDateString('es-PY') : 'Fecha no disponible'}
                           </p>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => handleEditarOferta(oferta)}
+                              className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded"
+                              title="Editar oferta"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </button>
+                            <button
+                              onClick={() => handleEliminarOferta(oferta)}
+                              className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded"
+                              title="Eliminar oferta"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -423,6 +580,599 @@ export default function ProveedoresPage() {
                   Cerrar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para agregar oferta */}
+      {showAddOfertaModal && selectedProveedorForOferta && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Agregar Oferta</h2>
+                <button
+                  onClick={() => setShowAddOfertaModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">Proveedor Seleccionado</h3>
+                <div className="flex items-center">
+                  <div className="font-semibold text-blue-900">{selectedProveedorForOferta.nombre}</div>
+                  {selectedProveedorForOferta.ciudad && (
+                    <div className="text-sm text-blue-700 ml-2">📍 {selectedProveedorForOferta.ciudad}</div>
+                  )}
+                </div>
+              </div>
+
+              <form className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Material *
+                  </label>
+                  <select
+                    value={addOfertaForm.materialId}
+                    onChange={(e) => setAddOfertaForm(prev => ({ ...prev, materialId: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  >
+                    <option value="">Seleccionar material</option>
+                    {materiales.map((material: any) => (
+                      <option key={material.id} value={material.id}>
+                        {material.nombre} ({material.unidad})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Precio (₲) *
+                  </label>
+                  <input
+                    type="text"
+                    value={addOfertaForm.precio}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, '')
+                      const numValue = parseInt(value) || 0
+                      setAddOfertaForm(prev => ({ ...prev, precio: numValue.toLocaleString('es-PY') }))
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="25000"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Marca
+                  </label>
+                  <input
+                    type="text"
+                    value={addOfertaForm.marca}
+                    onChange={(e) => setAddOfertaForm(prev => ({ ...prev, marca: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Marca del producto"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de Calidad
+                  </label>
+                  <select
+                    value={addOfertaForm.tipoCalidad}
+                    onChange={(e) => setAddOfertaForm(prev => ({ ...prev, tipoCalidad: e.target.value as 'COMUN' | 'PREMIUM' | 'INDUSTRIAL' | 'ARTESANAL' }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="COMUN">Común</option>
+                    <option value="PREMIUM">Premium</option>
+                    <option value="INDUSTRIAL">Industrial</option>
+                    <option value="ARTESANAL">Artesanal</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Comisión (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={addOfertaForm.comisionPorcentaje}
+                    onChange={(e) => setAddOfertaForm(prev => ({ ...prev, comisionPorcentaje: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.0"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Imagen de la Oferta
+                  </label>
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setSelectedFile(file);
+                              const url = URL.createObjectURL(file);
+                              setAddOfertaForm(prev => ({ ...prev, imagenUrl: url }));
+                            }
+                          }}
+                          className="hidden"
+                          id="add-oferta-image-upload"
+                        />
+                        <label
+                          htmlFor="add-oferta-image-upload"
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors text-gray-700 text-sm"
+                        >
+                          📎 Seleccionar imagen...
+                        </label>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (galeria.length === 0) {
+                            fetchGaleria();
+                          }
+                          setShowGallery(!showGallery);
+                        }}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 whitespace-nowrap"
+                      >
+                        🖼️ Galería
+                      </button>
+                    </div>
+                    {addOfertaForm.imagenUrl && (
+                      <img src={addOfertaForm.imagenUrl} alt="Preview" className="w-32 h-32 object-cover rounded-md" />
+                    )}
+
+                    {/* Galería de imágenes */}
+                    {showGallery && (
+                      <div className="border rounded-lg p-4 bg-gray-50 max-h-64 overflow-y-auto">
+                        <h4 className="font-medium mb-3">Seleccionar de Galería</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          {galeria.map((img: any) => (
+                            <div
+                              key={img.filename}
+                              onClick={() => {
+                                const fullUrl = img.url.startsWith('http')
+                                  ? img.url
+                                  : `${API_BASE_URL}${img.url}`;
+                                setAddOfertaForm(prev => ({ ...prev, imagenUrl: fullUrl }));
+                                setSelectedFile(null);
+                                setShowGallery(false);
+                              }}
+                              className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden transition-colors"
+                            >
+                              <img src={`${API_BASE_URL}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                        {galeria.length === 0 && (
+                          <p className="text-gray-500 text-sm text-center py-4">No hay imágenes en la galería</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Observaciones
+                  </label>
+                  <textarea
+                    value={addOfertaForm.observaciones}
+                    onChange={(e) => setAddOfertaForm(prev => ({ ...prev, observaciones: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Observaciones adicionales..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="add-oferta-stock"
+                    checked={addOfertaForm.stock}
+                    onChange={(e) => setAddOfertaForm(prev => ({ ...prev, stock: e.target.checked }))}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="add-oferta-stock" className="ml-2 block text-sm text-gray-900">
+                    Disponible en stock
+                  </label>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddOfertaModal(false)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!addOfertaForm.materialId || !addOfertaForm.precio) {
+                        toast.error('Por favor completa los campos requeridos')
+                        return
+                      }
+
+                      setLoadingAddOferta(true)
+                      try {
+                        await api.post(`/admin/materiales/${addOfertaForm.materialId}/ofertas`, {
+                          proveedorId: selectedProveedorForOferta.id,
+                          precio: parseFloat(addOfertaForm.precio.replace(/\./g, '').replace(',', '.')),
+                          marca: addOfertaForm.marca,
+                          tipoCalidad: addOfertaForm.tipoCalidad,
+                          comisionPorcentaje: parseFloat(addOfertaForm.comisionPorcentaje) || 0,
+                          stock: addOfertaForm.stock,
+                          observaciones: addOfertaForm.observaciones,
+                          imagenUrl: addOfertaForm.imagenUrl
+                        })
+
+                        toast.success('Oferta agregada exitosamente')
+                        setShowAddOfertaModal(false)
+
+                        // Recargar ofertas del proveedor si el modal está abierto
+                        if (selectedProveedor && selectedProveedor.id === selectedProveedorForOferta.id) {
+                          const response = await api.get(`/proveedor/${selectedProveedor.id}/ofertas`)
+                          setOfertasProveedor(response.data.data || [])
+                        }
+
+                        fetchProveedores()
+                      } catch (error: any) {
+                        console.error('Error adding oferta:', error)
+                        toast.error(error.response?.data?.error || 'Error al agregar oferta')
+                      } finally {
+                        setLoadingAddOferta(false)
+                      }
+                    }}
+                    disabled={loadingAddOferta}
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center disabled:opacity-50"
+                  >
+                    {loadingAddOferta ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Agregando...
+                      </>
+                    ) : (
+                      <>
+                        <span className="mr-2">💰</span>
+                        Agregar Oferta
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para editar oferta */}
+      {showEditOfertaModal && selectedOfertaForEdit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Editar Oferta</h2>
+                <button
+                  onClick={() => setShowEditOfertaModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">Oferta Seleccionada</h3>
+                <div className="flex items-center">
+                  <div className="font-semibold text-blue-900">{selectedOfertaForEdit.material?.nombre || 'Material'}</div>
+                  <div className="text-sm text-blue-700 ml-2">- {formatPrice(selectedOfertaForEdit.precio)}</div>
+                </div>
+              </div>
+
+              <form className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Precio (₲) *
+                  </label>
+                  <input
+                    type="text"
+                    value={editOfertaForm.precio}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, '')
+                      const numValue = parseInt(value) || 0
+                      setEditOfertaForm(prev => ({ ...prev, precio: numValue.toLocaleString('es-PY') }))
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="25000"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Marca
+                  </label>
+                  <input
+                    type="text"
+                    value={editOfertaForm.marca}
+                    onChange={(e) => setEditOfertaForm(prev => ({ ...prev, marca: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Marca del producto"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de Calidad
+                  </label>
+                  <select
+                    value={editOfertaForm.tipoCalidad}
+                    onChange={(e) => setEditOfertaForm(prev => ({ ...prev, tipoCalidad: e.target.value as 'COMUN' | 'PREMIUM' | 'INDUSTRIAL' | 'ARTESANAL' }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="COMUN">Común</option>
+                    <option value="PREMIUM">Premium</option>
+                    <option value="INDUSTRIAL">Industrial</option>
+                    <option value="ARTESANAL">Artesanal</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Comisión (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={editOfertaForm.comisionPorcentaje}
+                    onChange={(e) => setEditOfertaForm(prev => ({ ...prev, comisionPorcentaje: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.0"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Imagen de la Oferta
+                  </label>
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setSelectedFile(file);
+                              const url = URL.createObjectURL(file);
+                              setEditOfertaForm(prev => ({ ...prev, imagenUrl: url }));
+                            }
+                          }}
+                          className="hidden"
+                          id="edit-oferta-image-upload"
+                        />
+                        <label
+                          htmlFor="edit-oferta-image-upload"
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors text-gray-700 text-sm"
+                        >
+                          📎 Seleccionar imagen...
+                        </label>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (galeria.length === 0) {
+                            fetchGaleria();
+                          }
+                          setShowGallery(!showGallery);
+                        }}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 whitespace-nowrap"
+                      >
+                        🖼️ Galería
+                      </button>
+                    </div>
+                    {editOfertaForm.imagenUrl && (
+                      <img src={editOfertaForm.imagenUrl} alt="Preview" className="w-32 h-32 object-cover rounded-md" />
+                    )}
+
+                    {/* Galería de imágenes */}
+                    {showGallery && (
+                      <div className="border rounded-lg p-4 bg-gray-50 max-h-64 overflow-y-auto">
+                        <h4 className="font-medium mb-3">Seleccionar de Galería</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          {galeria.map((img: any) => (
+                            <div
+                              key={img.filename}
+                              onClick={() => {
+                                const fullUrl = img.url.startsWith('http')
+                                  ? img.url
+                                  : `${API_BASE_URL}${img.url}`;
+                                setEditOfertaForm(prev => ({ ...prev, imagenUrl: fullUrl }));
+                                setSelectedFile(null);
+                                setShowGallery(false);
+                              }}
+                              className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden transition-colors"
+                            >
+                              <img src={`${API_BASE_URL}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                        {galeria.length === 0 && (
+                          <p className="text-gray-500 text-sm text-center py-4">No hay imágenes en la galería</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Observaciones
+                  </label>
+                  <textarea
+                    value={editOfertaForm.observaciones}
+                    onChange={(e) => setEditOfertaForm(prev => ({ ...prev, observaciones: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Observaciones adicionales..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="edit-oferta-stock"
+                    checked={editOfertaForm.stock}
+                    onChange={(e) => setEditOfertaForm(prev => ({ ...prev, stock: e.target.checked }))}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="edit-oferta-stock" className="ml-2 block text-sm text-gray-900">
+                    Disponible en stock
+                  </label>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditOfertaModal(false)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!editOfertaForm.precio) {
+                        toast.error('Por favor ingresa un precio')
+                        return
+                      }
+
+                      setLoadingEditOferta(true)
+                      try {
+                        // Subir imagen si hay un archivo seleccionado (blob URL)
+                        let finalImageUrl = editOfertaForm.imagenUrl
+
+                        if (selectedFile && editOfertaForm.imagenUrl?.startsWith('blob:')) {
+                          const formData = new FormData()
+                          formData.append('file', selectedFile)
+
+                          const uploadResponse = await api.post('/upload', formData, {
+                            headers: { 'Content-Type': 'multipart/form-data' }
+                          })
+
+                          if (uploadResponse.data.success) {
+                            finalImageUrl = uploadResponse.data.data.url
+                          } else {
+                            throw new Error('Error al subir la imagen')
+                          }
+                        }
+
+                        await api.put(`/admin/ofertas/${selectedOfertaForEdit.id}`, {
+                          precio: parseFloat(editOfertaForm.precio.replace(/\./g, '').replace(',', '.')),
+                          marca: editOfertaForm.marca,
+                          tipoCalidad: editOfertaForm.tipoCalidad,
+                          comisionPorcentaje: parseFloat(editOfertaForm.comisionPorcentaje) || 0,
+                          stock: editOfertaForm.stock,
+                          observaciones: editOfertaForm.observaciones,
+                          imagenUrl: finalImageUrl
+                        })
+
+                        toast.success('Oferta actualizada exitosamente')
+                        setShowEditOfertaModal(false)
+                        setSelectedFile(null) // Limpiar archivo seleccionado
+
+                        // Recargar ofertas si el modal está abierto
+                        if (selectedProveedor) {
+                          const response = await api.get(`/proveedor/${selectedProveedor.id}/ofertas`)
+                          setOfertasProveedor(response.data.data || [])
+                        }
+                      } catch (error: any) {
+                        console.error('Error updating oferta:', error)
+                        toast.error(error.response?.data?.error || 'Error al actualizar oferta')
+                      } finally {
+                        setLoadingEditOferta(false)
+                      }
+                    }}
+                    disabled={loadingEditOferta}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center disabled:opacity-50"
+                  >
+                    {loadingEditOferta ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Actualizando...
+                      </>
+                    ) : (
+                      <>
+                        <span className="mr-2">💾</span>
+                        Actualizar Oferta
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación para eliminar oferta con DaisyUI */}
+      {showDeleteModal && ofertaToDelete && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg text-red-600">⚠️ Confirmar Eliminación</h3>
+            <p className="py-4">
+              ¿Estás seguro de que quieres eliminar la oferta de <strong>{ofertaToDelete.material?.nombre || 'este material'}</strong>?
+            </p>
+            <p className="text-sm text-gray-600 mb-4">
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={() => {
+                  setShowDeleteModal(false)
+                  setOfertaToDelete(null)
+                }}
+                disabled={loadingDelete}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn btn-error"
+                onClick={confirmDeleteOferta}
+                disabled={loadingDelete}
+              >
+                {loadingDelete ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

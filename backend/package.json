@@ -18,6 +18,7 @@
     "seed:proyectos-completo": "tsx src/seed-proyectos-completo.ts",
     "seed:proyectos-referencia": "tsx src/seed-proyectos-referencia.ts",
     "seed:inmuebles": "tsx src/seed-inmuebles.ts",
+    "seed:proveedores": "tsx src/seed-proveedores.ts",
     "migrate:categorias": "tsx src/migrate-categorias.ts"
   },
   "dependencies": {

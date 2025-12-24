@@ -44,4 +44,7 @@ export default async function proveedorRoutes(fastify: FastifyInstance) {
     // Obtener ofertas de un proveedor específico
     adminConstructorRoutes.get('/:id/ofertas', getOfertasByProveedor);
   });
+
+  // Ruta temporal sin autenticación para testing
+  fastify.get('/debug', getAllProveedores);
 }

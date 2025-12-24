@@ -127,87 +127,55 @@ export async function updatePerfil(request: FastifyRequest, reply: FastifyReply)
 // GET /proveedores - Obtener todos los proveedores con estadísticas
 export async function getAllProveedores(request: FastifyRequest, reply: FastifyReply) {
   try {
-    // Obtener proveedores con conteo de ofertas usando una consulta SQL directa
-    const proveedores = await prisma.$queryRaw`
-      SELECT
-        p.*,
-        u.name,
-        u.email,
-        u.telefono as "userTelefono",
-        COUNT(op.id) as "ofertasCount"
-      FROM "Proveedor" p
-      LEFT JOIN "User" u ON p."usuarioId" = u.id
-      LEFT JOIN "OfertaProveedor" op ON p.id = op."proveedorId"
-      WHERE p."esActivo" = true
-      GROUP BY p.id, u.name, u.email, u.telefono
-      ORDER BY p."createdAt" DESC
-    `;
+    // Obtener proveedores con información de usuario
+    const proveedores = await prisma.proveedor.findMany({
+      where: {}, // Incluir todos los proveedores
+      include: {
+        usuario: {
+          select: {
+            name: true,
+            email: true,
+            telefono: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
-    // Formatear los resultados para mantener compatibilidad
-    const proveedoresFormateados = (proveedores as any[]).map((prov: any) => ({
-      id: prov.id,
-      nombre: prov.nombre,
-      email: prov.email,
-      telefono: prov.telefono,
-      ciudad: prov.ciudad,
-      departamento: prov.departamento,
-      latitud: prov.latitud,
-      longitud: prov.longitud,
-      sitioWeb: prov.sitioWeb,
-      logo: prov.logo,
-      esActivo: prov.esActivo,
-      usuarioId: prov.usuarioId,
-      createdAt: prov.createdAt,
-      updatedAt: prov.updatedAt,
-      usuario: prov.name ? {
-        name: prov.name,
-        email: prov.email,
-        telefono: prov.userTelefono
-      } : null,
+    // Agregar createdAt a cada proveedor para el frontend
+    const proveedoresConFecha = proveedores.map(proveedor => ({
+      ...proveedor,
+      createdAt: proveedor.createdAt ? proveedor.createdAt.toISOString() : new Date().toISOString()
+    }));
+
+    // Obtener conteo de ofertas para todos los proveedores
+    const conteosOfertas = await prisma.ofertaProveedor.groupBy({
+      by: ['proveedorId'],
       _count: {
-        ofertas: parseInt(prov.ofertasCount) || 0
+        id: true
+      }
+    });
+
+    // Crear un mapa de conteos por proveedorId
+    const conteosMap = new Map();
+    conteosOfertas.forEach(conteo => {
+      if (conteo.proveedorId) {
+        conteosMap.set(conteo.proveedorId, conteo._count.id);
+      }
+    });
+
+    // Combinar proveedores con sus conteos
+    const proveedoresConConteo = proveedoresConFecha.map(proveedor => ({
+      ...proveedor,
+      _count: {
+        ofertas: conteosMap.get(proveedor.id) || 0
       }
     }));
 
-    reply.send({ success: true, data: proveedoresFormateados });
+    reply.send({ success: true, data: proveedoresConConteo });
   } catch (error) {
     console.error('Error fetching all proveedores:', error);
-
-    // Fallback: intentar con el método anterior si falla la consulta SQL
-    try {
-      const proveedores = await prisma.proveedor.findMany({
-        include: {
-          usuario: {
-            select: {
-              name: true,
-              email: true,
-              telefono: true
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' }
-      });
-
-      const proveedoresConConteo = await Promise.all(
-        proveedores.map(async (proveedor) => {
-          const conteoOfertas = await prisma.ofertaProveedor.count({
-            where: { proveedorId: proveedor.id }
-          });
-
-          return {
-            ...proveedor,
-            _count: {
-              ofertas: conteoOfertas
-            }
-          };
-        })
-      );
-
-      reply.send({ success: true, data: proveedoresConConteo });
-    } catch (fallbackError) {
-      console.error('Fallback also failed:', fallbackError);
-      reply.status(500).send({ success: false, error: 'Error al obtener proveedores' });
-    }
+    reply.status(500).send({ success: false, error: 'Error al obtener proveedores' });
   }
 }
 

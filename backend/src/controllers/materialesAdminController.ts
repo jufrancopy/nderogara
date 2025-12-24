@@ -487,6 +487,7 @@ export const updateOfertaAdmin = async (
     if (updateData.comisionPorcentaje !== undefined) data.comisionPorcentaje = parseFloat(updateData.comisionPorcentaje.toString());
     if (updateData.stock !== undefined) data.stock = updateData.stock;
     if (updateData.observaciones !== undefined) data.observaciones = updateData.observaciones;
+    if (updateData.imagenUrl !== undefined) data.imagenUrl = updateData.imagenUrl;
 
     // Actualizar oferta
     const ofertaActualizada = await prisma.ofertaProveedor.update({
