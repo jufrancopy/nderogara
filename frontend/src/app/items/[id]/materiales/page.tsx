@@ -456,19 +456,8 @@ export default function MaterialesItemPage() {
   }
 
   const handleDeleteClick = (materialId: string, materialNombre: string) => {
-    console.log('handleDeleteClick - materialId (registro MaterialPorItem):', materialId, 'materialNombre:', materialNombre);
-    console.log('itemId from params:', itemId);
-
     // Verificar que el material existe antes de mostrar el dialog
     const materialExists = item?.materialesPorItem.find(m => m.id === materialId);
-    console.log('Material encontrado en item:', !!materialExists);
-    if (materialExists) {
-      console.log('Detalles del material:', {
-        id: materialExists.id,
-        materialId: materialExists.material.id,
-        materialNombre: materialExists.material.nombre
-      });
-    }
 
     setDeleteDialog({
       isOpen: true,
@@ -669,12 +658,6 @@ export default function MaterialesItemPage() {
 
   // Función para gestionar ofertas de un material
   const handleGestionarOfertas = async (materialItem: MaterialPorItem) => {
-    console.log('🎯 handleGestionarOfertas called with:', {
-      materialId: materialItem.material.id,
-      materialNombre: materialItem.material.nombre,
-      precioUnitario: materialItem.precioUnitario
-    });
-
     setLoadingOfertas(true)
     setShowOfertasModal(true)
 
@@ -688,27 +671,17 @@ export default function MaterialesItemPage() {
         (m: MaterialPorItem) => m.id === materialItem.id
       )
 
-      console.log('🔄 Material actualizado:', {
-        found: !!updatedMaterialItem,
-        precioUnitario: updatedMaterialItem?.precioUnitario,
-        originalPrecioUnitario: materialItem.precioUnitario
-      });
-
       if (updatedMaterialItem) {
         setSelectedMaterialForOfertas(updatedMaterialItem)
-        console.log('📊 selectedMaterialForOfertas set to updated item:', updatedMaterialItem.id);
       } else {
         setSelectedMaterialForOfertas(materialItem)
-        console.log('📊 selectedMaterialForOfertas set to original item:', materialItem.id);
       }
 
       // Cargar ofertas del material
       const response = await api.get(`/materiales/${materialItem.material.id}/ofertas`)
       setOfertasMaterial(response.data.data || [])
-
-      console.log('📋 Ofertas cargadas:', response.data.data?.length || 0);
     } catch (error) {
-      console.error('❌ Error fetching ofertas:', error)
+      console.error('Error fetching ofertas:', error)
       setOfertasMaterial([])
       setSelectedMaterialForOfertas(materialItem)
     } finally {
@@ -721,13 +694,6 @@ export default function MaterialesItemPage() {
     if (!selectedMaterialForOfertas) return
 
     try {
-      console.log('Seleccionando oferta:', {
-        ofertaId: oferta.id,
-        precio: oferta.precio,
-        proveedor: oferta.proveedor?.nombre,
-        materialItemId: selectedMaterialForOfertas.id
-      })
-
       // Actualizar el material en el item con el precio de la oferta seleccionada
       const response = await api.put(`/items/${itemId}/materiales/${selectedMaterialForOfertas.id}`, {
         cantidadPorUnidad: selectedMaterialForOfertas.cantidadPorUnidad,
@@ -735,18 +701,14 @@ export default function MaterialesItemPage() {
         observaciones: `Oferta seleccionada: ${oferta.proveedor?.nombre} - ${oferta.marca || 'Sin marca'} - ${formatPrice(oferta.precio)}`
       })
 
-      console.log('Respuesta de actualización:', response.data)
-
       toast.success(`Oferta seleccionada: ${formatPrice(oferta.precio)} de ${oferta.proveedor?.nombre}`)
 
       // Recargar el item para mostrar el nuevo precio
-      console.log('Recargando item...')
       await fetchItem()
 
       setShowOfertasModal(false) // Cerrar el modal
     } catch (error: any) {
       console.error('Error selecting oferta:', error)
-      console.error('Detalles del error:', error.response?.data)
       toast.error('Error al seleccionar la oferta')
     }
   }
@@ -2894,17 +2856,6 @@ export default function MaterialesItemPage() {
                                 const preciosCoinciden = materialPrecio === ofertaPrecio;
 
                                 const esSeleccionada = materialTienePrecioEspecifico && preciosCoinciden;
-
-                                console.log('🔍 Comparación de selección para oferta:', oferta.id, {
-                                  materialInstanceId: selectedMaterialForOfertas?.id,
-                                  materialTienePrecioEspecifico,
-                                  materialPrecio,
-                                  ofertaPrecio,
-                                  preciosCoinciden,
-                                  esSeleccionada,
-                                  materialPrecioUnitario: selectedMaterialForOfertas?.precioUnitario,
-                                  materialPrecioBase: selectedMaterialForOfertas?.material?.precioUnitario
-                                });
 
                                 return esSeleccionada ? (
                                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
