@@ -696,11 +696,11 @@ export default function MaterialesItemPage() {
 
       if (updatedMaterialItem) {
         setSelectedMaterialForOfertas(updatedMaterialItem)
+        console.log('📊 selectedMaterialForOfertas set to updated item:', updatedMaterialItem.id);
       } else {
         setSelectedMaterialForOfertas(materialItem)
+        console.log('📊 selectedMaterialForOfertas set to original item:', materialItem.id);
       }
-
-      console.log('📊 selectedMaterialForOfertas set to:', selectedMaterialForOfertas);
 
       // Cargar ofertas del material
       const response = await api.get(`/materiales/${materialItem.material.id}/ofertas`)
@@ -2789,51 +2789,61 @@ export default function MaterialesItemPage() {
                               {/* Imagen específica de la oferta o del material */}
                               <div className="flex-shrink-0">
                                 <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
-                                  {oferta.imagenUrl ? (
-                                    // Imagen específica de la oferta del proveedor
-                                    <img
-                                      src={oferta.imagenUrl.startsWith('http')
-                                        ? oferta.imagenUrl
-                                        : `${API_BASE_URL}${oferta.imagenUrl}`}
-                                      alt={`Oferta de ${oferta.proveedor?.nombre || 'Proveedor'}`}
-                                      className="w-full h-full object-cover"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.style.display = 'none';
-                                        const parent = target.parentElement;
-                                        if (parent && !parent.querySelector('.error-text')) {
-                                          const errorDiv = document.createElement('div');
-                                          errorDiv.className = 'flex items-center justify-center w-full h-full';
-                                          errorDiv.innerHTML = '<span class="text-xs text-gray-500">Sin imagen</span>';
-                                          errorDiv.classList.add('error-text');
-                                          parent.appendChild(errorDiv);
-                                        }
-                                      }}
-                                    />
-                                  ) : oferta.material?.imagenUrl ? (
-                                    // Imagen genérica del material del catálogo
-                                    <img
-                                      src={oferta.material.imagenUrl.startsWith('http')
-                                        ? oferta.material.imagenUrl
-                                        : `${API_BASE_URL}${oferta.material.imagenUrl}`}
-                                      alt={oferta.material.nombre || 'Material'}
-                                      className="w-full h-full object-cover opacity-60"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.style.display = 'none';
-                                        const parent = target.parentElement;
-                                        if (parent && !parent.querySelector('.error-text')) {
-                                          const errorDiv = document.createElement('div');
-                                          errorDiv.className = 'flex items-center justify-center w-full h-full';
-                                          errorDiv.innerHTML = '<span class="text-xs text-gray-500">Sin imagen</span>';
-                                          errorDiv.classList.add('error-text');
-                                          parent.appendChild(errorDiv);
-                                        }
-                                      }}
-                                    />
-                                  ) : (
-                                    <span className="text-xs text-gray-500">Sin imagen</span>
-                                  )}
+                                  {(() => {
+                                    // Prioridad: imagen de oferta específica → imagen del material → placeholder
+                                    const isBlobUrl = oferta.imagenUrl?.startsWith('blob:');
+
+                                    if (oferta.imagenUrl && !isBlobUrl) {
+                                      // Imagen específica de la oferta del proveedor (URL válida)
+                                      return (
+                                        <img
+                                          src={oferta.imagenUrl.startsWith('http')
+                                            ? oferta.imagenUrl
+                                            : `${API_BASE_URL}${oferta.imagenUrl}`}
+                                          alt={`Oferta de ${oferta.proveedor?.nombre || 'Proveedor'}`}
+                                          className="w-full h-full object-cover"
+                                          onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.style.display = 'none';
+                                            const parent = target.parentElement;
+                                            if (parent && !parent.querySelector('.error-text')) {
+                                              const errorDiv = document.createElement('div');
+                                              errorDiv.className = 'flex items-center justify-center w-full h-full';
+                                              errorDiv.innerHTML = '<span class="text-xs text-gray-500">Sin imagen</span>';
+                                              errorDiv.classList.add('error-text');
+                                              parent.appendChild(errorDiv);
+                                            }
+                                          }}
+                                        />
+                                      );
+                                    } else if (oferta.material?.imagenUrl) {
+                                      // Imagen genérica del material del catálogo
+                                      return (
+                                        <img
+                                          src={oferta.material.imagenUrl.startsWith('http')
+                                            ? oferta.material.imagenUrl
+                                            : `${API_BASE_URL}${oferta.material.imagenUrl}`}
+                                          alt={oferta.material.nombre || 'Material'}
+                                          className="w-full h-full object-cover opacity-60"
+                                          onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.style.display = 'none';
+                                            const parent = target.parentElement;
+                                            if (parent && !parent.querySelector('.error-text')) {
+                                              const errorDiv = document.createElement('div');
+                                              errorDiv.className = 'flex items-center justify-center w-full h-full';
+                                              errorDiv.innerHTML = '<span class="text-xs text-gray-500">Sin imagen</span>';
+                                              errorDiv.classList.add('error-text');
+                                              parent.appendChild(errorDiv);
+                                            }
+                                          }}
+                                        />
+                                      );
+                                    } else {
+                                      // Placeholder cuando no hay imagen
+                                      return <span className="text-xs text-gray-500">Sin imagen</span>;
+                                    }
+                                  })()}
                                 </div>
                               </div>
 
