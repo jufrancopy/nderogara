@@ -25,6 +25,8 @@ export default function ProveedoresPage() {
   const [proveedores, setProveedores] = useState<Proveedor[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [sortBy, setSortBy] = useState<'name' | 'ofertas' | 'date'>('name')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [selectedProveedor, setSelectedProveedor] = useState<Proveedor | null>(null)
   const [showOfertasModal, setShowOfertasModal] = useState(false)
   const [ofertasProveedor, setOfertasProveedor] = useState<any[]>([])
@@ -192,11 +194,38 @@ export default function ProveedoresPage() {
     }
   }
 
-  const filteredProveedores = proveedores.filter(proveedor =>
-    (proveedor.nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (proveedor.ciudad || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (proveedor.email || '').toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredProveedores = proveedores
+    .filter(proveedor =>
+      (proveedor.nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (proveedor.ciudad || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (proveedor.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      let aValue: any, bValue: any
+
+      switch (sortBy) {
+        case 'name':
+          aValue = a.nombre || ''
+          bValue = b.nombre || ''
+          break
+        case 'ofertas':
+          aValue = a._count?.ofertas || 0
+          bValue = b._count?.ofertas || 0
+          break
+        case 'date':
+          aValue = new Date(a.createdAt || 0).getTime()
+          bValue = new Date(b.createdAt || 0).getTime()
+          break
+        default:
+          return 0
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0
+      } else {
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0
+      }
+    })
 
   if (loading) {
     return (
@@ -234,8 +263,9 @@ export default function ProveedoresPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          {/* Search Bar */}
-          <div className="mb-6">
+          {/* Search and Sort Controls */}
+          <div className="mb-6 space-y-4">
+            {/* Search Bar */}
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -249,6 +279,47 @@ export default function ProveedoresPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+            </div>
+
+            {/* Sort Controls */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <label className="text-sm font-medium text-gray-700">Ordenar por:</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'name' | 'ofertas' | 'date')}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  <option value="name">Nombre</option>
+                  <option value="ofertas">Cantidad de Ofertas</option>
+                  <option value="date">Fecha de Registro</option>
+                </select>
+
+                <button
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  {sortOrder === 'asc' ? (
+                    <>
+                      <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                      Ascendente
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      Descendente
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="text-sm text-gray-500">
+                {filteredProveedores.length} proveedor{filteredProveedores.length !== 1 ? 'es' : ''} encontrado{filteredProveedores.length !== 1 ? 's' : ''}
+              </div>
             </div>
           </div>
 
