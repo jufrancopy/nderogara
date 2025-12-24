@@ -153,6 +153,9 @@ export default function Navbar() {
                       <Link href="/items" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={closeDropdown}>
                         📦 Items
                       </Link>
+                      <Link href="/proveedor" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={closeDropdown}>
+                        🏭 Proveedor
+                      </Link>
                       {user?.rol === 'CONSTRUCTOR' && (
                         <Link href="/proveedor/materiales" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={closeDropdown}>
                           🏪 Mis Materiales
@@ -298,6 +301,9 @@ export default function Navbar() {
                   </Link>
                   <Link href="/items" className="block py-1 text-sm text-gray-600 hover:text-gray-900" onClick={() => setMobileMenuOpen(false)}>
                     📦 Items
+                  </Link>
+                  <Link href="/proveedor" className="block py-1 text-sm text-gray-600 hover:text-gray-900" onClick={() => setMobileMenuOpen(false)}>
+                    🏭 Proveedor
                   </Link>
                   {user?.rol === 'CONSTRUCTOR' && (
                     <Link href="/proveedor/materiales" className="block py-1 text-sm text-gray-600 hover:text-gray-900" onClick={() => setMobileMenuOpen(false)}>

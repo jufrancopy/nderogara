@@ -123,3 +123,71 @@ export async function updatePerfil(request: FastifyRequest, reply: FastifyReply)
     reply.status(500).send({ success: false, error: 'Error al actualizar perfil del proveedor' });
   }
 }
+
+// GET /proveedores - Obtener todos los proveedores con estadísticas
+export async function getAllProveedores(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const proveedores = await prisma.proveedor.findMany({
+      include: {
+        usuario: {
+          select: {
+            name: true,
+            email: true,
+            telefono: true
+          }
+        },
+        _count: {
+          select: {
+            ofertas: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    reply.send({ success: true, data: proveedores });
+  } catch (error) {
+    console.error('Error fetching all proveedores:', error);
+    reply.status(500).send({ success: false, error: 'Error al obtener proveedores' });
+  }
+}
+
+// GET /proveedores/:id/ofertas - Obtener todas las ofertas de un proveedor específico
+export async function getOfertasByProveedor(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const { id } = request.params as { id: string };
+
+    if (!id) {
+      return reply.status(400).send({ success: false, error: 'ID de proveedor requerido' });
+    }
+
+    // Verificar que el proveedor existe
+    const proveedor = await prisma.proveedor.findUnique({
+      where: { id }
+    });
+
+    if (!proveedor) {
+      return reply.status(404).send({ success: false, error: 'Proveedor no encontrado' });
+    }
+
+    // Obtener todas las ofertas del proveedor con información del material
+    const ofertas = await prisma.ofertaProveedor.findMany({
+      where: { proveedorId: id },
+      include: {
+        material: {
+          select: {
+            id: true,
+            nombre: true,
+            unidad: true
+          }
+        }
+      },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    reply.send({ success: true, data: ofertas });
+  } catch (error) {
+    console.error('Error fetching ofertas by proveedor:', error);
+    reply.status(500).send({ success: false, error: 'Error al obtener ofertas del proveedor' });
+  }
+}
