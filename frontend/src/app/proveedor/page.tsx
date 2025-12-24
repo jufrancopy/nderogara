@@ -50,7 +50,7 @@ export default function ProveedoresPage() {
 
     try {
       // Obtener todas las ofertas del proveedor
-      const response = await api.get(`/proveedores/${proveedor.id}/ofertas`)
+      const response = await api.get(`/proveedor/${proveedor.id}/ofertas`)
       setOfertasProveedor(response.data.data || [])
     } catch (error) {
       console.error('Error fetching ofertas:', error)
