@@ -127,6 +127,7 @@ export async function updatePerfil(request: FastifyRequest, reply: FastifyReply)
 // GET /proveedores - Obtener todos los proveedores con estadísticas
 export async function getAllProveedores(request: FastifyRequest, reply: FastifyReply) {
   try {
+    // Primero obtenemos todos los proveedores
     const proveedores = await prisma.proveedor.findMany({
       include: {
         usuario: {
@@ -135,17 +136,28 @@ export async function getAllProveedores(request: FastifyRequest, reply: FastifyR
             email: true,
             telefono: true
           }
-        },
-        _count: {
-          select: {
-            ofertas: true
-          }
         }
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    reply.send({ success: true, data: proveedores });
+    // Luego agregamos el conteo de ofertas para cada proveedor
+    const proveedoresConConteo = await Promise.all(
+      proveedores.map(async (proveedor) => {
+        const conteoOfertas = await prisma.ofertaProveedor.count({
+          where: { proveedorId: proveedor.id }
+        });
+
+        return {
+          ...proveedor,
+          _count: {
+            ofertas: conteoOfertas
+          }
+        };
+      })
+    );
+
+    reply.send({ success: true, data: proveedoresConConteo });
   } catch (error) {
     console.error('Error fetching all proveedores:', error);
     reply.status(500).send({ success: false, error: 'Error al obtener proveedores' });
