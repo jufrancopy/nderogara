@@ -185,7 +185,7 @@ function SortableItem({
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+            <div className="flex flex-col gap-1">
               <h4 className="text-base sm:text-lg font-medium text-gray-900 flex items-center flex-wrap">
                 <span className="truncate">{item.item.nombre}</span>
                 {item.esDinamico && (
@@ -194,16 +194,23 @@ function SortableItem({
                   </span>
                 )}
               </h4>
-              <p className="text-sm text-gray-500">
-                {item.cantidadMedida} {getUnidadLabel(item.item.unidadMedida)}
-              </p>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                <p className="text-sm text-gray-500">
+                  {item.cantidadMedida} {getUnidadLabel(item.item.unidadMedida)}
+                </p>
+                <div className="text-right sm:hidden">
+                  <p className="text-lg font-bold text-gray-900">
+                    {formatPrice(Number(item.costoTotal))}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="text-right ml-2 flex-shrink-0">
+          <div className="hidden sm:block text-right ml-2 flex-shrink-0">
             <p className="text-lg font-bold text-gray-900">
               {formatPrice(Number(item.costoTotal))}
             </p>
-            <p className="text-sm text-gray-500 hidden sm:block">
+            <p className="text-sm text-gray-500">
               {item.esDinamico ? (
                 'Pagos incrementales'
               ) : (
