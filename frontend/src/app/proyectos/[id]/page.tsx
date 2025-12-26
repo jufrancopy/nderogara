@@ -170,7 +170,7 @@ function SortableItem({
     >
       {/* Header del acordeón */}
       <div
-        className="px-6 py-4 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors flex items-center justify-between"
+        className="px-4 sm:px-6 py-4 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors flex items-center justify-between"
         onClick={() => toggleItemExpansion(item.id)}
       >
         <div className="flex items-center space-x-4 flex-1">
@@ -184,24 +184,26 @@ function SortableItem({
             <GripVertical className="h-4 w-4 text-gray-500" />
           </div>
 
-          <div className="flex-1">
-            <h4 className="text-lg font-medium text-gray-900 flex items-center">
-              {item.item.nombre}
-              {item.esDinamico && (
-                <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                  Dinámico
-                </span>
-              )}
-            </h4>
-            <p className="text-sm text-gray-500">
-              {item.cantidadMedida} {getUnidadLabel(item.item.unidadMedida)}
-            </p>
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+              <h4 className="text-base sm:text-lg font-medium text-gray-900 flex items-center flex-wrap">
+                <span className="truncate">{item.item.nombre}</span>
+                {item.esDinamico && (
+                  <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
+                    Dinámico
+                  </span>
+                )}
+              </h4>
+              <p className="text-sm text-gray-500">
+                {item.cantidadMedida} {getUnidadLabel(item.item.unidadMedida)}
+              </p>
+            </div>
           </div>
-          <div className="text-right">
+          <div className="text-right ml-2 flex-shrink-0">
             <p className="text-lg font-bold text-gray-900">
               {formatPrice(Number(item.costoTotal))}
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 hidden sm:block">
               {item.esDinamico ? (
                 'Pagos incrementales'
               ) : (
@@ -210,7 +212,7 @@ function SortableItem({
             </p>
           </div>
         </div>
-            <div className="flex items-center space-x-2 ml-4">
+            <div className="flex items-center gap-1 sm:gap-2 ml-2 sm:ml-4 flex-shrink-0">
               {item.esDinamico && (
                 <button
                   onClick={async (e) => {
@@ -289,7 +291,7 @@ function SortableItem({
 
       {/* Contenido expandible - Materiales */}
       {expandedItem === item.id && (
-        <div className="px-6 py-4 border-t border-gray-200 bg-white">
+        <div className="px-4 sm:px-6 py-4 border-t border-gray-200 bg-white">
           <div className="flex items-center justify-between mb-3">
             <h5 className="text-sm font-medium text-gray-700">Materiales utilizados:</h5>
             <Link
@@ -1637,10 +1639,10 @@ export default function ProyectoDetallePage() {
                         ))}
 
                         {/* Total */}
-                        <div className="bg-gray-50 px-6 py-4 rounded-lg">
-                          <div className="flex justify-between items-center">
-                            <span className="text-lg font-medium text-gray-900">Total del Proyecto:</span>
-                            <span className="text-xl font-bold text-gray-900">
+                        <div className="bg-gray-50 px-4 sm:px-6 py-4 rounded-lg">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                            <span className="text-base sm:text-lg font-medium text-gray-900">Total del Proyecto:</span>
+                            <span className="text-xl sm:text-xl font-bold text-gray-900">
                               {formatPrice(calcularCostoTotal())}
                             </span>
                           </div>
