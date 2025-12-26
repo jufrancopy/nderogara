@@ -219,44 +219,66 @@ function SortableItem({
             </p>
           </div>
         </div>
-            <div className="flex items-center gap-1 sm:gap-2 ml-2 sm:ml-4 flex-shrink-0">
-              {item.esDinamico && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-1 ml-2 sm:ml-4 flex-shrink-0">
+              {/* Botones principales */}
+              <div className="flex items-center gap-1 sm:gap-2">
+                {item.esDinamico && (
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation()
+                      try {
+                        // Cargar pagos del item antes de abrir el modal
+                        const response = await api.get(`/proyectos/${proyectoId}/presupuesto/${item.id}/pagos`)
+                        const pagos = response.data.data || []
+
+                        // Calcular el costo actual basado en los pagos existentes (para items dinámicos)
+                        let costoActual = item.costoTotal
+                        if (item.esDinamico) {
+                          const totalPagosAprobados = pagos
+                            .filter((p: any) => p.estado === 'APROBADO')
+                            .reduce((sum: number, p: any) => sum + Number(p.montoPagado), 0)
+                          costoActual = totalPagosAprobados
+                        }
+
+                        // Crear item actualizado con el costo correcto
+                        const itemActualizado = {
+                          ...item,
+                          costoTotal: costoActual
+                        }
+
+                        setPagoModal({ isOpen: true, presupuestoItem: itemActualizado, pagos })
+                      } catch (error) {
+                        console.error('Error loading pagos:', error)
+                        setPagoModal({ isOpen: true, presupuestoItem: item, pagos: [] })
+                      }
+                    }}
+                    className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition-colors whitespace-nowrap"
+                    title="Gestionar pagos"
+                  >
+                    💰 Pago
+                  </button>
+                )}
+
                 <button
-                  onClick={async (e) => {
+                  onClick={(e) => {
                     e.stopPropagation()
-                    try {
-                      // Cargar pagos del item antes de abrir el modal
-                      const response = await api.get(`/proyectos/${proyectoId}/presupuesto/${item.id}/pagos`)
-                      const pagos = response.data.data || []
-
-                      // Calcular el costo actual basado en los pagos existentes (para items dinámicos)
-                      let costoActual = item.costoTotal
-                      if (item.esDinamico) {
-                        const totalPagosAprobados = pagos
-                          .filter((p: any) => p.estado === 'APROBADO')
-                          .reduce((sum: number, p: any) => sum + Number(p.montoPagado), 0)
-                        costoActual = totalPagosAprobados
-                      }
-
-                      // Crear item actualizado con el costo correcto
-                      const itemActualizado = {
-                        ...item,
-                        costoTotal: costoActual
-                      }
-
-                      setPagoModal({ isOpen: true, presupuestoItem: itemActualizado, pagos })
-                    } catch (error) {
-                      console.error('Error loading pagos:', error)
-                      setPagoModal({ isOpen: true, presupuestoItem: item, pagos: [] })
-                    }
+                    handleRemoveItem(item.item.id)
                   }}
-                  className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition-colors"
-                  title="Gestionar pagos"
+                  className="text-red-600 hover:text-red-900 transition-colors p-1"
+                  title="Eliminar item"
                 >
-                  💰 Pago
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
                 </button>
-              )}
-              <div className="flex items-center space-x-2">
+
+                <span className="text-gray-400">
+                  {expandedItem === item.id ? '▼' : '▶'}
+                </span>
+              </div>
+
+              {/* Checkbox Dinámico - separado para móvil */}
+              <div className="flex items-center">
                 <label className="flex items-center space-x-1 cursor-pointer">
                   <input
                     type="checkbox"
@@ -280,19 +302,6 @@ function SortableItem({
                   <span className="text-xs text-gray-600">Dinámico</span>
                 </label>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleRemoveItem(item.item.id)
-                }}
-                className="text-red-600 hover:text-red-900 transition-colors p-1"
-                title="Eliminar item"
-              >
-                ✕
-              </button>
-              <span className="text-gray-400">
-                {expandedItem === item.id ? '▼' : '▶'}
-              </span>
             </div>
       </div>
 
