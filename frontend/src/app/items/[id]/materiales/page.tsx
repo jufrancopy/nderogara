@@ -1511,10 +1511,21 @@ export default function MaterialesItemPage() {
                                 }
                               }
 
-                              // Verificar si es una URL incrustada válida (no blob, pero podría ser data: o cualquier otra URL)
-                              if (imagenUrl && !imagenUrl.startsWith('http') && !imagenUrl.startsWith('blob:')) {
-                                // Podría ser una URL relativa al servidor
-                                imagenUrl = `${API_BASE_URL}${imagenUrl}`;
+                              // Manejar diferentes tipos de URLs
+                              if (imagenUrl) {
+                                if (imagenUrl.startsWith('http') || imagenUrl.startsWith('https')) {
+                                  // URL absoluta externa, usar tal cual
+                                  // imagenUrl ya está correcto
+                                } else if (imagenUrl.startsWith('data:')) {
+                                  // URL de datos incrustada (base64), usar tal cual
+                                  // imagenUrl ya está correcto
+                                } else if (imagenUrl.startsWith('blob:')) {
+                                  // URL de blob, usar tal cual (aunque puede ser inválida)
+                                  // imagenUrl ya está correcto
+                                } else {
+                                  // URL relativa al servidor, agregar el prefijo
+                                  imagenUrl = `${API_BASE_URL}${imagenUrl}`;
+                                }
                               }
 
                               return imagenUrl ? (
