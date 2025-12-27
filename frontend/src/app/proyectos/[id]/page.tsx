@@ -132,6 +132,26 @@ interface SortableItemProps {
   API_BASE_URL: string
   proyectoId: string
   onItemUpdate: () => void
+  calcularCostoTotalItem: (item: PresupuestoItem, materialesPorItem: Record<string, any[]>) => number
+}
+
+// Función para calcular el costo total de un item incluyendo materiales asociados
+const calcularCostoTotalItem = (item: PresupuestoItem, materialesPorItem: Record<string, any[]>) => {
+  // Costo base del item
+  let costoTotal = Number(item.costoTotal)
+
+  // Agregar costos de materiales asociados
+  const materialesItem = materialesPorItem[item.item.id] || []
+  const costoMaterialesAsociados = materialesItem.reduce((sum: number, materialItem: any) => {
+    const precioUnitario = Number(materialItem.material?.precioUnitario || 0)
+    const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad || 0)
+    const cantidadItem = Number(item.cantidadMedida || 0)
+
+    // Costo = precio_unitario * cantidad_por_unidad * cantidad_del_item_en_el_proyecto
+    return sum + (precioUnitario * cantidadPorUnidad * cantidadItem)
+  }, 0)
+
+  return costoTotal + costoMaterialesAsociados
 }
 
 function SortableItem({
@@ -146,7 +166,8 @@ function SortableItem({
   formatPrice,
   API_BASE_URL,
   proyectoId,
-  onItemUpdate
+  onItemUpdate,
+  calcularCostoTotalItem
 }: SortableItemProps) {
   const {
     attributes,
@@ -205,13 +226,13 @@ function SortableItem({
               {/* Precio - Desktop */}
               <div className="hidden sm:block text-right ml-2 flex-shrink-0">
                 <p className="text-lg font-bold text-gray-900">
-                  {formatPrice(Number(item.costoTotal))}
+                  {formatPrice(calcularCostoTotalItem(item, materialesPorItem))}
                 </p>
                 <p className="text-sm text-gray-500">
                   {item.esDinamico ? (
                     'Pagos incrementales'
                   ) : (
-                    `Mat: ${formatPrice(Number(item.costoMateriales))} | MO: ${formatPrice(Number(item.costoManoObra))}`
+                    `Base: ${formatPrice(Number(item.costoTotal))} | Mat. Asoc.: ${formatPrice(calcularCostoTotalItem(item, materialesPorItem) - Number(item.costoTotal))}`
                   )}
                 </p>
               </div>
@@ -226,7 +247,7 @@ function SortableItem({
           {/* Precio - Mobile */}
           <div className="flex sm:hidden justify-between items-center">
             <div className="text-lg font-bold text-gray-900">
-              {formatPrice(Number(item.costoTotal))}
+              {formatPrice(calcularCostoTotalItem(item, materialesPorItem))}
             </div>
             <div className="text-xs text-gray-500">
               {item.esDinamico ? 'Pagos incrementales' : 'Costo fijo'}
@@ -1734,6 +1755,7 @@ export default function ProyectoDetallePage() {
                             API_BASE_URL={API_BASE_URL}
                             proyectoId={proyectoId}
                             onItemUpdate={fetchProyecto}
+                            calcularCostoTotalItem={calcularCostoTotalItem}
                           />
                         ))}
 
