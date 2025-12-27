@@ -361,18 +361,32 @@ export default function AdminMaterialesPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {currentMateriales.map((material: any) => (
                       <tr key={material.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-4 whitespace-nowrap max-w-xs">
                           <div className="flex items-center">
-                            {material.imagenUrl && (
-                              <img
-                                src={material.imagenUrl.startsWith('http') ? material.imagenUrl : `${API_BASE_URL}${material.imagenUrl}`}
-                                alt={material.nombre}
-                                className="w-10 h-10 rounded-lg object-cover mr-3"
-                              />
-                            )}
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">{material.nombre}</div>
-                              <div className="text-sm text-gray-500">{material.descripcion || 'Sin descripción'}</div>
+                            <div className="w-10 h-10 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center mr-3 overflow-hidden">
+                              {material.imagenUrl ? (
+                                <img
+                                  src={material.imagenUrl.startsWith('http') ? material.imagenUrl : `${API_BASE_URL}${material.imagenUrl}`}
+                                  alt={material.nombre}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    const parent = target.parentElement;
+                                    if (parent) {
+                                      parent.innerHTML = '<span class="text-gray-400 text-xs">📷</span>';
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <span className="text-gray-400 text-xs">📷</span>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium text-gray-900 truncate">{material.nombre}</div>
+                              <div className="text-sm text-gray-500 truncate max-w-32" title={material.descripcion || 'Sin descripción'}>
+                                {material.descripcion || 'Sin descripción'}
+                              </div>
                             </div>
                           </div>
                         </td>

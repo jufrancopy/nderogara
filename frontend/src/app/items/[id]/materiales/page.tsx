@@ -573,20 +573,25 @@ export default function MaterialesItemPage() {
     setLoadingCreate(true)
 
     try {
-      // Subir imagen si hay archivo seleccionado
-      let finalImageUrl = createMaterialForm.imagenUrl || ''
-      if (selectedFile) {
-        const formData = new FormData()
-        formData.append('file', selectedFile)
+          // Manejar imagen - verificar si es URL incrustada o archivo a subir
+          let finalImageUrl = createMaterialForm.imagenUrl || ''
+          if (selectedFile) {
+            // Subir archivo seleccionado
+            const formData = new FormData()
+            formData.append('file', selectedFile)
 
-        const uploadResponse = await api.post('/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        })
+            const uploadResponse = await api.post('/upload', formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            })
 
-        if (uploadResponse.data.success) {
-          finalImageUrl = uploadResponse.data.data.url
-        }
-      }
+            if (uploadResponse.data.success) {
+              finalImageUrl = uploadResponse.data.data.url
+            }
+          } else if (finalImageUrl && finalImageUrl.startsWith('blob:')) {
+            // Es una URL blob inválida, resetear
+            finalImageUrl = ''
+          }
+          // Si es una URL externa válida, mantenerla
 
       // Crear el material usando la API de admin (que también crea la oferta automáticamente)
       const materialData = {
@@ -2770,66 +2775,64 @@ export default function MaterialesItemPage() {
                         <div key={oferta.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                           <div className="flex justify-between items-start mb-3">
                             <div className="flex items-start gap-4 flex-1">
-                              {/* Imagen específica de la oferta o del material */}
-                              <div className="flex-shrink-0">
-                                <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
-                                  {(() => {
-                                    // Prioridad: imagen de oferta específica → imagen del material → placeholder
-                                    const isBlobUrl = oferta.imagenUrl?.startsWith('blob:');
-
-                                    if (oferta.imagenUrl && !isBlobUrl) {
-                                      // Imagen específica de la oferta del proveedor (URL válida)
-                                      return (
-                                        <img
-                                          src={oferta.imagenUrl.startsWith('http')
-                                            ? oferta.imagenUrl
-                                            : `${API_BASE_URL}${oferta.imagenUrl}`}
-                                          alt={`Oferta de ${oferta.proveedor?.nombre || 'Proveedor'}`}
-                                          className="w-full h-full object-cover"
-                                          onError={(e) => {
-                                            const target = e.target as HTMLImageElement;
-                                            target.style.display = 'none';
-                                            const parent = target.parentElement;
-                                            if (parent && !parent.querySelector('.error-text')) {
-                                              const errorDiv = document.createElement('div');
-                                              errorDiv.className = 'flex items-center justify-center w-full h-full';
-                                              errorDiv.innerHTML = '<span class="text-xs text-gray-500">Sin imagen</span>';
-                                              errorDiv.classList.add('error-text');
-                                              parent.appendChild(errorDiv);
-                                            }
-                                          }}
-                                        />
-                                      );
-                                    } else if (oferta.material?.imagenUrl) {
-                                      // Imagen genérica del material del catálogo
-                                      return (
-                                        <img
-                                          src={oferta.material.imagenUrl.startsWith('http')
-                                            ? oferta.material.imagenUrl
-                                            : `${API_BASE_URL}${oferta.material.imagenUrl}`}
-                                          alt={oferta.material.nombre || 'Material'}
-                                          className="w-full h-full object-cover opacity-60"
-                                          onError={(e) => {
-                                            const target = e.target as HTMLImageElement;
-                                            target.style.display = 'none';
-                                            const parent = target.parentElement;
-                                            if (parent && !parent.querySelector('.error-text')) {
-                                              const errorDiv = document.createElement('div');
-                                              errorDiv.className = 'flex items-center justify-center w-full h-full';
-                                              errorDiv.innerHTML = '<span class="text-xs text-gray-500">Sin imagen</span>';
-                                              errorDiv.classList.add('error-text');
-                                              parent.appendChild(errorDiv);
-                                            }
-                                          }}
-                                        />
-                                      );
-                                    } else {
-                                      // Placeholder cuando no hay imagen
-                                      return <span className="text-xs text-gray-500">Sin imagen</span>;
-                                    }
-                                  })()}
-                                </div>
-                              </div>
+                        {/* Imagen específica de la oferta o del material */}
+                        <div className="flex-shrink-0">
+                          <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                            {(() => {
+                              // Prioridad: imagen de oferta específica → imagen del material → placeholder
+                              if (oferta.imagenUrl && !oferta.imagenUrl.startsWith('blob:')) {
+                                // Imagen específica de la oferta del proveedor (URL válida)
+                                return (
+                                  <img
+                                    src={oferta.imagenUrl.startsWith('http')
+                                      ? oferta.imagenUrl
+                                      : `${API_BASE_URL}${oferta.imagenUrl}`}
+                                    alt={`Oferta de ${oferta.proveedor?.nombre || 'Proveedor'}`}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      const parent = target.parentElement;
+                                      if (parent && !parent.querySelector('.error-text')) {
+                                        const errorDiv = document.createElement('div');
+                                        errorDiv.className = 'flex items-center justify-center w-full h-full';
+                                        errorDiv.innerHTML = '<span class="text-xs text-gray-500">📷</span>';
+                                        errorDiv.classList.add('error-text');
+                                        parent.appendChild(errorDiv);
+                                      }
+                                    }}
+                                  />
+                                );
+                              } else if (oferta.material?.imagenUrl) {
+                                // Imagen genérica del material del catálogo
+                                return (
+                                  <img
+                                    src={oferta.material.imagenUrl.startsWith('http')
+                                      ? oferta.material.imagenUrl
+                                      : `${API_BASE_URL}${oferta.material.imagenUrl}`}
+                                    alt={oferta.material.nombre || 'Material'}
+                                    className="w-full h-full object-cover opacity-60"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      const parent = target.parentElement;
+                                      if (parent && !parent.querySelector('.error-text')) {
+                                        const errorDiv = document.createElement('div');
+                                        errorDiv.className = 'flex items-center justify-center w-full h-full';
+                                        errorDiv.innerHTML = '<span class="text-xs text-gray-500">📷</span>';
+                                        errorDiv.classList.add('error-text');
+                                        parent.appendChild(errorDiv);
+                                      }
+                                    }}
+                                  />
+                                );
+                              } else {
+                                // Placeholder cuando no hay imagen
+                                return <span className="text-xs text-gray-500">📷</span>;
+                              }
+                            })()}
+                          </div>
+                        </div>
 
                               {/* Información de la oferta */}
                               <div className="flex-1">
