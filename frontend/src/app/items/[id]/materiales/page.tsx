@@ -573,7 +573,7 @@ export default function MaterialesItemPage() {
     setLoadingCreate(true)
 
     try {
-          // Manejar imagen - verificar si es URL incrustada o archivo a subir
+          // Manejar imagen - verificar si es URL incrustada, archivo o URL externa
           let finalImageUrl = createMaterialForm.imagenUrl || ''
           if (selectedFile) {
             // Subir archivo seleccionado
@@ -587,11 +587,14 @@ export default function MaterialesItemPage() {
             if (uploadResponse.data.success) {
               finalImageUrl = uploadResponse.data.data.url
             }
-          } else if (finalImageUrl && finalImageUrl.startsWith('blob:')) {
-            // Es una URL blob inválida, resetear
-            finalImageUrl = ''
+          } else if (finalImageUrl) {
+            // Verificar si es una URL blob inválida
+            if (finalImageUrl.startsWith('blob:')) {
+              finalImageUrl = ''
+            }
+            // Si es una URL externa válida (http/https) o una ruta relativa, mantenerla
+            // Las URLs incrustadas válidas se mantienen
           }
-          // Si es una URL externa válida, mantenerla
 
       // Crear el material usando la API de admin (que también crea la oferta automáticamente)
       const materialData = {
@@ -1479,7 +1482,7 @@ export default function MaterialesItemPage() {
                           <div className="w-12 h-12 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer overflow-hidden"
                                onClick={() => materialItem.material && handleShowDetail(materialItem.material)}>
                             {(() => {
-                              // Prioridad: imagen de oferta seleccionada → imagen del catálogo
+                              // Prioridad: imagen de oferta seleccionada → imagen del catálogo → primera oferta disponible
                               let imagenUrl = null;
 
                               // Si hay precio específico, buscar la oferta correspondiente
@@ -1500,12 +1503,18 @@ export default function MaterialesItemPage() {
                                 imagenUrl = materialItem.material.imagenUrl;
                               }
 
-                              // Si no hay imagen pero hay ofertas disponibles, mostrar imagen de la oferta más barata
+                              // Si no hay selección pero hay ofertas disponibles, mostrar imagen de la primera oferta
                               if (!imagenUrl && materialItem.material?.ofertas && materialItem.material.ofertas.length > 0) {
                                 const ofertaMasBarata = materialItem.material.ofertas[0];
                                 if (ofertaMasBarata.imagenUrl) {
                                   imagenUrl = ofertaMasBarata.imagenUrl;
                                 }
+                              }
+
+                              // Verificar si es una URL incrustada válida (no blob, pero podría ser data: o cualquier otra URL)
+                              if (imagenUrl && !imagenUrl.startsWith('http') && !imagenUrl.startsWith('blob:')) {
+                                // Podría ser una URL relativa al servidor
+                                imagenUrl = `${API_BASE_URL}${imagenUrl}`;
                               }
 
                               return imagenUrl ? (
