@@ -12,6 +12,12 @@ interface CreateMaterialCatalogoBody {
   precioUnitario?: number;
   precioBase?: number;
   observaciones?: string;
+  proveedorId?: string; // ID del proveedor seleccionado
+  proveedor?: string; // Nombre del proveedor (legacy)
+  telefonoProveedor?: string;
+  tipoCalidad?: string;
+  marca?: string;
+  stockMinimo?: string;
 }
 
 export const createMaterialCatalogo = async (
@@ -33,6 +39,7 @@ export const createMaterialCatalogo = async (
       tipoCalidad,
       marca,
       proveedor,
+      proveedorId,
       telefonoProveedor,
       stockMinimo
     } = request.body as any;
@@ -55,54 +62,70 @@ export const createMaterialCatalogo = async (
       },
     });
 
-    // 2. Si se proporcionó información de precio, crear una oferta automática
-    // Esto simula que el admin está "ofreciendo" este material
+    // 2. Si se proporcionó información de precio y proveedor, crear una oferta automática
     let ofertaCreada = null;
-    if (precioUnitario && proveedor) {
+    if (precioUnitario && (proveedorId || proveedor)) {
       try {
-        // Buscar o crear el proveedor admin (usuario admin actuando como proveedor)
-        let proveedorAdmin = await prisma.proveedor.findFirst({
-          where: { usuarioId: user.id }
-        });
+        let proveedorUsado;
 
-        // Si no existe, crear el proveedor admin
-        if (!proveedorAdmin) {
-          proveedorAdmin = await prisma.proveedor.create({
-            data: {
-              nombre: proveedor,
-              email: user.email,
-              telefono: telefonoProveedor || user.telefono,
-              sitioWeb: null,
-              logo: null,
-              esActivo: true,
-              usuarioId: user.id,
-              latitud: null,
-              longitud: null,
-              ciudad: null,
-              departamento: null
-            }
+        // Si se proporcionó proveedorId, usar ese proveedor existente
+        if (proveedorId) {
+          proveedorUsado = await prisma.proveedor.findUnique({
+            where: { id: proveedorId }
           });
+
+          if (!proveedorUsado) {
+            console.error('⚠️ Proveedor especificado no encontrado:', proveedorId);
+            // No fallar la creación del material si el proveedor no existe
+          }
+        } else if (proveedor) {
+          // Lógica legacy: Buscar o crear el proveedor admin (usuario admin actuando como proveedor)
+          let proveedorAdmin = await prisma.proveedor.findFirst({
+            where: { usuarioId: user.id }
+          });
+
+          // Si no existe, crear el proveedor admin
+          if (!proveedorAdmin) {
+            proveedorAdmin = await prisma.proveedor.create({
+              data: {
+                nombre: proveedor,
+                email: user.email,
+                telefono: telefonoProveedor || user.telefono,
+                sitioWeb: null,
+                logo: null,
+                esActivo: true,
+                usuarioId: user.id,
+                latitud: null,
+                longitud: null,
+                ciudad: null,
+                departamento: null
+              }
+            });
+          }
+          proveedorUsado = proveedorAdmin;
         }
 
-        // Crear la oferta
-        ofertaCreada = await prisma.ofertaProveedor.create({
-          data: {
-            materialId: material.id,
-            proveedorId: proveedorAdmin.id,
-            precio: parseFloat(precioUnitario),
-            tipoCalidad: tipoCalidad || 'COMUN',
-            marca: marca || null,
-            comisionPorcentaje: 0, // Admin no paga comisión
-            stock: stockMinimo ? parseInt(stockMinimo) > 0 : true,
-            vigenciaHasta: null, // Sin límite
-            observaciones: observaciones || null
-          },
-          include: {
-            proveedor: true
-          }
-        });
+        // Crear la oferta si tenemos un proveedor válido
+        if (proveedorUsado) {
+          ofertaCreada = await prisma.ofertaProveedor.create({
+            data: {
+              materialId: material.id,
+              proveedorId: proveedorUsado.id,
+              precio: parseFloat(precioUnitario),
+              tipoCalidad: tipoCalidad || 'COMUN',
+              marca: marca || null,
+              comisionPorcentaje: 0, // Admin no paga comisión
+              stock: stockMinimo ? parseInt(stockMinimo) > 0 : true,
+              vigenciaHasta: null, // Sin límite
+              observaciones: observaciones || null
+            },
+            include: {
+              proveedor: true
+            }
+          });
 
-        console.log('✅ Oferta automática creada para material del catálogo');
+          console.log(`✅ Oferta automática creada para material del catálogo usando proveedor: ${proveedorUsado.nombre}`);
+        }
       } catch (ofertaError) {
         console.error('⚠️ Error creando oferta automática:', ofertaError);
         // No fallar la creación del material si falla la oferta

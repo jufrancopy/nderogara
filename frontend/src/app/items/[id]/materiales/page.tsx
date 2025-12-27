@@ -606,7 +606,7 @@ export default function MaterialesItemPage() {
         precioBase: createMaterialForm.precioBase ? parseFloat(createMaterialForm.precioBase) : null,
         tipoCalidad: createMaterialForm.tipoCalidad,
         marca: createMaterialForm.marca,
-        proveedorId: createMaterialForm.proveedorId,
+        proveedorId: createMaterialForm.proveedorId, // Enviar ID del proveedor seleccionado
         telefonoProveedor: selectedProveedor?.telefono || '',
         stockMinimo: parseInt(createMaterialForm.stockMinimo) || 0,
         imagenUrl: finalImageUrl,
