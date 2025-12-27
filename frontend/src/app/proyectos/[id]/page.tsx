@@ -143,12 +143,12 @@ const calcularCostoTotalItem = (item: PresupuestoItem, materialesPorItem: Record
   // Agregar costos de materiales asociados
   const materialesItem = materialesPorItem[item.item.id] || []
   const costoMaterialesAsociados = materialesItem.reduce((sum: number, materialItem: any) => {
-    const precioUnitario = Number(materialItem.material?.precioUnitario || 0)
+    // Prioridad: precio específico de la oferta seleccionada → precio base del material
+    const precioUnitario = Number(materialItem.precioUnitario || materialItem.material?.precioUnitario || 0)
     const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad || 0)
-    const cantidadItem = Number(item.cantidadMedida || 0)
 
-    // Costo = precio_unitario * cantidad_por_unidad * cantidad_del_item_en_el_proyecto
-    return sum + (precioUnitario * cantidadPorUnidad * cantidadItem)
+    // Costo = precio_unitario * cantidad_por_unidad (sin multiplicar por cantidad del item)
+    return sum + (precioUnitario * cantidadPorUnidad)
   }, 0)
 
   return costoTotal + costoMaterialesAsociados
@@ -1174,16 +1174,19 @@ export default function ProyectoDetallePage() {
       // Costo base del item (mano de obra + materiales base)
       let costoItem = Number(item.costoTotal)
 
-      // Agregar costos de materiales asociados
-      const materialesItem = materialesPorItem[item.item.id] || []
-      const costoMaterialesAsociados = materialesItem.reduce((sum: number, materialItem: any) => {
-        const precioUnitario = Number(materialItem.material?.precioUnitario || 0)
-        const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad || 0)
-        const cantidadItem = Number(item.cantidadMedida || 0)
+  // Agregar costos de materiales asociados (solo aquellos con precio específico establecido)
+  const materialesItem = materialesPorItem[item.item.id] || []
+  const costoMaterialesAsociados = materialesItem.reduce((sum: number, materialItem: any) => {
+    // Solo incluir materiales que tienen precioUnitario establecido (ofertas seleccionadas)
+    if (!materialItem.precioUnitario) return sum
 
-        // Costo = precio_unitario * cantidad_por_unidad * cantidad_del_item_en_el_proyecto
-        return sum + (precioUnitario * cantidadPorUnidad * cantidadItem)
-      }, 0)
+    const precioUnitario = Number(materialItem.precioUnitario)
+    const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad || 0)
+    const cantidadItem = Number(item.cantidadMedida || 0)
+
+    // Costo = precio_unitario * cantidad_por_unidad * cantidad_del_item_en_el_proyecto
+    return sum + (precioUnitario * cantidadPorUnidad * cantidadItem)
+  }, 0)
 
       return total + costoItem + costoMaterialesAsociados
     }, 0)
