@@ -170,66 +170,146 @@ function SortableItem({
     >
       {/* Header del acordeón */}
       <div
-        className="px-4 sm:px-6 py-4 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors flex items-center justify-between"
+        className="px-4 sm:px-6 py-4 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
         onClick={() => toggleItemExpansion(item.id)}
       >
-        <div className="flex items-center space-x-4 flex-1">
-          {/* Drag Handle */}
-          <div
-            {...attributes}
-            {...listeners}
-            className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded"
-            title="Arrastrar para reordenar"
-          >
-            <GripVertical className="h-4 w-4 text-gray-500" />
-          </div>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+              {/* Drag Handle - Solo desktop */}
+              <div
+                {...attributes}
+                {...listeners}
+                className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded hidden sm:block"
+                title="Arrastrar para reordenar"
+              >
+                <GripVertical className="h-4 w-4 text-gray-500" />
+              </div>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-col gap-1">
-              <h4 className="text-base sm:text-lg font-medium text-gray-900 flex items-center flex-wrap">
-                <span className="truncate">{item.item.nombre}</span>
-                {item.esDinamico && (
-                  <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
-                    Dinámico
-                  </span>
-                )}
-              </h4>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                <p className="text-sm text-gray-500">
-                  {item.cantidadMedida} {getUnidadLabel(item.item.unidadMedida)}
-                </p>
-                <div className="text-right sm:hidden">
-                  <p className="text-lg font-bold text-gray-900">
-                    {formatPrice(Number(item.costoTotal))}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col gap-1">
+                  <h4 className="text-base sm:text-lg font-medium text-gray-900 flex items-center flex-wrap">
+                    <span className="truncate">{item.item.nombre}</span>
+                    {item.esDinamico && (
+                      <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
+                        Dinámico
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-sm text-gray-500">
+                    {item.cantidadMedida} {getUnidadLabel(item.item.unidadMedida)}
                   </p>
                 </div>
               </div>
+
+              {/* Precio - Desktop */}
+              <div className="hidden sm:block text-right ml-2 flex-shrink-0">
+                <p className="text-lg font-bold text-gray-900">
+                  {formatPrice(Number(item.costoTotal))}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {item.esDinamico ? (
+                    'Pagos incrementales'
+                  ) : (
+                    `Mat: ${formatPrice(Number(item.costoMateriales))} | MO: ${formatPrice(Number(item.costoManoObra))}`
+                  )}
+                </p>
+              </div>
+
+              {/* Flecha expandir/colapsar */}
+              <span className="text-gray-400 text-lg ml-2 flex-shrink-0">
+                {expandedItem === item.id ? '▼' : '▶'}
+              </span>
             </div>
           </div>
-          <div className="hidden sm:block text-right ml-2 flex-shrink-0">
-            <p className="text-lg font-bold text-gray-900">
+
+          {/* Precio - Mobile */}
+          <div className="flex sm:hidden justify-between items-center">
+            <div className="text-lg font-bold text-gray-900">
               {formatPrice(Number(item.costoTotal))}
-            </p>
-            <p className="text-sm text-gray-500">
-              {item.esDinamico ? (
-                'Pagos incrementales'
-              ) : (
-                `Mat: ${formatPrice(Number(item.costoMateriales))} | MO: ${formatPrice(Number(item.costoManoObra))}`
-              )}
-            </p>
+            </div>
+            <div className="text-xs text-gray-500">
+              {item.esDinamico ? 'Pagos incrementales' : 'Costo fijo'}
+            </div>
           </div>
-        </div>
-            <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+
+          {/* Botones - Desktop */}
+          <div className="hidden sm:flex items-center gap-3 justify-end">
+            {item.esDinamico && (
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  try {
+                    const response = await api.get(`/proyectos/${proyectoId}/presupuesto/${item.id}/pagos`)
+                    const pagos = response.data.data || []
+                    let costoActual = item.costoTotal
+                    if (item.esDinamico) {
+                      const totalPagosAprobados = pagos
+                        .filter((p: any) => p.estado === 'APROBADO')
+                        .reduce((sum: number, p: any) => sum + Number(p.montoPagado), 0)
+                      costoActual = totalPagosAprobados
+                    }
+                    const itemActualizado = { ...item, costoTotal: costoActual }
+                    setPagoModal({ isOpen: true, presupuestoItem: itemActualizado, pagos })
+                  } catch (error) {
+                    console.error('Error loading pagos:', error)
+                    setPagoModal({ isOpen: true, presupuestoItem: item, pagos: [] })
+                  }
+                }}
+                className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 transition-colors font-medium"
+                title="Gestionar pagos"
+              >
+                💰 Pagar
+              </button>
+            )}
+
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={item.esDinamico || false}
+                onChange={async (e) => {
+                  e.stopPropagation()
+                  try {
+                    await api.put(`/proyectos/${proyectoId}/presupuesto/${item.id}`, {
+                      cantidadMedida: item.cantidadMedida,
+                      esDinamico: e.target.checked
+                    })
+                    toast.success(`Item ${e.target.checked ? 'configurado como' : 'configurado como'} costo ${e.target.checked ? 'dinámico' : 'fijo'}`)
+                    onItemUpdate()
+                  } catch (error) {
+                    console.error('Error updating item:', error)
+                    toast.error('Error al actualizar el item')
+                  }
+                }}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <span className="text-sm text-gray-600 font-medium">Dinámico</span>
+            </label>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleRemoveItem(item.item.id)
+              }}
+              className="border border-red-300 text-red-600 hover:bg-red-50 transition-colors p-2 rounded font-medium"
+              title="Eliminar item"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Botones - Mobile */}
+          <div className="flex sm:hidden items-center justify-between">
+            <div className="flex items-center gap-3">
               {item.esDinamico && (
                 <button
                   onClick={async (e) => {
                     e.stopPropagation()
                     try {
-                      // Cargar pagos del item antes de abrir el modal
                       const response = await api.get(`/proyectos/${proyectoId}/presupuesto/${item.id}/pagos`)
                       const pagos = response.data.data || []
-
-                      // Calcular el costo actual basado en los pagos existentes (para items dinámicos)
                       let costoActual = item.costoTotal
                       if (item.esDinamico) {
                         const totalPagosAprobados = pagos
@@ -237,27 +317,21 @@ function SortableItem({
                           .reduce((sum: number, p: any) => sum + Number(p.montoPagado), 0)
                         costoActual = totalPagosAprobados
                       }
-
-                      // Crear item actualizado con el costo correcto
-                      const itemActualizado = {
-                        ...item,
-                        costoTotal: costoActual
-                      }
-
+                      const itemActualizado = { ...item, costoTotal: costoActual }
                       setPagoModal({ isOpen: true, presupuestoItem: itemActualizado, pagos })
                     } catch (error) {
                       console.error('Error loading pagos:', error)
                       setPagoModal({ isOpen: true, presupuestoItem: item, pagos: [] })
                     }
                   }}
-                  className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition-colors whitespace-nowrap"
+                  className="bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700 transition-colors font-medium"
                   title="Gestionar pagos"
                 >
-                  💰 Pago
+                  💰 Pagar
                 </button>
               )}
 
-              <label className="flex items-center space-x-1 cursor-pointer">
+              <label className="flex items-center cursor-pointer" title="Marcar como dinámico">
                 <input
                   type="checkbox"
                   checked={item.esDinamico || false}
@@ -275,28 +349,26 @@ function SortableItem({
                       toast.error('Error al actualizar el item')
                     }
                   }}
-                  className="h-3 w-3 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-2"
                 />
-                <span className="text-xs text-gray-600">Dinámico</span>
+                <span className="text-sm text-gray-600 font-medium">Dinámico</span>
               </label>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleRemoveItem(item.item.id)
-                }}
-                className="text-red-600 hover:text-red-900 transition-colors p-1"
-                title="Eliminar item"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-
-              <span className="text-gray-400">
-                {expandedItem === item.id ? '▼' : '▶'}
-              </span>
             </div>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleRemoveItem(item.item.id)
+              }}
+              className="border border-red-300 text-red-600 hover:bg-red-50 transition-colors p-2 rounded font-medium"
+              title="Eliminar item"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Contenido expandible - Materiales */}
