@@ -1148,7 +1148,24 @@ export default function ProyectoDetallePage() {
 
   const calcularCostoTotal = () => {
     if (!proyecto?.presupuestoItems) return 0
-    return proyecto.presupuestoItems.reduce((total, item) => total + Number(item.costoTotal), 0)
+
+    return proyecto.presupuestoItems.reduce((total, item) => {
+      // Costo base del item (mano de obra + materiales base)
+      let costoItem = Number(item.costoTotal)
+
+      // Agregar costos de materiales asociados
+      const materialesItem = materialesPorItem[item.item.id] || []
+      const costoMaterialesAsociados = materialesItem.reduce((sum: number, materialItem: any) => {
+        const precioUnitario = Number(materialItem.material?.precioUnitario || 0)
+        const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad || 0)
+        const cantidadItem = Number(item.cantidadMedida || 0)
+
+        // Costo = precio_unitario * cantidad_por_unidad * cantidad_del_item_en_el_proyecto
+        return sum + (precioUnitario * cantidadPorUnidad * cantidadItem)
+      }, 0)
+
+      return total + costoItem + costoMaterialesAsociados
+    }, 0)
   }
 
   const abrirModalPagosProyecto = async () => {
