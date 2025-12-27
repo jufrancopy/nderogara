@@ -2798,9 +2798,7 @@ export default function MaterialesItemPage() {
                                 // Imagen específica de la oferta del proveedor (URL válida)
                                 return (
                                   <img
-                                    src={oferta.imagenUrl.startsWith('http')
-                                      ? oferta.imagenUrl
-                                      : `${API_BASE_URL}${oferta.imagenUrl}`}
+                                    src={oferta.imagenUrl.startsWith('data:') ? oferta.imagenUrl : (oferta.imagenUrl.startsWith('http') ? oferta.imagenUrl : `${API_BASE_URL}${oferta.imagenUrl}`)}
                                     alt={`Oferta de ${oferta.proveedor?.nombre || 'Proveedor'}`}
                                     className="w-full h-full object-cover"
                                     onError={(e) => {
