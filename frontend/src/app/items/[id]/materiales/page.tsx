@@ -1530,9 +1530,7 @@ export default function MaterialesItemPage() {
 
                               return imagenUrl ? (
                                 <img
-                                  src={imagenUrl.startsWith('http')
-                                    ? imagenUrl
-                                    : `${API_BASE_URL}${imagenUrl}`}
+                                  src={imagenUrl.startsWith('data:') ? imagenUrl : (imagenUrl.startsWith('http') ? imagenUrl : `${API_BASE_URL}${imagenUrl}`)}
                                   alt={materialItem.material.nombre || 'Material'}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
@@ -2130,9 +2128,7 @@ export default function MaterialesItemPage() {
 
                     return imagenUrl ? (
                       <img
-                        src={imagenUrl.startsWith('http')
-                          ? imagenUrl
-                          : `${API_BASE_URL}${imagenUrl}`}
+                        src={imagenUrl.startsWith('data:') ? imagenUrl : (imagenUrl.startsWith('http') ? imagenUrl : `${API_BASE_URL}${imagenUrl}`)}
                         alt={selectedMaterialForDetail.nombre}
                         className="w-48 h-48 object-cover rounded-lg shadow-md"
                         onError={(e) => {
@@ -2730,20 +2726,18 @@ export default function MaterialesItemPage() {
 
               {/* Información del material */}
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center gap-4">
-                  {selectedMaterialForOfertas.material.imagenUrl ? (
-                    <img
-                      src={selectedMaterialForOfertas.material.imagenUrl.startsWith('http')
-                        ? selectedMaterialForOfertas.material.imagenUrl
-                        : `${API_BASE_URL}${selectedMaterialForOfertas.material.imagenUrl}`}
-                      alt={selectedMaterialForOfertas.material.nombre}
-                      className="w-16 h-16 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                      <span className="text-gray-400 text-xs">Sin imagen</span>
-                    </div>
-                  )}
+                        <div className="flex items-center gap-4">
+                          {selectedMaterialForOfertas.material.imagenUrl ? (
+                            <img
+                              src={selectedMaterialForOfertas.material.imagenUrl.startsWith('data:') ? selectedMaterialForOfertas.material.imagenUrl : (selectedMaterialForOfertas.material.imagenUrl.startsWith('http') ? selectedMaterialForOfertas.material.imagenUrl : `${API_BASE_URL}${selectedMaterialForOfertas.material.imagenUrl}`)}
+                              alt={selectedMaterialForOfertas.material.nombre}
+                              className="w-16 h-16 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+                              <span className="text-gray-400 text-xs">Sin imagen</span>
+                            </div>
+                          )}
                   <div>
                     <h3 className="text-lg font-semibold text-blue-900">{selectedMaterialForOfertas.material.nombre}</h3>
                     <p className="text-sm text-blue-700">{getUnidadLabel(selectedMaterialForOfertas.material.unidad)}</p>
@@ -3317,20 +3311,18 @@ export default function MaterialesItemPage() {
 
               <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <h3 className="text-lg font-semibold text-blue-900 mb-2">Material Seleccionado</h3>
-                <div className="flex items-center">
-                  {editingMaterial.material.imagenUrl ? (
-                    <img
-                      src={editingMaterial.material.imagenUrl.startsWith('http')
-                        ? editingMaterial.material.imagenUrl
-                        : `${API_BASE_URL}${editingMaterial.material.imagenUrl}`}
-                      alt={editingMaterial.material.nombre}
-                      className="w-12 h-12 rounded-lg object-cover mr-3"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center mr-3">
-                      <span className="text-gray-400 text-xs">Sin imagen</span>
-                    </div>
-                  )}
+                  <div className="flex items-center">
+                    {editingMaterial.material.imagenUrl ? (
+                      <img
+                        src={editingMaterial.material.imagenUrl.startsWith('data:') ? editingMaterial.material.imagenUrl : (editingMaterial.material.imagenUrl.startsWith('http') ? editingMaterial.material.imagenUrl : `${API_BASE_URL}${editingMaterial.material.imagenUrl}`)}
+                        alt={editingMaterial.material.nombre}
+                        className="w-12 h-12 rounded-lg object-cover mr-3"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center mr-3">
+                        <span className="text-gray-400 text-xs">Sin imagen</span>
+                      </div>
+                    )}
                   <div>
                     <div className="font-semibold text-blue-900">{editingMaterial.material?.nombre || 'Material sin nombre'}</div>
                     <div className="text-sm text-blue-700">{editingMaterial.material ? getUnidadLabel(editingMaterial.material.unidad) : 'Sin unidad'}</div>
