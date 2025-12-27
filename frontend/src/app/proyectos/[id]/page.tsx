@@ -434,10 +434,10 @@ function SortableItem({
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium text-gray-900">
-                      {formatPrice(Number(materialItem.material.precioUnitario))}
+                      {formatPrice(Number(materialItem.precioUnitario || materialItem.material?.precioUnitario || 0))}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Total: {formatPrice(Number(materialItem.material.precioUnitario) * Number(materialItem.cantidadPorUnidad) * Number(item.cantidadMedida))}
+                      Total: {formatPrice(Number(materialItem.precioUnitario || materialItem.material?.precioUnitario || 0) * Number(materialItem.cantidadPorUnidad) * Number(item.cantidadMedida))}
                     </p>
                   </div>
                 </div>
