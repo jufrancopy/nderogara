@@ -3331,20 +3331,16 @@ export default function MaterialesItemPage() {
               <form onSubmit={handleEditSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cantidad por {item && getUnidadLabel(item.unidadMedida)} *
+                    Cantidad *
                   </label>
                   <input
-                    type="text"
+                    type="number"
+                    step="0.01"
+                    min="0"
                     value={editForm.cantidadPorUnidad}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^0-9.]/g, '')
-                      // Allow decimal input like "6.35" - remove invalid characters but keep dots as decimals
-                      const number = parseFloat(value)
-                      if (!isNaN(number) && number >= 0) {
-                        setEditForm(prev => ({ ...prev, cantidadPorUnidad: number.toLocaleString('es-PY', { minimumFractionDigits: 0, maximumFractionDigits: 3 }) }))
-                      } else if (value === '') {
-                        setEditForm(prev => ({ ...prev, cantidadPorUnidad: '' }))
-                      }
+                      const value = e.target.value
+                      setEditForm(prev => ({ ...prev, cantidadPorUnidad: value }))
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     placeholder="6.35"
