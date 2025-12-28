@@ -1736,47 +1736,113 @@ export default function ProyectoDetallePage() {
                     </p>
                   </div>
                 ) : (
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <SortableContext
-                      items={proyecto.presupuestoItems.map(item => item.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <div className="space-y-4">
-                        {proyecto.presupuestoItems.map((item, index) => (
-                          <SortableItem
-                            key={item.id}
-                            item={item}
-                            index={index}
-                            expandedItem={expandedItem}
-                            toggleItemExpansion={toggleItemExpansion}
-                            handleRemoveItem={handleRemoveItem}
-                            setPagoModal={setPagoModal}
-                            materialesPorItem={materialesPorItem}
-                            getUnidadLabel={getUnidadLabel}
-                            formatPrice={formatPrice}
-                            API_BASE_URL={API_BASE_URL}
-                            proyectoId={proyectoId}
-                            onItemUpdate={fetchProyecto}
-                            calcularCostoTotalItem={calcularCostoTotalItem}
-                          />
-                        ))}
-
-                        {/* Total */}
-                        <div className="bg-gray-50 px-4 sm:px-6 py-4 rounded-lg">
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                            <span className="text-base sm:text-lg font-medium text-gray-900">Total del Proyecto:</span>
-                            <span className="text-xl sm:text-xl font-bold text-gray-900">
-                              {formatPrice(calcularCostoTotal())}
-                            </span>
-                          </div>
-                        </div>
+                  <div className="space-y-6">
+                    {/* Tabla de Desglose de Costos */}
+                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="px-6 py-4 border-b border-gray-200">
+                        <h3 className="text-lg font-medium text-gray-900">Desglose de Costos por Item</h3>
+                        <p className="text-sm text-gray-600 mt-1">Separación detallada entre mano de obra y materiales</p>
                       </div>
-                    </SortableContext>
-                  </DndContext>
+
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Item
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Cantidad
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Mano de Obra
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Materiales
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Total
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {proyecto.presupuestoItems.map((item) => (
+                              <tr key={item.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {item.item.nombre}
+                                  </div>
+                                  {item.esDinamico && (
+                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                      Dinámico
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {item.cantidadMedida} {getUnidadLabel(item.item.unidadMedida)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {formatPrice(Number(item.costoManoObra || item.costoTotal))}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {formatPrice(calcularCostoTotalItem(item, materialesPorItem) - Number(item.costoTotal))}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                                  {formatPrice(calcularCostoTotalItem(item, materialesPorItem))}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot className="bg-gray-50">
+                            <tr>
+                              <td colSpan={4} className="px-6 py-4 text-right text-sm font-bold text-gray-900">
+                                Total del Proyecto:
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-lg font-bold text-gray-900">
+                                {formatPrice(calcularCostoTotal())}
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Lista Detallada de Items */}
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Detalles de Items</h3>
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <SortableContext
+                          items={proyecto.presupuestoItems.map(item => item.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div className="space-y-4">
+                            {proyecto.presupuestoItems.map((item, index) => (
+                              <SortableItem
+                                key={item.id}
+                                item={item}
+                                index={index}
+                                expandedItem={expandedItem}
+                                toggleItemExpansion={toggleItemExpansion}
+                                handleRemoveItem={handleRemoveItem}
+                                setPagoModal={setPagoModal}
+                                materialesPorItem={materialesPorItem}
+                                getUnidadLabel={getUnidadLabel}
+                                formatPrice={formatPrice}
+                                API_BASE_URL={API_BASE_URL}
+                                proyectoId={proyectoId}
+                                onItemUpdate={fetchProyecto}
+                                calcularCostoTotalItem={calcularCostoTotalItem}
+                              />
+                            ))}
+                          </div>
+                        </SortableContext>
+                      </DndContext>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
