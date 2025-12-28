@@ -228,13 +228,16 @@ function SortableItem({
                 <p className="text-lg font-bold text-gray-900">
                   {formatPrice(calcularCostoTotalItem(item, materialesPorItem))}
                 </p>
-                <p className="text-sm text-gray-500">
+                <div className="text-sm text-gray-500">
                   {item.esDinamico ? (
                     'Pagos incrementales'
                   ) : (
-                    `Base: ${formatPrice(Number(item.costoTotal))} | Mat. Asoc.: ${formatPrice(calcularCostoTotalItem(item, materialesPorItem) - Number(item.costoTotal))}`
+                    <div className="space-y-1">
+                      <div>Mano de obra: {formatPrice(Number(item.costoTotal))}</div>
+                      <div>Materiales: {formatPrice(calcularCostoTotalItem(item, materialesPorItem) - Number(item.costoTotal))}</div>
+                    </div>
                   )}
-                </p>
+                </div>
               </div>
 
               {/* Flecha expandir/colapsar */}
