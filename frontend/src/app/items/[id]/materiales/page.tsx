@@ -3337,10 +3337,9 @@ export default function MaterialesItemPage() {
                     type="text"
                     value={editForm.cantidadPorUnidad}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^0-9.,]/g, '')
-                      // Allow decimals by properly handling the input
-                      const numericValue = value.replace(/\./g, '').replace(',', '.')
-                      const number = parseFloat(numericValue)
+                      const value = e.target.value.replace(/[^0-9.]/g, '')
+                      // Allow decimal input like "6.35" - remove invalid characters but keep dots as decimals
+                      const number = parseFloat(value)
                       if (!isNaN(number) && number >= 0) {
                         setEditForm(prev => ({ ...prev, cantidadPorUnidad: number.toLocaleString('es-PY', { minimumFractionDigits: 0, maximumFractionDigits: 3 }) }))
                       } else if (value === '') {
@@ -3348,11 +3347,11 @@ export default function MaterialesItemPage() {
                       }
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="1.500"
+                    placeholder="6.35"
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Ingresa la cantidad con decimales si es necesario (ej: 2.500 o 1,5)
+                    Ingresa la cantidad con decimales si es necesario (ej: 6.35 metros)
                   </p>
                 </div>
 
