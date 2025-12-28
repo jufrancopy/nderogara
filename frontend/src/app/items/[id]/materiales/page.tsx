@@ -3338,10 +3338,11 @@ export default function MaterialesItemPage() {
                     value={editForm.cantidadPorUnidad}
                     onChange={(e) => {
                       const value = e.target.value.replace(/[^0-9.,]/g, '')
+                      // Allow decimals by properly handling the input
                       const numericValue = value.replace(/\./g, '').replace(',', '.')
                       const number = parseFloat(numericValue)
-                      if (!isNaN(number)) {
-                        setEditForm(prev => ({ ...prev, cantidadPorUnidad: number.toLocaleString('es-PY') }))
+                      if (!isNaN(number) && number >= 0) {
+                        setEditForm(prev => ({ ...prev, cantidadPorUnidad: number.toLocaleString('es-PY', { minimumFractionDigits: 0, maximumFractionDigits: 3 }) }))
                       } else if (value === '') {
                         setEditForm(prev => ({ ...prev, cantidadPorUnidad: '' }))
                       }
@@ -3351,7 +3352,7 @@ export default function MaterialesItemPage() {
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Ingresa la cantidad con separadores de miles (ej: 2.500)
+                    Ingresa la cantidad con decimales si es necesario (ej: 2.500 o 1,5)
                   </p>
                 </div>
 
