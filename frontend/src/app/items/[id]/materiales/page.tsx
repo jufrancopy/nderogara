@@ -776,7 +776,7 @@ export default function MaterialesItemPage() {
 
     // Convertir URLs relativas a absolutas para que se muestren correctamente
     if (validImageUrl && !validImageUrl.startsWith('http') && !validImageUrl.startsWith('blob:')) {
-      validImageUrl = `${window.location.origin}${validImageUrl}`;
+      validImageUrl = `${API_BASE_URL}${validImageUrl}`;
     }
 
     setSelectedOfertaForEdit(oferta)
