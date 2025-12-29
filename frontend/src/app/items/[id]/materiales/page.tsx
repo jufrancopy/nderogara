@@ -53,16 +53,6 @@ interface Material {
   precioBase?: number
   precioUnitario?: number
   imagenUrl?: string
-  ofertas?: Array<{
-    id: string
-    precio: number
-    stock: boolean
-    imagenUrl?: string
-    proveedor: {
-      id: string
-      nombre: string
-    }
-  }>
 }
 
 export default function MaterialesItemPage() {
@@ -109,6 +99,17 @@ export default function MaterialesItemPage() {
 
   // Estados para crear nuevo material
   const [showCreateMaterialModal, setShowCreateMaterialModal] = useState(false)
+
+  // Estados para crear nueva lista
+  const [showCreateListaModal, setShowCreateListaModal] = useState(false)
+  const [createListaForm, setCreateListaForm] = useState({
+    nombre: '',
+    precioUnitario: '',
+    proveedorId: '',
+    telefonoProveedor: '',
+    imagenUrl: '',
+    observaciones: ''
+  })
 
   // Estados para gestionar ofertas
   const [showOfertasModal, setShowOfertasModal] = useState(false)
@@ -672,6 +673,103 @@ export default function MaterialesItemPage() {
     }
   }
 
+  // Función para crear nueva lista de materiales
+  const handleCreateLista = async () => {
+    // Validaciones básicas
+    if (!createListaForm.nombre || !createListaForm.precioUnitario || !createListaForm.proveedorId) {
+      toast.error('Por favor completa todos los campos requeridos')
+      return
+    }
+
+    setLoadingCreate(true)
+
+    try {
+      // Manejar imagen - verificar si es URL incrustada, archivo o URL externa
+      let finalImageUrl = createListaForm.imagenUrl || ''
+      if (selectedFile) {
+        // Subir archivo seleccionado
+        const formData = new FormData()
+        formData.append('file', selectedFile)
+
+        const uploadResponse = await api.post('/upload/imagen', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+
+        if (uploadResponse.data.success) {
+          finalImageUrl = uploadResponse.data.data.url
+          // Recargar la galería para incluir la nueva imagen subida
+          await fetchGaleria()
+        }
+      } else if (finalImageUrl) {
+        // Verificar si es una URL blob inválida
+        if (finalImageUrl.startsWith('blob:')) {
+          finalImageUrl = ''
+        }
+        // Si es una URL externa válida (http/https) o una ruta relativa, mantenerla
+        // Las URLs incrustadas válidas se mantienen
+      }
+
+      // Crear el material usando la API de admin (que también crea la oferta automáticamente)
+      const materialData = {
+        nombre: `[LISTA] ${createListaForm.nombre}`, // Agregar indicador LISTA
+        descripcion: createListaForm.observaciones,
+        unidad: 'GLOBAL', // Campo predefinido
+        categoriaId: categorias.find(c => c.nombre === 'Construcción General')?.id || categorias[0]?.id, // Categoría predefinida
+        precioUnitario: parseFloat(createListaForm.precioUnitario.replace(/\./g, '').replace(',', '.')),
+        precioBase: parseFloat(createListaForm.precioUnitario.replace(/\./g, '').replace(',', '.')), // Precio base igual al unitario
+        tipoCalidad: 'GENERICO', // Campo predefinido
+        marca: 'Universal', // Campo predefinido
+        proveedorId: createListaForm.proveedorId, // Enviar ID del proveedor seleccionado
+        telefonoProveedor: selectedProveedor?.telefono || '',
+        stockMinimo: 0, // Campo predefinido
+        imagenUrl: finalImageUrl,
+        observaciones: `LISTA DE MATERIALES - ${createListaForm.observaciones || 'Compra en bulk sin detalle individual'}`
+      }
+
+      const response = await api.post('/admin/materiales', materialData)
+
+      if (response.data.success) {
+        const nuevoMaterial = response.data.data
+
+        // Agregar automáticamente el material al item actual
+        await api.post(`/items/${itemId}/materiales`, {
+          materialId: nuevoMaterial.id,
+          cantidadPorUnidad: 1, // Siempre 1 para listas
+          observaciones: `LISTA - ${createListaForm.nombre} - Monto total: ${formatPrice(parseFloat(createListaForm.precioUnitario.replace(/\./g, '').replace(',', '.')))} - ${new Date().toLocaleDateString('es-PY')}`
+        })
+
+        toast.success('Lista de materiales creada y agregada exitosamente al item')
+
+        // Resetear formulario
+        setCreateListaForm({
+          nombre: '',
+          precioUnitario: '',
+          proveedorId: '',
+          telefonoProveedor: '',
+          imagenUrl: '',
+          observaciones: ''
+        })
+        setSelectedFile(null)
+        setCurrentImageUrl('')
+        setSelectedProveedor(null)
+        setProveedorSearchTerm('')
+
+        // Cerrar modal y recargar datos
+        setShowCreateListaModal(false)
+        fetchItem()
+        fetchMateriales()
+      } else {
+        toast.error(response.data.error || 'Error al crear lista de materiales')
+      }
+    } catch (error: any) {
+      console.error('Error creating lista:', error)
+      const errorMessage = error.response?.data?.error || 'Error al crear lista de materiales'
+      toast.error(`Error: ${errorMessage}`)
+    } finally {
+      setLoadingCreate(false)
+    }
+  }
+
   // Función para gestionar ofertas de un material
   const handleGestionarOfertas = async (materialItem: MaterialPorItem) => {
     setLoadingOfertas(true)
@@ -1191,6 +1289,14 @@ export default function MaterialesItemPage() {
                 <span className="hidden sm:inline ml-2">Nuevo Material</span>
               </button>
               <button
+                onClick={() => setShowCreateListaModal(true)}
+                className="bg-indigo-600 text-white px-3 py-1 rounded text-sm transition-colors flex items-center hover:bg-indigo-700 sm:px-4 sm:py-2 lg:px-4 lg:py-2"
+                title="Crear Lista de Materiales"
+              >
+                <span className="text-lg">📋</span>
+                <span className="hidden sm:inline ml-2">Nueva Lista</span>
+              </button>
+              <button
                 onClick={() => setShowProveedorDashboard(true)}
                 className="bg-purple-600 text-white px-3 py-1 rounded text-sm transition-colors flex items-center hover:bg-purple-700 sm:px-4 sm:py-2 lg:px-4 lg:py-2"
                 title="Ver materiales por proveedor"
@@ -1400,22 +1506,14 @@ export default function MaterialesItemPage() {
                                   </div>
                                   <div className="text-xs text-gray-500">
                                     {getUnidadLabel(material.unidad)}
-                                    {(() => {
-                                      // Mostrar información de ofertas disponibles
-                                      const numOfertas = material.ofertas?.filter(oferta => oferta.stock === true).length || 0
-                                      if (numOfertas > 0) {
-                                        return (
-                                          <span className="ml-2 text-green-600 font-medium">
-                                            • {numOfertas} oferta{numOfertas !== 1 ? 's' : ''} disponible{numOfertas !== 1 ? 's' : ''}
-                                          </span>
-                                        )
-                                      }
-                                      return material.precioBase ? (
-                                        <span className="ml-2 text-blue-600 font-medium">
-                                          • Precio base disponible
-                                        </span>
-                                      ) : null;
-                                    })()}
+                  {(() => {
+                    // Mostrar información de precio base disponible
+                    return material.precioBase ? (
+                      <span className="ml-2 text-blue-600 font-medium">
+                        • Precio base disponible
+                      </span>
+                    ) : null;
+                  })()}
                                   </div>
                                   {yaEstaAgregado && (
                                     <div className="text-xs text-orange-600 mt-1">
@@ -3829,6 +3927,374 @@ export default function MaterialesItemPage() {
         </div>
       )}
 
+      {/* Modal para crear lista de materiales */}
+      {showCreateListaModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Crear Lista de Materiales</h2>
+                <button
+                  onClick={() => setShowCreateListaModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-indigo-900 mb-2">¿Qué es una Lista de Materiales?</h3>
+                <ul className="text-sm text-indigo-800 space-y-1">
+                  <li>• Permite registrar compras en bulk sin detallar cada material individualmente</li>
+                  <li>• Útil cuando se pierde el detalle de la compra pero tienes el monto total</li>
+                  <li>• Crea un material genérico con campos predefinidos</li>
+                  <li>• Se agrega automáticamente al item actual</li>
+                  <li>• Incluye indicador "LISTA" para distinguirlo de materiales normales</li>
+                </ul>
+              </div>
+
+              <form className="space-y-6">
+                {/* Información Básica */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Información de la Lista</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nombre de la Lista *
+                      </label>
+                      <input
+                        type="text"
+                        value={createListaForm.nombre}
+                        onChange={(e) => setCreateListaForm(prev => ({ ...prev, nombre: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="Ej: Compra Ferretería Central - Enero"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Monto Total Pagado (₲) *
+                      </label>
+                      <input
+                        type="text"
+                        value={createListaForm.precioUnitario}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9]/g, '')
+                          const numValue = parseInt(value) || 0
+                          setCreateListaForm(prev => ({
+                            ...prev,
+                            precioUnitario: numValue.toLocaleString('es-PY')
+                          }))
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="500000"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Categoría
+                      </label>
+                      <input
+                        type="text"
+                        value="Construcción General"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
+                        readOnly
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Campo predefinido para listas</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Unidad de Medida
+                      </label>
+                      <input
+                        type="text"
+                        value="Global"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
+                        readOnly
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Campo predefinido para listas</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tipo de Calidad
+                      </label>
+                      <input
+                        type="text"
+                        value="Genérico"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
+                        readOnly
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Campo predefinido para listas</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Marca
+                      </label>
+                      <input
+                        type="text"
+                        value="Universal"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
+                        readOnly
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Campo predefinido para listas</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Información del Proveedor */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Información del Proveedor</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="relative">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Proveedor *
+                      </label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="text"
+                            value={proveedorSearchTerm}
+                            onChange={(e) => {
+                              setProveedorSearchTerm(e.target.value)
+                              setShowProveedorDropdown(true)
+                              if (selectedProveedor && e.target.value !== selectedProveedor.nombre) {
+                                setSelectedProveedor(null)
+                                setCreateListaForm(prev => ({ ...prev, proveedorId: '' }))
+                              }
+                            }}
+                            onFocus={() => setShowProveedorDropdown(true)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Buscar proveedor..."
+                            required
+                          />
+                          {selectedProveedor && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedProveedor(null)
+                                setProveedorSearchTerm('')
+                                setCreateListaForm(prev => ({ ...prev, proveedorId: '' }))
+                              }}
+                              className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowCreateProveedorModal(true)}
+                          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors whitespace-nowrap"
+                        >
+                          + Agregar
+                        </button>
+                      </div>
+
+                      {/* Dropdown de proveedores */}
+                      {showProveedorDropdown && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          {proveedores
+                            .filter(proveedor =>
+                              (proveedor.nombre || '').toLowerCase().includes(proveedorSearchTerm.toLowerCase())
+                            )
+                            .map((proveedor) => (
+                              <div
+                                key={proveedor.id}
+                                onClick={() => {
+                                  setSelectedProveedor(proveedor)
+                                  setProveedorSearchTerm(proveedor.nombre || '')
+                                  setCreateListaForm(prev => ({ ...prev, proveedorId: proveedor.id }))
+                                  setShowProveedorDropdown(false)
+                                }}
+                                className="px-3 py-2 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                              >
+                                <div className="font-medium text-gray-900">{proveedor.nombre || 'Sin nombre'}</div>
+                                {proveedor.ciudad && (
+                                  <div className="text-sm text-gray-500">📍 {proveedor.ciudad}</div>
+                                )}
+                                {proveedor.telefono && (
+                                  <div className="text-sm text-gray-500">📞 {proveedor.telefono}</div>
+                                )}
+                              </div>
+                            ))}
+                          {proveedores.filter(proveedor =>
+                            proveedor.nombre.toLowerCase().includes(proveedorSearchTerm.toLowerCase())
+                          ).length === 0 && (
+                            <div className="px-3 py-2 text-gray-500 text-center">
+                              No se encontraron proveedores
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {createListaForm.proveedorId === '' && (
+                        <p className="mt-1 text-sm text-red-600">El proveedor es requerido</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Teléfono del Proveedor
+                      </label>
+                      <input
+                        type="tel"
+                        value={selectedProveedor?.telefono || ''}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
+                        placeholder="Se completa automáticamente"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Imagen */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Imagen de la Lista</h3>
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setSelectedFile(file);
+                              const url = URL.createObjectURL(file);
+                              setCurrentImageUrl('');
+                              setCreateListaForm(prev => ({ ...prev, imagenUrl: url }));
+                            }
+                          }}
+                          className="hidden"
+                          id="create-lista-image-upload"
+                        />
+                        <label
+                          htmlFor="create-lista-image-upload"
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors text-gray-700 text-sm"
+                        >
+                          📎 Seleccionar imagen...
+                        </label>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Cargar galería si no está cargada
+                          if (galeria.length === 0) {
+                            fetchGaleria();
+                          }
+                          setShowGallery(!showGallery);
+                        }}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 whitespace-nowrap"
+                      >
+                        🖼️ Galería
+                      </button>
+                    </div>
+                    {currentImageUrl || createListaForm.imagenUrl ? (
+                      <img src={currentImageUrl || createListaForm.imagenUrl} alt="Preview" className="w-32 h-32 object-cover rounded-md" />
+                    ) : null}
+
+                    {/* Campo URL como opción adicional */}
+                    <div className="border-t pt-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        O especificar URL
+                      </label>
+                      <input
+                        type="url"
+                        value={createListaForm.imagenUrl.startsWith('blob:') ? '' : createListaForm.imagenUrl}
+                        onChange={(e) => {
+                          setCreateListaForm(prev => ({ ...prev, imagenUrl: e.target.value }));
+                          setSelectedFile(null);
+                          setCurrentImageUrl('');
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="https://ejemplo.com/imagen.jpg"
+                      />
+                    </div>
+                  </div>
+
+                  {showGallery && (
+                    <div className="border rounded-lg p-4 bg-gray-50 max-h-64 overflow-y-auto mt-3">
+                      <h4 className="font-medium mb-3">Seleccionar de Galería</h4>
+                      <div className="grid grid-cols-3 gap-3">
+                        {galeria.map((img: any) => (
+                          <div
+                            key={img.filename}
+                            onClick={() => {
+                              const fullUrl = img.url.startsWith('http')
+                                ? img.url
+                                : `${API_BASE_URL}${img.url}`;
+                              setCreateListaForm(prev => ({ ...prev, imagenUrl: fullUrl }));
+                              setCurrentImageUrl(fullUrl);
+                              setSelectedFile(null);
+                              setShowGallery(false);
+                            }}
+                            className="cursor-pointer border-2 border-transparent hover:border-indigo-500 rounded-md overflow-hidden transition-colors"
+                          >
+                            <img src={`${API_BASE_URL}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                      {galeria.length === 0 && (
+                        <p className="text-gray-500 text-sm text-center py-4">No hay imágenes en la galería</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Observaciones */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Observaciones
+                  </label>
+                  <textarea
+                    value={createListaForm.observaciones}
+                    onChange={(e) => setCreateListaForm(prev => ({ ...prev, observaciones: e.target.value }))}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Detalles adicionales sobre la compra en lista..."
+                  />
+                </div>
+
+                {/* Botones */}
+                <div className="flex justify-end space-x-4 pt-6 border-t">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateListaModal(false)}
+                    className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateLista}
+                    disabled={loadingCreate}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors flex items-center disabled:opacity-50"
+                  >
+                    {loadingCreate ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Creando...
+                      </>
+                    ) : (
+                      <>
+                        <span className="mr-2">📋</span>
+                        Crear Lista y Agregar
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Dashboard de Proveedores */}
       {showProveedorDashboard && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -3874,10 +4340,10 @@ export default function MaterialesItemPage() {
                       const proveedoresUnicos = new Set(
                         filteredMaterialesPorItem
                           .filter(m => m.observaciones && m.observaciones.includes('Oferta seleccionada:'))
-                          .map(m => {
-                            const match = m.observaciones.match(/Oferta seleccionada:\s*([^-]+(?:\s+[^-\s]+)*)/);
-                            return match ? match[1].trim() : null;
-                          })
+                    .map((m: MaterialPorItem) => {
+                      const match = m.observaciones?.match(/Oferta seleccionada:\s*([^-]+(?:\s+[^-\s]+)*)/);
+                      return match ? match[1].trim() : null;
+                    })
                           .filter(p => p)
                       );
                       return proveedoresUnicos.size;
