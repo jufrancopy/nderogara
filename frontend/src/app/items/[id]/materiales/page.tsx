@@ -1960,8 +1960,8 @@ export default function MaterialesItemPage() {
       {/* Modal de agregar comprobante de pago */}
       {showPagoModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[75vh] overflow-hidden flex flex-col">
+            <div className="p-4 flex-shrink-0">
               <div className="flex justify-between items-start mb-4">
                 <h2 className="text-xl font-bold text-gray-900">Agregar Comprobante de Pago</h2>
                 <button
