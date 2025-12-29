@@ -1786,7 +1786,7 @@ export default function MaterialesItemPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
                             {/* Solo mostrar botones de editar y ofertas si NO es una lista */}
-                            {materialItem.observaciones?.includes('LISTA DE MATERIALES') ? (
+                            {materialItem.observaciones?.includes('LISTA -') ? (
                               <>
                                 <button
                                   onClick={() => handleAddComprobante(materialItem)}
