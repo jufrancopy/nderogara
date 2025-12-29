@@ -192,6 +192,9 @@ export default function MaterialesItemPage() {
   // Estados para desglose expandible
   const [showAllMaterials, setShowAllMaterials] = useState(false)
 
+  // Estados para dashboard de proveedores
+  const [showProveedorDashboard, setShowProveedorDashboard] = useState(false)
+
   // Estados para búsqueda y paginación
   const [materialSearchTerm, setMaterialSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -1186,6 +1189,14 @@ export default function MaterialesItemPage() {
               >
                 <span className="text-lg">+</span>
                 <span className="hidden sm:inline ml-2">Nuevo Material</span>
+              </button>
+              <button
+                onClick={() => setShowProveedorDashboard(true)}
+                className="bg-purple-600 text-white px-3 py-1 rounded text-sm transition-colors flex items-center hover:bg-purple-700 sm:px-4 sm:py-2 lg:px-4 lg:py-2"
+                title="Ver materiales por proveedor"
+              >
+                <Package className="h-4 w-4 sm:h-4 sm:w-4 lg:h-4 lg:w-4" />
+                <span className="hidden sm:inline ml-2">Por Proveedor</span>
               </button>
             </div>
           </div>
@@ -3813,6 +3824,234 @@ export default function MaterialesItemPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Dashboard de Proveedores */}
+      {showProveedorDashboard && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Dashboard de Proveedores</h2>
+                  <p className="text-gray-600 mt-1">
+                    Materiales del Item: {item?.nombre}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowProveedorDashboard(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Estadísticas generales */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-blue-900">Total Materiales</span>
+                    <Package className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="text-2xl font-bold text-blue-900">
+                    {filteredMaterialesPorItem.length}
+                  </div>
+                  <div className="text-xs text-blue-700 mt-1">
+                    Materiales en este item
+                  </div>
+                </div>
+
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-green-900">Proveedores</span>
+                    <span className="text-green-600">🏪</span>
+                  </div>
+                  <div className="text-2xl font-bold text-green-900">
+                    {(() => {
+                      const proveedoresUnicos = new Set(
+                        filteredMaterialesPorItem
+                          .filter(m => m.observaciones && m.observaciones.includes('Oferta seleccionada:'))
+                          .map(m => {
+                            const match = m.observaciones.match(/Oferta seleccionada:\s*([^-]+(?:\s+[^-\s]+)*)/);
+                            return match ? match[1].trim() : null;
+                          })
+                          .filter(p => p)
+                      );
+                      return proveedoresUnicos.size;
+                    })()}
+                  </div>
+                  <div className="text-xs text-green-700 mt-1">
+                    Proveedores activos
+                  </div>
+                </div>
+
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-purple-900">Total Pagado</span>
+                    <span className="text-purple-600">💰</span>
+                  </div>
+                  <div className="text-2xl font-bold text-purple-900">
+                    {formatPrice(
+                      filteredMaterialesPorItem.reduce((total, m) => {
+                        const estado = estadoPagos[m.id];
+                        return total + (estado?.totalPagado || 0);
+                      }, 0)
+                    )}
+                  </div>
+                  <div className="text-xs text-purple-700 mt-1">
+                    Monto total pagado
+                  </div>
+                </div>
+              </div>
+
+              {/* Materiales agrupados por proveedor */}
+              <div className="space-y-6">
+                {(() => {
+                  // Agrupar materiales por proveedor
+                  const materialesPorProveedor = filteredMaterialesPorItem.reduce((acc, materialItem) => {
+                    const proveedor = (materialItem.observaciones && materialItem.observaciones.includes('Oferta seleccionada:'))
+                      ? (() => {
+                          const match = materialItem.observaciones!.match(/Oferta seleccionada:\s*([^-]+(?:\s+[^-\s]+)*)/);
+                          return match ? match[1].trim() : 'Sin proveedor asignado';
+                        })()
+                      : 'Sin proveedor asignado';
+
+                    if (!acc[proveedor]) {
+                      acc[proveedor] = [];
+                    }
+                    acc[proveedor].push(materialItem);
+                    return acc;
+                  }, {} as Record<string, MaterialPorItem[]>);
+
+                  return Object.entries(materialesPorProveedor).map(([proveedor, materiales]) => (
+                    <div key={proveedor} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900">{proveedor}</h3>
+                            <p className="text-sm text-gray-600">
+                              {materiales.length} material{materiales.length !== 1 ? 'es' : ''} • Total: {
+                                formatPrice(materiales.reduce((total, m) => total + ((m.precioUnitario || m.material.precioUnitario || 0) * m.cantidadPorUnidad), 0))
+                              }
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-medium text-gray-900">
+                              Pagado: {formatPrice(materiales.reduce((total, m) => total + (estadoPagos[m.id]?.totalPagado || 0), 0))}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              Pendiente: {formatPrice(materiales.reduce((total, m) => total + (estadoPagos[m.id]?.pendiente || 0), 0))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-6">
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Material
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Cantidad
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Precio Unitario
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Subtotal
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Estado Pago
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {materiales.map((materialItem) => (
+                                <tr key={materialItem.id} className="hover:bg-gray-50">
+                                  <td className="px-4 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <div className="w-8 h-8 flex-shrink-0 bg-gray-100 rounded flex items-center justify-center overflow-hidden mr-3">
+                                        {materialItem.material.imagenUrl ? (
+                                          <img
+                                            src={materialItem.material.imagenUrl.startsWith('http')
+                                              ? materialItem.material.imagenUrl
+                                              : `${API_BASE_URL}${materialItem.material.imagenUrl}`}
+                                            alt={materialItem.material.nombre}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                              const target = e.target as HTMLImageElement;
+                                              target.style.display = 'none';
+                                              const parent = target.parentElement;
+                                              if (parent) {
+                                                parent.innerHTML = '<span class="text-xs text-gray-500">📷</span>';
+                                              }
+                                            }}
+                                          />
+                                        ) : (
+                                          <span className="text-xs text-gray-500">📷</span>
+                                        )}
+                                      </div>
+                                      <div>
+                                        <div className="text-sm font-medium text-gray-900">
+                                          {materialItem.material.nombre}
+                                        </div>
+                                        <div className="text-sm text-gray-500">
+                                          {getUnidadLabel(materialItem.material.unidad)}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {Number(materialItem.cantidadPorUnidad).toLocaleString('es-PY')}
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {formatPrice(materialItem.precioUnitario || materialItem.material.precioUnitario || 0)}
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {formatPrice((materialItem.precioUnitario || materialItem.material.precioUnitario || 0) * materialItem.cantidadPorUnidad)}
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap">
+                                    <span className={`px-2 py-1 text-xs rounded-full ${
+                                      (() => {
+                                        const estado = estadoPagos[materialItem.id];
+                                        if (!estado || estado.estado === 'PENDIENTE') return 'bg-gray-100 text-gray-800';
+                                        if (estado.estado === 'COMPLETO') return 'bg-green-100 text-green-800';
+                                        return 'bg-yellow-100 text-yellow-800';
+                                      })()
+                                    }`}>
+                                      {(() => {
+                                        const estado = estadoPagos[materialItem.id];
+                                        if (!estado || estado.estado === 'PENDIENTE') return 'Pendiente';
+                                        if (estado.estado === 'COMPLETO') return 'Pagado';
+                                        return `Parcial (${formatPrice(estado.totalPagado)}/${formatPrice(estado.costoTotal)})`;
+                                      })()}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setShowProveedorDashboard(false)}
+                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
         </div>
