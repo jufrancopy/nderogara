@@ -473,15 +473,22 @@ function PagoHistorialItem({
   presupuestoItemId,
   proyectoId,
   pagosIniciales,
-  setModalComprobante
+  setModalComprobante,
+  onPagoDeleted
 }: {
   presupuestoItemId: string
   proyectoId: string
   pagosIniciales?: any[]
   setModalComprobante: (url: string | null) => void
+  onPagoDeleted?: () => void
 }) {
   const [pagos, setPagos] = useState<any[]>(pagosIniciales || [])
   const [loading, setLoading] = useState(!pagosIniciales)
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean
+    pagoId: string
+    monto: number
+  }>({ isOpen: false, pagoId: '', monto: 0 })
 
   useEffect(() => {
     // Si ya tenemos pagos iniciales, no cargar desde API
@@ -505,6 +512,35 @@ function PagoHistorialItem({
     fetchPagos()
   }, [presupuestoItemId, proyectoId, pagosIniciales])
 
+  const handleDeleteClick = (pagoId: string, monto: number) => {
+    setDeleteDialog({
+      isOpen: true,
+      pagoId,
+      monto
+    })
+  }
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await api.delete(`/proyectos/${proyectoId}/presupuesto/${presupuestoItemId}/pagos/${deleteDialog.pagoId}`)
+      toast.success('Pago eliminado exitosamente')
+
+      // Actualizar la lista de pagos
+      setPagos(prev => prev.filter(p => p.id !== deleteDialog.pagoId))
+
+      // Llamar callback si existe
+      if (onPagoDeleted) {
+        onPagoDeleted()
+      }
+    } catch (error: any) {
+      console.error('Error deleting pago:', error)
+      const errorMessage = error.response?.data?.error || 'Error al eliminar el pago'
+      toast.error(errorMessage)
+    } finally {
+      setDeleteDialog({ isOpen: false, pagoId: '', monto: 0 })
+    }
+  }
+
   if (loading) {
     return <div className="text-center py-4">Cargando historial...</div>
   }
@@ -522,74 +558,128 @@ function PagoHistorialItem({
     .reduce((sum, p) => sum + Number(p.montoPagado), 0)
 
   return (
-    <div className="space-y-3">
-      <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-        <span className="text-sm font-medium text-blue-900">Total pagado:</span>
-        <span className="text-lg font-bold text-blue-600">{formatPrice(totalPagado)}</span>
-      </div>
+    <>
+      <div className="space-y-3">
+        <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+          <span className="text-sm font-medium text-blue-900">Total pagado:</span>
+          <span className="text-lg font-bold text-blue-600">{formatPrice(totalPagado)}</span>
+        </div>
 
-      {pagos.map((pago: any) => (
-        <div key={pago.id} className="border rounded-lg p-3 bg-white">
-          <div className="flex justify-between items-start mb-2">
-            <div className="flex-1">
-              <div className="flex items-center space-x-2">
-                <span className="font-medium text-gray-900">
-                  {formatPrice(pago.montoPagado)}
-                </span>
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  pago.estado === 'APROBADO' ? 'bg-green-100 text-green-800' :
-                  pago.estado === 'RECHAZADO' ? 'bg-red-100 text-red-800' :
-                  'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {pago.estado}
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                {new Date(pago.fechaPago).toLocaleDateString('es-PY')}
-              </p>
-              {pago.notas && (
-                <p className="text-sm text-gray-600 mt-2">{pago.notas}</p>
-              )}
-            </div>
-          </div>
-
-          {pago.comprobanteUrl && (
-            <div className="mt-3 pt-3 border-t">
-              <div className="flex items-center space-x-2 mb-2">
-                <span className="text-gray-600 text-sm font-medium">Comprobante:</span>
-                {pago.comprobanteUrl.toLowerCase().endsWith('.pdf') ? (
-                  <span className="text-red-600 text-sm">📄 PDF</span>
-                ) : (
-                  <span className="text-green-600 text-sm">🖼️ Imagen</span>
+        {pagos.map((pago: any) => (
+          <div key={pago.id} className="border rounded-lg p-3 bg-white">
+            <div className="flex justify-between items-start mb-2">
+              <div className="flex-1">
+                <div className="flex items-center space-x-2">
+                  <span className="font-medium text-gray-900">
+                    {formatPrice(pago.montoPagado)}
+                  </span>
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    pago.estado === 'APROBADO' ? 'bg-green-100 text-green-800' :
+                    pago.estado === 'RECHAZADO' ? 'bg-red-100 text-red-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {pago.estado}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {new Date(pago.fechaPago).toLocaleDateString('es-PY')}
+                </p>
+                {pago.notas && (
+                  <p className="text-sm text-gray-600 mt-2">{pago.notas}</p>
                 )}
               </div>
-              {pago.comprobanteUrl.toLowerCase().endsWith('.pdf') ? (
-                <div className="flex items-center justify-center p-3 bg-red-50 rounded-lg border-2 border-dashed border-red-200 cursor-pointer hover:bg-red-100 transition-colors"
-                     onClick={() => window.open(`${API_BASE_URL}${pago.comprobanteUrl}`, '_blank')}>
-                  <div className="text-center">
-                    <div className="text-red-500 text-2xl mb-1">📄</div>
-                    <p className="text-red-700 text-sm font-medium">Click para ver PDF</p>
-                    <p className="text-red-500 text-xs">Abrirá en nueva pestaña</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex justify-center">
-                  <img
-                    src={`${API_BASE_URL}${pago.comprobanteUrl}`}
-                    alt="Comprobante de pago"
-                    className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all"
-                    onClick={() => setModalComprobante && setModalComprobante(`${API_BASE_URL}${pago.comprobanteUrl}`)}
-                    onError={(e) => {
-                      ;(e.target as HTMLImageElement).style.display = 'none'
-                    }}
-                  />
-                </div>
-              )}
+              <button
+                onClick={() => handleDeleteClick(pago.id, pago.montoPagado)}
+                className="text-red-600 hover:text-red-800 transition-colors p-1 ml-2 flex-shrink-0"
+                title="Eliminar pago"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
             </div>
-          )}
+
+            {pago.comprobanteUrl && (
+              <div className="mt-3 pt-3 border-t">
+                <div className="flex items-center space-x-2 mb-2">
+                  <span className="text-gray-600 text-sm font-medium">Comprobante:</span>
+                  {pago.comprobanteUrl.toLowerCase().endsWith('.pdf') ? (
+                    <span className="text-red-600 text-sm">📄 PDF</span>
+                  ) : (
+                    <span className="text-green-600 text-sm">🖼️ Imagen</span>
+                  )}
+                </div>
+                {pago.comprobanteUrl.toLowerCase().endsWith('.pdf') ? (
+                  <div className="flex items-center justify-center p-3 bg-red-50 rounded-lg border-2 border-dashed border-red-200 cursor-pointer hover:bg-red-100 transition-colors"
+                       onClick={() => window.open(`${API_BASE_URL}${pago.comprobanteUrl}`, '_blank')}>
+                    <div className="text-center">
+                      <div className="text-red-500 text-2xl mb-1">📄</div>
+                      <p className="text-red-700 text-sm font-medium">Click para ver PDF</p>
+                      <p className="text-red-500 text-xs">Abrirá en nueva pestaña</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-center">
+                    <img
+                      src={`${API_BASE_URL}${pago.comprobanteUrl}`}
+                      alt="Comprobante de pago"
+                      className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all"
+                      onClick={() => setModalComprobante && setModalComprobante(`${API_BASE_URL}${pago.comprobanteUrl}`)}
+                      onError={(e) => {
+                        ;(e.target as HTMLImageElement).style.display = 'none'
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Modal de confirmación para eliminar pago */}
+      {deleteDialog.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <span className="text-red-600 text-xl">⚠️</span>
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Confirmar Eliminación</h3>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-gray-700">
+                  ¿Estás seguro de que quieres eliminar este pago de <strong className="text-gray-900">{formatPrice(deleteDialog.monto)}</strong>?
+                </p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Esta acción eliminará permanentemente el pago y no se puede deshacer.
+                </p>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                  onClick={() => setDeleteDialog({ isOpen: false, pagoId: '', monto: 0 })}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center"
+                  onClick={handleDeleteConfirm}
+                >
+                  <span className="mr-2">🗑️</span>
+                  Eliminar Pago
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      ))}
-    </div>
+      )}
+    </>
   )
 }
 
@@ -2312,6 +2402,10 @@ export default function ProyectoDetallePage() {
                     proyectoId={proyectoId}
                     pagosIniciales={pagoModal.pagos}
                     setModalComprobante={setModalComprobante}
+                    onPagoDeleted={() => {
+                      // Recargar datos del proyecto para actualizar costos
+                      fetchProyecto()
+                    }}
                   />
                 </div>
               </div>
