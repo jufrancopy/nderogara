@@ -1766,32 +1766,56 @@ export default function ProyectoDetallePage() {
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
-                            {proyecto.presupuestoItems.map((item) => (
-                              <tr key={item.id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {item.item.nombre}
-                                  </div>
-                                  {item.esDinamico && (
-                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                      Dinámico
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {item.cantidadMedida} {getUnidadLabel(item.item.unidadMedida)}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  {formatPrice(Number(item.costoManoObra || item.costoTotal))}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  {formatPrice(calcularCostoTotalItem(item, materialesPorItem) - Number(item.costoTotal))}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                                  {formatPrice(calcularCostoTotalItem(item, materialesPorItem))}
-                                </td>
-                              </tr>
-                            ))}
+                            {proyecto.presupuestoItems.map((item) => {
+                              // Calcular costos según el tipo de item
+                              let costoManoObra, costoMateriales, costoTotal
+
+                              if (item.esDinamico) {
+                                // Para items dinámicos: el costoTotal es la suma de TODOS los pagos realizados
+                                // Los pagos incluyen tanto mano de obra como materiales, pero mostramos los materiales asociados por separado
+                                costoManoObra = Number(item.costoTotal) // Todos los pagos realizados (mano de obra + materiales incluidos en pagos)
+                                costoMateriales = Math.max(0, calcularCostoTotalItem(item, materialesPorItem) - Number(item.costoTotal)) // Materiales asociados adicionales
+                                costoTotal = costoManoObra + costoMateriales // Total incluyendo materiales asociados
+                              } else {
+                                // Para items fijos: separación clara entre mano de obra y materiales
+                                costoManoObra = Number(item.costoManoObra || 0)
+                                costoMateriales = Math.max(0, Number(item.costoTotal) - costoManoObra)
+                                costoTotal = Number(item.costoTotal)
+                              }
+
+                              return (
+                                <tr key={item.id} className="hover:bg-gray-50">
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {item.item.nombre}
+                                    </div>
+                                    {item.esDinamico && (
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        Dinámico
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {item.cantidadMedida} {getUnidadLabel(item.item.unidadMedida)}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {formatPrice(costoManoObra)}
+                                    {item.esDinamico && (
+                                      <div className="text-xs text-gray-500">Pagos realizados</div>
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {formatPrice(costoMateriales)}
+                                    {item.esDinamico && costoMateriales === 0 && (
+                                      <div className="text-xs text-gray-500">Incluido en pagos</div>
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                                    {formatPrice(costoTotal)}
+                                  </td>
+                                </tr>
+                              )
+                            })}
                           </tbody>
                           <tfoot className="bg-gray-50">
                             <tr>
