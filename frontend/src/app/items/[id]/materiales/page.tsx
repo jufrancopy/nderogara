@@ -589,6 +589,8 @@ export default function MaterialesItemPage() {
 
             if (uploadResponse.data.success) {
               finalImageUrl = uploadResponse.data.data.url
+              // Recargar la galería para incluir la nueva imagen subida
+              await fetchGaleria()
             }
           } else if (finalImageUrl) {
             // Verificar si es una URL blob inválida
@@ -705,11 +707,23 @@ export default function MaterialesItemPage() {
     if (!selectedMaterialForOfertas) return
 
     try {
+      // Limpiar cualquier selección anterior de oferta en las observaciones
+      const currentObservaciones = selectedMaterialForOfertas.observaciones || ''
+      const observacionesSinSeleccion = currentObservaciones
+        .split('\n')
+        .filter((line: string) => !line.includes('Oferta seleccionada:'))
+        .join('\n')
+        .trim()
+
+      // Crear nuevas observaciones con la oferta seleccionada
+      const newObservaciones = `Oferta seleccionada: ${oferta.proveedor?.nombre} - ${oferta.marca || 'Sin marca'} - ${formatPrice(oferta.precio)}`
+      const finalObservaciones = observacionesSinSeleccion ? `${observacionesSinSeleccion}\n${newObservaciones}` : newObservaciones
+
       // Actualizar el material en el item con el precio de la oferta seleccionada
       const response = await api.put(`/items/${itemId}/materiales/${selectedMaterialForOfertas.id}`, {
         cantidadPorUnidad: selectedMaterialForOfertas.cantidadPorUnidad,
         precioUnitario: parseFloat(oferta.precio), // Establecer el precio específico de la oferta
-        observaciones: `Oferta seleccionada: ${oferta.proveedor?.nombre} - ${oferta.marca || 'Sin marca'} - ${formatPrice(oferta.precio)}`
+        observaciones: finalObservaciones
       })
 
       toast.success(`Oferta seleccionada: ${formatPrice(oferta.precio)} de ${oferta.proveedor?.nombre}`)
@@ -717,7 +731,23 @@ export default function MaterialesItemPage() {
       // Recargar el item para mostrar el nuevo precio
       await fetchItem()
 
-      setShowOfertasModal(false) // Cerrar el modal
+      // Actualizar el material seleccionado en el modal con los nuevos datos
+      const updatedItemResponse = await api.get(`/items/${itemId}`)
+      const updatedItem = updatedItemResponse.data.data
+      const updatedMaterial = updatedItem.materialesPorItem.find(
+        (m) => m.id === selectedMaterialForOfertas.id
+      )
+
+      if (updatedMaterial) {
+        setSelectedMaterialForOfertas(updatedMaterial)
+      }
+
+      // Recargar las ofertas para actualizar el estado de selección
+      const ofertasResponse = await api.get(`/materiales/${selectedMaterialForOfertas.material.id}/ofertas`)
+      setOfertasMaterial(ofertasResponse.data.data || [])
+
+      // No cerrar el modal automáticamente - permitir que el usuario lo cierre manualmente
+      // setShowOfertasModal(false)
     } catch (error: any) {
       console.error('Error selecting oferta:', error)
       toast.error('Error al seleccionar la oferta')
@@ -776,7 +806,7 @@ export default function MaterialesItemPage() {
 
     // Convertir URLs relativas a absolutas para que se muestren correctamente
     if (validImageUrl && !validImageUrl.startsWith('http') && !validImageUrl.startsWith('blob:')) {
-      validImageUrl = `${API_BASE_URL}${validImageUrl}`;
+      validImageUrl = `${window.location.origin.replace(':3000', ':3001')}${validImageUrl}`;
     }
 
     setSelectedOfertaForEdit(oferta)
@@ -866,6 +896,8 @@ export default function MaterialesItemPage() {
 
         if (uploadResponse.data.success) {
           finalImageUrl = uploadResponse.data.data.url
+          // Recargar la galería para incluir la nueva imagen subida
+          await fetchGaleria()
         } else {
           throw new Error('Error al subir la imagen')
         }
@@ -948,6 +980,8 @@ export default function MaterialesItemPage() {
 
         if (uploadResponse.data.success) {
           finalImageUrl = uploadResponse.data.data.url
+          // Recargar la galería para incluir la nueva imagen subida
+          await fetchGaleria()
         } else {
           throw new Error('Error al subir la imagen')
         }
@@ -987,6 +1021,45 @@ export default function MaterialesItemPage() {
         setProveedorSearchTerm('')
         setSelectedFile(null)
         setCurrentImageUrl('')
+
+        // Verificar si la oferta editada era la seleccionada actualmente
+        const materialPrecio = Number(selectedMaterialForOfertas?.precioUnitario || 0);
+        const ofertaPrecioAnterior = Number(selectedOfertaForEdit?.precio || 0);
+        const observaciones = selectedMaterialForOfertas?.observaciones || '';
+        const tieneSeleccionEnObservaciones = observaciones.includes('Oferta seleccionada:');
+
+        // Extraer el proveedor de la selección de las observaciones
+        let proveedorSeleccionado = '';
+        if (tieneSeleccionEnObservaciones) {
+          const match = observaciones.match(/Oferta seleccionada:\s*([^-]+(?:\s+[^-\s]+)*)/);
+          if (match && match[1]) {
+            proveedorSeleccionado = match[1].trim();
+          }
+        }
+
+        const eraSeleccionada = materialPrecio === ofertaPrecioAnterior && 
+                                proveedorSeleccionado === (selectedOfertaForEdit?.proveedor?.nombre || '');
+
+        // Si era la oferta seleccionada, actualizar el precio en el material
+        if (eraSeleccionada && selectedMaterialForOfertas) {
+          try {
+            const nuevoPrecio = parseFloat(editOfertaForm.precio.replace(/\./g, '').replace(',', '.'));
+            await api.put(`/items/${itemId}/materiales/${selectedMaterialForOfertas.id}`, {
+              cantidadPorUnidad: selectedMaterialForOfertas.cantidadPorUnidad,
+              precioUnitario: nuevoPrecio,
+              observaciones: selectedMaterialForOfertas.observaciones?.replace(
+                /Oferta seleccionada:[^-]+-[^-]+- \d+(?:\.\d+)?/,
+                `Oferta seleccionada: ${selectedProveedor?.nombre || editOfertaForm.proveedorId} - ${editOfertaForm.marca || 'Sin marca'} - ${formatPrice(nuevoPrecio)}`
+              ) || undefined
+            });
+
+            // Recargar el item para mostrar el precio actualizado
+            await fetchItem();
+          } catch (updateError) {
+            console.error('Error updating material price after oferta edit:', updateError);
+            toast.error('Oferta actualizada, pero error al actualizar precio del material');
+          }
+        }
 
         // Si estamos en el modal de ofertas, recargar las ofertas
         if (showOfertasModal && selectedMaterialForOfertas) {
@@ -2890,17 +2963,27 @@ export default function MaterialesItemPage() {
                               </span>
                               {/* Indicador de oferta seleccionada */}
                               {(() => {
-                                // Una oferta está seleccionada solo si:
-                                // 1. Esta instancia específica del material tiene un precioUnitario establecido
-                                // 2. Ese precio coincide exactamente con el precio de esta oferta
-                                const materialTienePrecioEspecifico = selectedMaterialForOfertas?.precioUnitario !== undefined &&
-                                                                     selectedMaterialForOfertas?.precioUnitario !== null;
-
+                                // Una oferta está seleccionada si el precioUnitario del material coincide con el precio de la oferta
+                                // Y si las observaciones contienen "Oferta seleccionada" con el proveedor correcto
                                 const materialPrecio = Number(selectedMaterialForOfertas?.precioUnitario || 0);
                                 const ofertaPrecio = Number(oferta.precio || 0);
-                                const preciosCoinciden = materialPrecio === ofertaPrecio;
+                                const observaciones = selectedMaterialForOfertas?.observaciones || '';
 
-                                const esSeleccionada = materialTienePrecioEspecifico && preciosCoinciden;
+                                const preciosCoinciden = materialPrecio === ofertaPrecio;
+                                const tieneSeleccionEnObservaciones = observaciones.includes('Oferta seleccionada:');
+
+                                // Extraer el proveedor de la selección de las observaciones
+                                let proveedorSeleccionado = '';
+                                if (tieneSeleccionEnObservaciones) {
+                                  const match = observaciones.match(/Oferta seleccionada:\s*([^-]+(?:\s+[^-\s]+)*)/);
+                                  if (match && match[1]) {
+                                    proveedorSeleccionado = match[1].trim();
+                                  }
+                                }
+
+                                const proveedorCoincide = proveedorSeleccionado === (oferta.proveedor?.nombre || '');
+
+                                const esSeleccionada = preciosCoinciden && tieneSeleccionEnObservaciones && proveedorCoincide;
 
                                 return esSeleccionada ? (
                                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -2914,7 +2997,22 @@ export default function MaterialesItemPage() {
                               {(() => {
                                 const materialPrecio = Number(selectedMaterialForOfertas?.precioUnitario || 0);
                                 const ofertaPrecio = Number(oferta.precio || 0);
-                                const esSeleccionada = materialPrecio === ofertaPrecio;
+                                const observaciones = selectedMaterialForOfertas?.observaciones || '';
+
+                                const preciosCoinciden = materialPrecio === ofertaPrecio;
+                                const tieneSeleccionEnObservaciones = observaciones.includes('Oferta seleccionada:');
+
+                                // Extraer el proveedor de la selección de las observaciones
+                                let proveedorSeleccionado = '';
+                                if (tieneSeleccionEnObservaciones) {
+                                  const match = observaciones.match(/Oferta seleccionada:\s*([^-]+(?:\s+[^-\s]+)*)/);
+                                  if (match && match[1]) {
+                                    proveedorSeleccionado = match[1].trim();
+                                  }
+                                }
+
+                                const proveedorCoincide = proveedorSeleccionado === (oferta.proveedor?.nombre || '');
+                                const esSeleccionada = preciosCoinciden && tieneSeleccionEnObservaciones && proveedorCoincide;
 
                                 return esSeleccionada ? (
                                   <div className="flex gap-2">
@@ -3638,8 +3736,9 @@ export default function MaterialesItemPage() {
                             <div
                               key={img.filename}
                               onClick={() => {
-                                // Usar URL absoluta para compatibilidad con servidores
-                                const absoluteUrl = `${window.location.origin}${img.url}`;
+                                // Usar URL absoluta forzando puerto 3001 para backend
+                                const backendUrl = window.location.origin.replace(':3000', ':3001');
+                                const absoluteUrl = `${backendUrl}${img.url}`;
                                 setEditOfertaForm(prev => ({ ...prev, imagenUrl: absoluteUrl }));
                                 setCurrentImageUrl(absoluteUrl);
                                 setSelectedFile(null);
@@ -3647,7 +3746,7 @@ export default function MaterialesItemPage() {
                               }}
                               className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden transition-colors"
                             >
-                              <img src={`${window.location.origin}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
+                              <img src={`${window.location.origin.replace(':3000', ':3001')}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
                             </div>
                           ))}
                         </div>
