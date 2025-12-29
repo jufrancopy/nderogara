@@ -776,7 +776,7 @@ export default function MaterialesItemPage() {
 
     // Convertir URLs relativas a absolutas para que se muestren correctamente
     if (validImageUrl && !validImageUrl.startsWith('http') && !validImageUrl.startsWith('blob:')) {
-      validImageUrl = `${API_BASE_URL}${validImageUrl}`;
+      validImageUrl = `${window.location.origin}${validImageUrl}`;
     }
 
     setSelectedOfertaForEdit(oferta)
@@ -3216,15 +3216,16 @@ export default function MaterialesItemPage() {
                             <div
                               key={img.filename}
                               onClick={() => {
-                                // Usar URL relativa ya que los archivos estáticos se sirven desde el mismo dominio
-                                setOfertaForm(prev => ({ ...prev, imagenUrl: img.url }));
-                                setCurrentImageUrl(img.url);
+                                // Usar URL absoluta para compatibilidad con servidores
+                                const absoluteUrl = `${window.location.origin}${img.url}`;
+                                setOfertaForm(prev => ({ ...prev, imagenUrl: absoluteUrl }));
+                                setCurrentImageUrl(absoluteUrl);
                                 setSelectedFile(null);
                                 setShowGallery(false);
                               }}
                               className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden transition-colors"
                             >
-                              <img src={img.url} alt={img.filename} className="w-full h-20 object-cover" />
+                              <img src={`${window.location.origin}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
                             </div>
                           ))}
                         </div>
@@ -3637,17 +3638,16 @@ export default function MaterialesItemPage() {
                             <div
                               key={img.filename}
                               onClick={() => {
-                                const fullUrl = img.url.startsWith('http')
-                                  ? img.url
-                                  : `${API_BASE_URL}${img.url}`;
-                                setOfertaForm(prev => ({ ...prev, imagenUrl: fullUrl }));
-                                setCurrentImageUrl(fullUrl);
+                                // Usar URL absoluta para compatibilidad con servidores
+                                const absoluteUrl = `${window.location.origin}${img.url}`;
+                                setEditOfertaForm(prev => ({ ...prev, imagenUrl: absoluteUrl }));
+                                setCurrentImageUrl(absoluteUrl);
                                 setSelectedFile(null);
                                 setShowGallery(false);
                               }}
                               className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden transition-colors"
                             >
-                              <img src={`${API_BASE_URL}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
+                              <img src={`${window.location.origin}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
                             </div>
                           ))}
                         </div>
