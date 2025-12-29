@@ -1745,7 +1745,7 @@ export default function MaterialesItemPage() {
                             <div className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 flex items-center gap-2"
                                  onClick={() => materialItem.material && handleShowDetail(materialItem.material)}>
                               {materialItem.material?.nombre || 'Material sin nombre'}
-                              {materialItem.observaciones?.includes('LISTA DE MATERIALES') && (
+                              {materialItem.observaciones?.includes('LISTA -') && (
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
                                   📋 LISTA
                                 </span>
