@@ -3201,27 +3201,57 @@ export default function MaterialesItemPage() {
 
                     {/* Galería de imágenes */}
                     {showGallery && (
-                      <div className="border rounded-lg p-4 bg-gray-50 max-h-64 overflow-y-auto">
-                        <h4 className="font-medium mb-3">Seleccionar de Galería</h4>
-                        <div className="grid grid-cols-3 gap-3">
-                          {galeria.map((img: any) => (
-                            <div
-                              key={img.filename}
-                              onClick={() => {
-                                const fullUrl = img.url.startsWith('http')
-                                  ? img.url
-                                  : `${API_BASE_URL}${img.url}`;
-                                setOfertaForm(prev => ({ ...prev, imagenUrl: fullUrl }));
-                                setSelectedFile(null);
-                                setShowGallery(false);
-                              }}
-                              className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden transition-colors"
-                            >
-                              <img src={`${API_BASE_URL}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
-                            </div>
-                          ))}
+                      <div className="border rounded-lg p-4 bg-gray-50 max-h-96 overflow-y-auto">
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="font-medium">Seleccionar de Galería ({galeria.length} imágenes)</h4>
+                          <button
+                            onClick={() => setShowGallery(false)}
+                            className="text-gray-400 hover:text-gray-600 text-sm"
+                          >
+                            ✕
+                          </button>
                         </div>
-                        {galeria.length === 0 && (
+                        {galeria.length > 0 ? (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {galeria.map((img: any) => {
+                              const imageUrl = img.url.startsWith('http')
+                                ? img.url
+                                : img.url.startsWith('/')
+                                ? `${API_BASE_URL}${img.url}`
+                                : `${API_BASE_URL}/${img.url}`;
+
+                              return (
+                                <div
+                                  key={img.filename}
+                                  onClick={() => {
+                                    setOfertaForm(prev => ({ ...prev, imagenUrl: imageUrl }));
+                                    setSelectedFile(null);
+                                    setShowGallery(false);
+                                  }}
+                                  className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden transition-colors"
+                                  title={img.filename}
+                                >
+                                  <img
+                                    src={imageUrl}
+                                    alt={img.filename}
+                                    className="w-full h-20 object-cover"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      const parent = target.parentElement;
+                                      if (parent && !parent.querySelector('.error-text')) {
+                                        const errorDiv = document.createElement('div');
+                                        errorDiv.className = 'flex items-center justify-center w-full h-full bg-gray-200 text-gray-500 text-xs error-text';
+                                        errorDiv.textContent = 'Error';
+                                        parent.appendChild(errorDiv);
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
                           <p className="text-gray-500 text-sm text-center py-4">No hay imágenes en la galería</p>
                         )}
                       </div>
