@@ -3217,7 +3217,7 @@ export default function MaterialesItemPage() {
                               key={img.filename}
                               onClick={() => {
                                 // Usar URL absoluta para compatibilidad con servidores
-                                const absoluteUrl = `${window.location.origin}${img.url}`;
+                                const absoluteUrl = `${API_BASE_URL}${img.url}`;
                                 setOfertaForm(prev => ({ ...prev, imagenUrl: absoluteUrl }));
                                 setCurrentImageUrl(absoluteUrl);
                                 setSelectedFile(null);
@@ -3225,7 +3225,7 @@ export default function MaterialesItemPage() {
                               }}
                               className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden transition-colors"
                             >
-                              <img src={`${window.location.origin}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
+                              <img src={`${API_BASE_URL}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
                             </div>
                           ))}
                         </div>
