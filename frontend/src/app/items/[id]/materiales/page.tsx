@@ -580,7 +580,7 @@ export default function MaterialesItemPage() {
             const formData = new FormData()
             formData.append('file', selectedFile)
 
-            const uploadResponse = await api.post('/upload', formData, {
+            const uploadResponse = await api.post('/upload/imagen', formData, {
               headers: { 'Content-Type': 'multipart/form-data' }
             })
 
@@ -852,7 +852,7 @@ export default function MaterialesItemPage() {
         const formData = new FormData()
         formData.append('file', selectedFile)
 
-        const uploadResponse = await api.post('/upload', formData, {
+        const uploadResponse = await api.post('/upload/imagen', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
 
@@ -934,7 +934,7 @@ export default function MaterialesItemPage() {
         const formData = new FormData()
         formData.append('file', selectedFile)
 
-        const uploadResponse = await api.post('/upload', formData, {
+        const uploadResponse = await api.post('/upload/imagen', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
 
