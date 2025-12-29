@@ -711,7 +711,7 @@ export default function MaterialesItemPage() {
 
       // Crear el material usando la API de admin (que también crea la oferta automáticamente)
       const materialData = {
-        nombre: `[LISTA] ${createListaForm.nombre}`, // Agregar indicador LISTA
+        nombre: createListaForm.nombre, // Nombre completamente limpio sin indicadores
         descripcion: createListaForm.observaciones,
         unidad: 'GLOBAL', // Campo predefinido
         categoriaId: categorias.find(c => c.nombre === 'Construcción General')?.id || categorias[0]?.id, // Categoría predefinida
@@ -1742,9 +1742,14 @@ export default function MaterialesItemPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
-                            <div className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600"
+                            <div className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 flex items-center gap-2"
                                  onClick={() => materialItem.material && handleShowDetail(materialItem.material)}>
                               {materialItem.material?.nombre || 'Material sin nombre'}
+                              {materialItem.observaciones?.includes('LISTA DE MATERIALES') && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                                  📋 LISTA
+                                </span>
+                              )}
                             </div>
                             <div className="text-sm text-gray-500">
                               {materialItem.material ? getUnidadLabel(materialItem.material.unidad) : 'Sin unidad'}
