@@ -87,6 +87,10 @@ export default function MaterialesItemPage() {
   const [estadoPagos, setEstadoPagos] = useState<Record<string, any>>({})
   const [uploadingComprobante, setUploadingComprobante] = useState(false)
 
+  // Estados para lista de comprobantes en el modal
+  const [pagosComprobantes, setPagosComprobantes] = useState<any[]>([])
+  const [loadingComprobantes, setLoadingComprobantes] = useState(false)
+
   // Estados para ver detalles de pago
   const [showPagoDetalleModal, setShowPagoDetalleModal] = useState(false)
   const [selectedMaterialForDetalle, setSelectedMaterialForDetalle] = useState<MaterialPorItem | null>(null)
@@ -310,9 +314,22 @@ export default function MaterialesItemPage() {
   }
 
   // Funciones para pagos de materiales
-  const handleAddComprobante = (materialItem: MaterialPorItem) => {
+  const handleAddComprobante = async (materialItem: MaterialPorItem) => {
     setSelectedMaterialForPago(materialItem)
     setPagoForm({ montoPagado: '', comprobante: null, notas: '' })
+
+    // Cargar comprobantes existentes para este material
+    setLoadingComprobantes(true)
+    try {
+      const response = await api.get(`/materiales/${materialItem.id}/pagos`)
+      setPagosComprobantes(response.data.data || [])
+    } catch (error) {
+      console.error('Error loading comprobantes:', error)
+      setPagosComprobantes([])
+    } finally {
+      setLoadingComprobantes(false)
+    }
+
     setShowPagoModal(true)
   }
 
@@ -2026,83 +2043,139 @@ export default function MaterialesItemPage() {
                 </div>
               )}
 
-              <form onSubmit={handlePagoSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Monto Pagado *
-                  </label>
-                  <input
-                    type="text"
-                    value={pagoForm.montoPagado}
-                    onChange={(e) => {
-                      const formattedValue = formatMontoInput(e.target.value)
-                      setPagoForm({...pagoForm, montoPagado: formattedValue})
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="50000"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Ingresa el monto con separadores de miles
-                  </p>
-                </div>
+              {/* Lista de comprobantes existentes */}
+              {pagosComprobantes.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <span className="mr-2">📄</span>
+                    Comprobantes de Pago Existentes ({pagosComprobantes.length})
+                  </h3>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {pagosComprobantes.map((pago: any) => (
+                      <div key={pago.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h4 className="text-lg font-semibold text-gray-900">
+                                {formatPrice(pago.montoPagado)}
+                              </h4>
+                              <span className="text-sm text-gray-500">
+                                {new Date(pago.fechaPago).toLocaleDateString('es-PY')}
+                              </span>
+                            </div>
+                            {pago.notas && (
+                              <p className="text-sm text-gray-600">{pago.notas}</p>
+                            )}
+                          </div>
+                        </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Comprobante (Imagen) *
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setPagoForm({...pagoForm, comprobante: e.target.files?.[0] || null})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Formatos permitidos: JPG, PNG, GIF. Máx: 10MB
-                  </p>
+                        {/* Imagen del comprobante */}
+                        {pago.comprobanteUrl && (
+                          <div className="mt-3">
+                            <p className="text-sm font-medium text-gray-700 mb-2">Comprobante:</p>
+                            <div className="bg-white border border-gray-200 rounded-lg p-2 inline-block">
+                              <img
+                                src={pago.comprobanteUrl.startsWith('http') ? pago.comprobanteUrl : `${process.env.NEXT_PUBLIC_API_URL}${pago.comprobanteUrl.startsWith('/') ? '' : '/'}${pago.comprobanteUrl}`}
+                                alt="Comprobante de pago"
+                                className="max-w-xs max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => window.open(pago.comprobanteUrl.startsWith('http') ? pago.comprobanteUrl : `${process.env.NEXT_PUBLIC_API_URL}${pago.comprobanteUrl.startsWith('/') ? '' : '/'}${pago.comprobanteUrl}`, '_blank')}
+                                onError={(e) => {
+                                  console.error('Error loading image:', pago.comprobanteUrl);
+                                  (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjE4QzE0IDE5LjEgMTMuMSAyMCAxMiAyMEMxMC45IDIwIDEwIDE5LjEgMTAgMThWNFMxMC45IDIgMTIgMlpNMTIgNUEuNS41IDAgMCAxIDExLjUgNUMxMS41IDQuNSAxMiA0LjUgMTIgNFoiIGZpbGw9IiM5Q0E0QUYiLz4KPC9zdmc+';
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
+              )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Notas (opcional)
-                  </label>
-                  <textarea
-                    value={pagoForm.notas}
-                    onChange={(e) => setPagoForm({...pagoForm, notas: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Referencia de pago, fecha, etc."
-                    rows={3}
-                  />
-                </div>
+              {/* Formulario para agregar nuevo comprobante */}
+              <div className={pagosComprobantes.length > 0 ? "border-t pt-6" : ""}>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  {pagosComprobantes.length > 0 ? "Agregar Nuevo Comprobante" : "Agregar Comprobante de Pago"}
+                </h3>
+                <form onSubmit={handlePagoSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Monto Pagado *
+                    </label>
+                    <input
+                      type="text"
+                      value={pagoForm.montoPagado}
+                      onChange={(e) => {
+                        const formattedValue = formatMontoInput(e.target.value)
+                        setPagoForm({...pagoForm, montoPagado: formattedValue})
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="50000"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Ingresa el monto con separadores de miles
+                    </p>
+                  </div>
 
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowPagoModal(false)}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={uploadingComprobante}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center"
-                  >
-                    {uploadingComprobante ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Subiendo...
-                      </>
-                    ) : (
-                      <>
-                        <span className="mr-2">💰</span>
-                        Agregar Pago
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Comprobante (Imagen) *
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setPagoForm({...pagoForm, comprobante: e.target.files?.[0] || null})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Formatos permitidos: JPG, PNG, GIF. Máx: 10MB
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Notas (opcional)
+                    </label>
+                    <textarea
+                      value={pagoForm.notas}
+                      onChange={(e) => setPagoForm({...pagoForm, notas: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Referencia de pago, fecha, etc."
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowPagoModal(false)}
+                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={uploadingComprobante}
+                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center"
+                    >
+                      {uploadingComprobante ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Subiendo...
+                        </>
+                      ) : (
+                        <>
+                          <span className="mr-2">💰</span>
+                          Agregar Pago
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         </div>
