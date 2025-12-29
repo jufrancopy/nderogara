@@ -91,6 +91,10 @@ export default function MaterialesItemPage() {
   const [pagosComprobantes, setPagosComprobantes] = useState<any[]>([])
   const [loadingComprobantes, setLoadingComprobantes] = useState(false)
 
+  // Estados para modal de imagen de comprobante
+  const [showComprobanteModal, setShowComprobanteModal] = useState(false)
+  const [selectedComprobanteImage, setSelectedComprobanteImage] = useState<string>('')
+
   // Estados para ver detalles de pago
   const [showPagoDetalleModal, setShowPagoDetalleModal] = useState(false)
   const [selectedMaterialForDetalle, setSelectedMaterialForDetalle] = useState<MaterialPorItem | null>(null)
@@ -2050,35 +2054,37 @@ export default function MaterialesItemPage() {
                     <span className="mr-2">📄</span>
                     Comprobantes de Pago Existentes ({pagosComprobantes.length})
                   </h3>
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                  <div className="space-y-3 max-h-48 overflow-y-auto">
                     {pagosComprobantes.map((pago: any) => (
-                      <div key={pago.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                        <div className="flex justify-between items-start mb-3">
+                      <div key={pago.id} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <div className="flex justify-between items-start mb-2">
                           <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h4 className="text-lg font-semibold text-gray-900">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="text-base font-semibold text-gray-900">
                                 {formatPrice(pago.montoPagado)}
                               </h4>
-                              <span className="text-sm text-gray-500">
+                              <span className="text-xs text-gray-500">
                                 {new Date(pago.fechaPago).toLocaleDateString('es-PY')}
                               </span>
                             </div>
                             {pago.notas && (
-                              <p className="text-sm text-gray-600">{pago.notas}</p>
+                              <p className="text-xs text-gray-600">{pago.notas}</p>
                             )}
                           </div>
                         </div>
 
                         {/* Imagen del comprobante */}
                         {pago.comprobanteUrl && (
-                          <div className="mt-3">
-                            <p className="text-sm font-medium text-gray-700 mb-2">Comprobante:</p>
-                            <div className="bg-white border border-gray-200 rounded-lg p-2 inline-block">
+                          <div className="mt-2">
+                            <div className="bg-white border border-gray-200 rounded p-1 inline-block">
                               <img
                                 src={pago.comprobanteUrl.startsWith('http') ? pago.comprobanteUrl : `${process.env.NEXT_PUBLIC_API_URL}${pago.comprobanteUrl.startsWith('/') ? '' : '/'}${pago.comprobanteUrl}`}
                                 alt="Comprobante de pago"
-                                className="max-w-xs max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={() => window.open(pago.comprobanteUrl.startsWith('http') ? pago.comprobanteUrl : `${process.env.NEXT_PUBLIC_API_URL}${pago.comprobanteUrl.startsWith('/') ? '' : '/'}${pago.comprobanteUrl}`, '_blank')}
+                                className="w-16 h-12 object-cover cursor-pointer hover:opacity-80 transition-opacity rounded"
+                                onClick={() => {
+                                  setSelectedComprobanteImage(pago.comprobanteUrl.startsWith('http') ? pago.comprobanteUrl : `${process.env.NEXT_PUBLIC_API_URL}${pago.comprobanteUrl.startsWith('/') ? '' : '/'}${pago.comprobanteUrl}`);
+                                  setShowComprobanteModal(true);
+                                }}
                                 onError={(e) => {
                                   console.error('Error loading image:', pago.comprobanteUrl);
                                   (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjE4QzE0IDE5LjEgMTMuMSAyMCAxMiAyMEMxMC45IDIwIDEwIDE5LjEgMTAgMThWNFMxMC45IDIgMTIgMlpNMTIgNUEuNS41IDAgMCAxIDExLjUgNUMxMS41IDQuNSAxMiA0LjUgMTIgNFoiIGZpbGw9IiM5Q0E0QUYiLz4KPC9zdmc+';
@@ -4617,6 +4623,38 @@ export default function MaterialesItemPage() {
                   Cerrar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para ver imagen del comprobante */}
+      {showComprobanteModal && selectedComprobanteImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-4xl max-h-[90vh] bg-white rounded-lg overflow-hidden">
+            <div className="flex justify-end p-4">
+              <button
+                onClick={() => {
+                  setShowComprobanteModal(false);
+                  setSelectedComprobanteImage('');
+                }}
+                className="text-gray-400 hover:text-gray-600 text-3xl font-bold leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="px-4 pb-4">
+              <img
+                src={selectedComprobanteImage}
+                alt="Comprobante de pago"
+                className="max-w-full max-h-[70vh] object-contain mx-auto"
+                onError={(e) => {
+                  console.error('Error loading image:', selectedComprobanteImage);
+                  setShowComprobanteModal(false);
+                  setSelectedComprobanteImage('');
+                  toast.error('Error al cargar la imagen del comprobante');
+                }}
+              />
             </div>
           </div>
         </div>
