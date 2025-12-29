@@ -675,20 +675,8 @@ export default function MaterialesItemPage() {
     setShowOfertasModal(true)
 
     try {
-      // Recargar la información del item primero para tener datos actualizados
-      await fetchItem()
-
-      // Obtener la información actualizada del material del item recargado
-      const updatedItem = await api.get(`/items/${itemId}`)
-      const updatedMaterialItem = updatedItem.data.data.materialesPorItem.find(
-        (m: MaterialPorItem) => m.id === materialItem.id
-      )
-
-      if (updatedMaterialItem) {
-        setSelectedMaterialForOfertas(updatedMaterialItem)
-      } else {
-        setSelectedMaterialForOfertas(materialItem)
-      }
+      // Usar los datos actuales del material sin recargar todo el item
+      setSelectedMaterialForOfertas(materialItem)
 
       // Cargar ofertas del material
       const response = await api.get(`/materiales/${materialItem.material.id}/ofertas`)
