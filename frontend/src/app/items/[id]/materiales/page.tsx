@@ -1742,9 +1742,14 @@ export default function MaterialesItemPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
-                            <div className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600"
+                            <div className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 flex items-center gap-2"
                                  onClick={() => materialItem.material && handleShowDetail(materialItem.material)}>
                               {materialItem.material?.nombre || 'Material sin nombre'}
+                              {materialItem.material?.nombre.startsWith('[LISTA]') && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                  📋 LISTA
+                                </span>
+                              )}
                             </div>
                             <div className="text-sm text-gray-500">
                               {materialItem.material ? getUnidadLabel(materialItem.material.unidad) : 'Sin unidad'}
@@ -1780,33 +1785,54 @@ export default function MaterialesItemPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleEditClick(materialItem)}
-                              className="text-blue-600 hover:text-blue-800"
-                              title="Editar Cantidad"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleGestionarOfertas(materialItem)}
-                              className="text-purple-600 hover:text-purple-800"
-                              title="Gestionar Ofertas"
-                            >
-                              💰
-                            </button>
-                            <button
-                              onClick={() => handleAddComprobante(materialItem)}
-                              className="text-green-600 hover:text-green-800"
-                              title="Agregar Comprobante de Pago"
-                            >
-                              🧾
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClick(materialItem.id, materialItem.material.nombre)}
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            {/* Solo mostrar botones de editar y ofertas si NO es una lista */}
+                            {materialItem.material.nombre.startsWith('[LISTA]') ? (
+                              <>
+                                <button
+                                  onClick={() => handleAddComprobante(materialItem)}
+                                  className="text-green-600 hover:text-green-800"
+                                  title="Agregar Comprobante de Pago"
+                                >
+                                  🧾
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteClick(materialItem.id, materialItem.material.nombre)}
+                                  className="text-red-600 hover:text-red-800"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleEditClick(materialItem)}
+                                  className="text-blue-600 hover:text-blue-800"
+                                  title="Editar Cantidad"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleGestionarOfertas(materialItem)}
+                                  className="text-purple-600 hover:text-purple-800"
+                                  title="Gestionar Ofertas"
+                                >
+                                  💰
+                                </button>
+                                <button
+                                  onClick={() => handleAddComprobante(materialItem)}
+                                  className="text-green-600 hover:text-green-800"
+                                  title="Agregar Comprobante de Pago"
+                                >
+                                  🧾
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteClick(materialItem.id, materialItem.material.nombre)}
+                                  className="text-red-600 hover:text-red-800"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
