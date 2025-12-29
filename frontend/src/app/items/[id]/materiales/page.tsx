@@ -3201,78 +3201,29 @@ export default function MaterialesItemPage() {
 
                     {/* Galería de imágenes */}
                     {showGallery && (
-                      <div className="border rounded-lg p-4 bg-gray-50">
-                        <div className="flex justify-between items-center mb-3">
-                          <h4 className="font-medium">Seleccionar de Galería ({galeria.length} imágenes)</h4>
-                          <button
-                            onClick={() => setShowGallery(false)}
-                            className="text-gray-400 hover:text-gray-600 text-sm"
-                          >
-                            ✕
-                          </button>
+                      <div className="border rounded-lg p-4 bg-gray-50 max-h-64 overflow-y-auto">
+                        <h4 className="font-medium mb-3">Seleccionar de Galería</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          {galeria.map((img: any) => (
+                            <div
+                              key={img.filename}
+                              onClick={() => {
+                                const fullUrl = img.url.startsWith('http')
+                                  ? img.url
+                                  : `${API_BASE_URL}${img.url}`;
+                                setOfertaForm(prev => ({ ...prev, imagenUrl: fullUrl }));
+                                setCurrentImageUrl(fullUrl);
+                                setSelectedFile(null);
+                                setShowGallery(false);
+                              }}
+                              className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-md overflow-hidden transition-colors"
+                            >
+                              <img src={`${API_BASE_URL}${img.url}`} alt={img.filename} className="w-full h-20 object-cover" />
+                            </div>
+                          ))}
                         </div>
-                        {galeria.length > 0 ? (
-                          <div className={`grid gap-3 ${
-                            galeria.length <= 10
-                              ? 'grid-cols-5 sm:grid-cols-6 md:grid-cols-8'
-                              : galeria.length <= 20
-                              ? 'grid-cols-4 sm:grid-cols-5 md:grid-cols-6'
-                              : 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5'
-                          }`}>
-                            {galeria.map((img: any) => {
-                              const imageUrl = img.url.startsWith('http')
-                                ? img.url
-                                : img.url.startsWith('/')
-                                ? `${API_BASE_URL}${img.url}`
-                                : `${API_BASE_URL}/${img.url}`;
-
-                              return (
-                                <div
-                                  key={img.filename}
-                                  onClick={() => {
-                                    setOfertaForm(prev => ({ ...prev, imagenUrl: imageUrl }));
-                                    setSelectedFile(null);
-                                    setShowGallery(false);
-                                  }}
-                                  className="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-lg overflow-hidden transition-all duration-200 group shadow-sm hover:shadow-md"
-                                  title={img.filename}
-                                >
-                                  <div className="aspect-square relative bg-gray-100">
-                                    <img
-                                      src={imageUrl}
-                                      alt={img.filename}
-                                      className="w-full h-full object-cover"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.style.display = 'none';
-                                        const parent = target.parentElement;
-                                        if (parent && !parent.querySelector('.error-text')) {
-                                          const errorDiv = document.createElement('div');
-                                          errorDiv.className = 'flex items-center justify-center w-full h-full bg-gray-300 text-gray-600 text-xs error-text absolute inset-0 rounded-md';
-                                          errorDiv.innerHTML = '<span>⚠️<br>Error</span>';
-                                          parent.appendChild(errorDiv);
-                                        }
-                                      }}
-                                    />
-                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center rounded-md">
-                                      <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs font-semibold text-center px-1">
-                                        <div>Seleccionar</div>
-                                        <div className="text-xs opacity-80 mt-1 truncate max-w-full" title={img.filename}>
-                                          {img.filename.length > 12 ? `${img.filename.substring(0, 12)}...` : img.filename}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="text-center py-8">
-                            <div className="text-gray-400 text-4xl mb-2">🖼️</div>
-                            <p className="text-gray-500 text-sm">No hay imágenes en la galería</p>
-                            <p className="text-gray-400 text-xs mt-1">Las imágenes subidas aparecerán aquí</p>
-                          </div>
+                        {galeria.length === 0 && (
+                          <p className="text-gray-500 text-sm text-center py-4">No hay imágenes en la galería</p>
                         )}
                       </div>
                     )}
@@ -3683,7 +3634,8 @@ export default function MaterialesItemPage() {
                                 const fullUrl = img.url.startsWith('http')
                                   ? img.url
                                   : `${API_BASE_URL}${img.url}`;
-                                setEditOfertaForm(prev => ({ ...prev, imagenUrl: fullUrl }));
+                                setOfertaForm(prev => ({ ...prev, imagenUrl: fullUrl }));
+                                setCurrentImageUrl(fullUrl);
                                 setSelectedFile(null);
                                 setShowGallery(false);
                               }}
