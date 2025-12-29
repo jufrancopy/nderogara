@@ -711,7 +711,7 @@ export default function MaterialesItemPage() {
 
       // Crear el material usando la API de admin (que también crea la oferta automáticamente)
       const materialData = {
-        nombre: `[LISTA] ${createListaForm.nombre}`, // Agregar indicador LISTA
+        nombre: createListaForm.nombre, // Nombre limpio sin [LISTA]
         descripcion: createListaForm.observaciones,
         unidad: 'GLOBAL', // Campo predefinido
         categoriaId: categorias.find(c => c.nombre === 'Construcción General')?.id || categorias[0]?.id, // Categoría predefinida
@@ -1745,7 +1745,7 @@ export default function MaterialesItemPage() {
                             <div className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 flex items-center gap-2"
                                  onClick={() => materialItem.material && handleShowDetail(materialItem.material)}>
                               {materialItem.material?.nombre || 'Material sin nombre'}
-                              {materialItem.material?.nombre.startsWith('[LISTA]') && (
+                              {materialItem.observaciones?.includes('LISTA DE MATERIALES') && (
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                                   📋 LISTA
                                 </span>
@@ -1786,7 +1786,7 @@ export default function MaterialesItemPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
                             {/* Solo mostrar botones de editar y ofertas si NO es una lista */}
-                            {materialItem.material.nombre.startsWith('[LISTA]') ? (
+                            {materialItem.observaciones?.includes('LISTA DE MATERIALES') ? (
                               <>
                                 <button
                                   onClick={() => handleAddComprobante(materialItem)}
