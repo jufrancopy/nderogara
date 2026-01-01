@@ -353,10 +353,21 @@ export default function MaterialesItemPage() {
 
   const handlePagoSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedMaterialForPago || !pagoForm.montoPagado || !pagoForm.comprobante) return
+    console.log('🧾 Iniciando envío de comprobante...')
+    
+    if (!selectedMaterialForPago || !pagoForm.montoPagado || !pagoForm.comprobante) {
+      console.log('❌ Faltan datos requeridos:', {
+        selectedMaterial: !!selectedMaterialForPago,
+        montoPagado: !!pagoForm.montoPagado,
+        comprobante: !!pagoForm.comprobante
+      })
+      toast.error('Por favor completa todos los campos requeridos')
+      return
+    }
 
     setUploadingComprobante(true)
     try {
+      console.log('📤 Subiendo comprobante...')
       // Primero subir el comprobante
       const formData = new FormData()
       formData.append('file', pagoForm.comprobante)
@@ -366,7 +377,9 @@ export default function MaterialesItemPage() {
       })
 
       const comprobanteUrl = uploadResponse.data.data.url
+      console.log('✅ Comprobante subido:', comprobanteUrl)
 
+      console.log('💾 Creando registro de pago...')
       // Luego crear el pago
       await api.post('/materiales/pagos', {
         materialPorItemId: selectedMaterialForPago.id,
@@ -375,15 +388,20 @@ export default function MaterialesItemPage() {
         notas: pagoForm.notas
       })
 
+      console.log('✅ Pago registrado exitosamente')
       toast.success('Comprobante de pago agregado exitosamente')
+      
+      // Resetear estados y cerrar modal
       setShowPagoModal(false)
       setSelectedMaterialForPago(null)
+      setPagoForm({ montoPagado: '', comprobante: null, notas: '' })
+      setPagosComprobantes([])
 
       // Actualizar estados de pago
       await fetchEstadoPagos()
 
     } catch (error: any) {
-      console.error('Error adding pago:', error)
+      console.error('❌ Error adding pago:', error)
       const errorMessage = error.response?.data?.error || 'Error al agregar comprobante de pago'
       toast.error(errorMessage)
     } finally {
@@ -1960,16 +1978,32 @@ export default function MaterialesItemPage() {
       {/* Modal de agregar comprobante de pago */}
       {showPagoModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[75vh] overflow-hidden flex flex-col">
-            <div className="p-4 flex-shrink-0">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-4">
               <div className="flex justify-between items-start mb-4">
                 <h2 className="text-xl font-bold text-gray-900">Agregar Comprobante de Pago</h2>
-                <button
-                  onClick={() => setShowPagoModal(false)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl"
-                >
-                  ×
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      console.log('🔄 Forzando cierre del modal...')
+                      setShowPagoModal(false)
+                      setSelectedMaterialForPago(null)
+                      setPagoForm({ montoPagado: '', comprobante: null, notas: '' })
+                      setPagosComprobantes([])
+                      setUploadingComprobante(false)
+                    }}
+                    className="text-red-500 hover:text-red-700 text-sm px-2 py-1 border border-red-300 rounded"
+                    title="Forzar cierre si el modal está trabado"
+                  >
+                    Forzar Cierre
+                  </button>
+                  <button
+                    onClick={() => setShowPagoModal(false)}
+                    className="text-gray-400 hover:text-gray-600 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
 
               {selectedMaterialForPago && (
