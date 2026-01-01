@@ -36,10 +36,7 @@ const proyectoSchema = z.object({
   fechaInicio: z.string().optional(),
   fechaFinEstimada: z.string().optional(),
   estado: z.enum(['PLANIFICACION', 'EN_PROGRESO', 'PAUSADO', 'COMPLETADO', 'CANCELADO']),
-  margenGanancia: z.preprocess(
-    (val) => val === '' || val === null || val === undefined ? undefined : Number(val),
-    z.number().min(0).max(100).optional()
-  ),
+  margenGanancia: z.number().min(0).max(100).optional(),
   clienteNombre: z.string().optional(),
   clienteTelefono: z.string().optional(),
   clienteEmail: z.string().email('Email inválido').optional().or(z.literal('')),
@@ -399,6 +396,7 @@ export default function EditarProyectoPage() {
                       type="number"
                       step="0.01"
                       {...register('superficieTotal', { valueAsNumber: true })}
+                      onWheel={(e) => e.currentTarget.blur()}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -413,6 +411,7 @@ export default function EditarProyectoPage() {
                       min="0"
                       max="100"
                       {...register('margenGanancia', { valueAsNumber: true })}
+                      onWheel={(e) => e.currentTarget.blur()}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>

@@ -38,10 +38,20 @@ const createProyectoSchema = z.object({
   fechaInicio: z.string().optional(),
   fechaFinEstimada: z.string().optional(),
   estado: z.enum(['PLANIFICACION', 'EN_PROGRESO', 'PAUSADO', 'COMPLETADO', 'CANCELADO']).optional(),
-  margenGanancia: z.union([z.number(), z.string()]).optional().transform(val => 
-    val === undefined || val === null || val === '' ? undefined : 
-    typeof val === 'string' ? (val === '' ? undefined : parseFloat(val.replace(/\./g, '').replace(',', '.'))) : val
-  ),
+  margenGanancia: z.union([z.number(), z.string()]).optional().transform(val => {
+    console.log('🔍 margenGanancia transform - valor recibido:', val, 'tipo:', typeof val)
+    if (val === undefined || val === null || val === '') return undefined
+    if (typeof val === 'number') {
+      console.log('✅ margenGanancia es número:', val)
+      return val
+    }
+    if (typeof val === 'string') {
+      const num = parseFloat(val)
+      console.log('🔄 margenGanancia string->number:', val, '->', num)
+      return isNaN(num) ? undefined : num
+    }
+    return undefined
+  }),
   moneda: z.string().default('COP'),
   clienteNombre: z.string().optional(),
   clienteTelefono: z.string().optional(),
