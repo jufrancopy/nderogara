@@ -25,8 +25,14 @@ const proyectoSchema = z.object({
   direccion: z.string().optional(),
   ciudad: z.string().optional(),
   departamento: z.string().optional(),
-  latitud: z.number().optional(),
-  longitud: z.number().optional(),
+  latitud: z.preprocess(
+    (val) => val === '' || val === null || val === undefined ? undefined : Number(val),
+    z.number().optional()
+  ),
+  longitud: z.preprocess(
+    (val) => val === '' || val === null || val === undefined ? undefined : Number(val),
+    z.number().optional()
+  ),
   fechaInicio: z.string().optional(),
   fechaFinEstimada: z.string().optional(),
   estado: z.enum(['PLANIFICACION', 'EN_PROGRESO', 'PAUSADO', 'COMPLETADO', 'CANCELADO']),
@@ -238,11 +244,49 @@ export default function EditarProyectoPage() {
   const onSubmit = async (data: ProyectoForm) => {
     setLoading(true)
     try {
+      // Función para convertir coordenadas del formato paraguayo
+      const parseCoordinate = (value: any): number | undefined => {
+        if (value === undefined || value === null || value === '') return undefined
+
+        // Si ya es un número, devolverlo directamente
+        if (typeof value === 'number' && !isNaN(value)) {
+          if (value < -180 || value > 180) {
+            console.error(`Coordenada fuera de rango: ${value}`)
+            return undefined
+          }
+          return value
+        }
+
+        // Convertir a string y limpiar formato paraguayo (puntos como separadores de miles)
+        // Pero preservar el último punto como separador decimal
+        const strValue = value.toString()
+        
+        // Si contiene comas, asumir formato latinoamericano (coma como decimal)
+        if (strValue.includes(',')) {
+          const cleaned = strValue.replace(/\./g, '').replace(',', '.')
+          const numValue = parseFloat(cleaned)
+          if (isNaN(numValue) || numValue < -180 || numValue > 180) {
+            console.error(`Coordenada inválida: ${strValue} -> ${numValue}`)
+            return undefined
+          }
+          return numValue
+        }
+        
+        // Si no contiene comas, asumir formato estándar con punto decimal
+        const numValue = parseFloat(strValue)
+        if (isNaN(numValue) || numValue < -180 || numValue > 180) {
+          console.error(`Coordenada inválida: ${strValue} -> ${numValue}`)
+          return undefined
+        }
+
+        return numValue
+      }
+
       const cleanData = {
         ...data,
         superficieTotal: data.superficieTotal || undefined,
-        latitud: data.latitud || undefined,
-        longitud: data.longitud || undefined,
+        latitud: parseCoordinate(data.latitud),
+        longitud: parseCoordinate(data.longitud),
         fechaInicio: data.fechaInicio || undefined,
         fechaFinEstimada: data.fechaFinEstimada || undefined,
         margenGanancia: data.margenGanancia || undefined,
@@ -250,7 +294,10 @@ export default function EditarProyectoPage() {
         imagenUrl: imagenes.length > 0 ? JSON.stringify(imagenes) : undefined
       }
 
-      console.log('📝 Enviando actualización del proyecto:', cleanData)
+      console.log('📝 Datos originales del formulario:', data)
+      console.log('🗺️ Latitud original:', data.latitud, 'Tipo:', typeof data.latitud)
+      console.log('🗺️ Longitud original:', data.longitud, 'Tipo:', typeof data.longitud)
+      console.log('📝 Datos limpios a enviar:', cleanData)
       console.log('🖼️ Imágenes a actualizar:', imagenes)
       console.log('📄 imagenUrl serializada:', cleanData.imagenUrl)
 
@@ -407,9 +454,8 @@ export default function EditarProyectoPage() {
                       Latitud
                     </label>
                     <input
-                      type="number"
-                      step="any"
-                      {...register('latitud', { valueAsNumber: true })}
+                      type="text"
+                      {...register('latitud')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       placeholder="-25.2637"
                     />
@@ -423,9 +469,8 @@ export default function EditarProyectoPage() {
                       Longitud
                     </label>
                     <input
-                      type="number"
-                      step="any"
-                      {...register('longitud', { valueAsNumber: true })}
+                      type="text"
+                      {...register('longitud')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       placeholder="-57.5759"
                     />

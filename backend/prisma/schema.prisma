@@ -246,8 +246,8 @@ model Proyecto {
   direccion           String?
   ciudad              String?           // Ciudad donde se ubica el proyecto
   departamento        String?           // Departamento/Estado
-  latitud             Decimal?          @db.Decimal(10, 8) // Coordenadas GPS del proyecto
-  longitud            Decimal?          @db.Decimal(11, 8)
+  latitud             Decimal?          @db.Decimal(9, 6) // Coordenadas GPS del proyecto
+  longitud            Decimal?          @db.Decimal(10, 6)
   fechaInicio         DateTime?
   fechaFinEstimada    DateTime?
   estado              EstadoProyecto    @default(PLANIFICACION)

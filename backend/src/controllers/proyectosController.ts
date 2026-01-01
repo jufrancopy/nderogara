@@ -8,16 +8,40 @@ const prisma = new PrismaClient()
 const createProyectoSchema = z.object({
   nombre: z.string().min(1),
   descripcion: z.string().optional(),
-  superficieTotal: z.number().positive().optional(),
+  superficieTotal: z.union([z.number(), z.string()]).optional().transform(val => 
+    val === undefined || val === null || val === '' ? undefined : 
+    typeof val === 'string' ? (val === '' ? undefined : parseFloat(val.replace(/\./g, '').replace(',', '.'))) : val
+  ),
   direccion: z.string().optional(),
   ciudad: z.string().optional(),
   departamento: z.string().optional(),
-  latitud: z.number().optional(),
-  longitud: z.number().optional(),
+  latitud: z.union([z.number(), z.string()]).optional().transform(val => {
+    if (val === undefined || val === null || val === '') return undefined
+    if (typeof val === 'number') return val
+    if (typeof val === 'string') {
+      const cleaned = val.replace(/\./g, '').replace(',', '.')
+      const num = parseFloat(cleaned)
+      return isNaN(num) ? undefined : num
+    }
+    return undefined
+  }),
+  longitud: z.union([z.number(), z.string()]).optional().transform(val => {
+    if (val === undefined || val === null || val === '') return undefined
+    if (typeof val === 'number') return val
+    if (typeof val === 'string') {
+      const cleaned = val.replace(/\./g, '').replace(',', '.')
+      const num = parseFloat(cleaned)
+      return isNaN(num) ? undefined : num
+    }
+    return undefined
+  }),
   fechaInicio: z.string().optional(),
   fechaFinEstimada: z.string().optional(),
   estado: z.enum(['PLANIFICACION', 'EN_PROGRESO', 'PAUSADO', 'COMPLETADO', 'CANCELADO']).optional(),
-  margenGanancia: z.number().min(0).max(100).optional(),
+  margenGanancia: z.union([z.number(), z.string()]).optional().transform(val => 
+    val === undefined || val === null || val === '' ? undefined : 
+    typeof val === 'string' ? (val === '' ? undefined : parseFloat(val.replace(/\./g, '').replace(',', '.'))) : val
+  ),
   moneda: z.string().default('COP'),
   clienteNombre: z.string().optional(),
   clienteTelefono: z.string().optional(),
@@ -156,8 +180,10 @@ export const proyectosController = {
 
       console.log('📝 Creating proyecto with data:', request.body)
       console.log('🖼️ imagenUrl received:', (request.body as any).imagenUrl)
+      console.log('🌍 Coordenadas recibidas - latitud:', (request.body as any).latitud, 'longitud:', (request.body as any).longitud)
       const validatedData = createProyectoSchema.parse(request.body)
       console.log('✅ Validated data imagenUrl:', validatedData.imagenUrl)
+      console.log('✅ Validated coordenadas - latitud:', validatedData.latitud, 'longitud:', validatedData.longitud)
 
       const proyecto = await prisma.proyecto.create({
         data: {

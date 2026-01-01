@@ -25,8 +25,14 @@ const proyectoSchema = z.object({
   direccion: z.string().optional(),
   ciudad: z.string().optional(),
   departamento: z.string().optional(),
-  latitud: z.number().optional(),
-  longitud: z.number().optional(),
+  latitud: z.preprocess(
+    (val) => val === '' || val === null || val === undefined ? undefined : Number(val),
+    z.number().optional()
+  ),
+  longitud: z.preprocess(
+    (val) => val === '' || val === null || val === undefined ? undefined : Number(val),
+    z.number().optional()
+  ),
   fechaInicio: z.string().optional(),
   fechaFinEstimada: z.string().optional(),
   margenGanancia: z.number().min(0).max(100).optional(),
@@ -188,6 +194,8 @@ export default function NuevoProyectoPage() {
   }
 
   const onSubmit = async (data: ProyectoForm) => {
+    console.log('📄 Datos capturados por react-hook-form:', data)
+    console.log('🌍 Coordenadas capturadas - latitud:', data.latitud, 'longitud:', data.longitud)
     setLoading(true)
     try {
       // Convertir strings vacíos a undefined para campos opcionales
@@ -202,6 +210,7 @@ export default function NuevoProyectoPage() {
       }
 
       console.log('📝 Enviando datos del proyecto:', cleanData)
+      console.log('🌍 Coordenadas a enviar - latitud:', cleanData.latitud, 'longitud:', cleanData.longitud)
       console.log('🖼️ Imágenes a enviar:', imagenes)
       console.log('📄 imagenUrl serializada:', cleanData.imagenUrl)
 
@@ -361,13 +370,16 @@ export default function NuevoProyectoPage() {
                     <input
                       type="number"
                       step="any"
-                      {...register('latitud', { valueAsNumber: true })}
+                      {...register('latitud')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       placeholder="-25.2637"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Ejemplo: -25.2637 (para Asunción)
                     </p>
+                    {errors.latitud && (
+                      <p className="mt-1 text-sm text-red-600">{errors.latitud.message}</p>
+                    )}
                   </div>
 
                   <div>
@@ -377,13 +389,16 @@ export default function NuevoProyectoPage() {
                     <input
                       type="number"
                       step="any"
-                      {...register('longitud', { valueAsNumber: true })}
+                      {...register('longitud')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       placeholder="-57.5759"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Ejemplo: -57.5759 (para Asunción)
                     </p>
+                    {errors.longitud && (
+                      <p className="mt-1 text-sm text-red-600">{errors.longitud.message}</p>
+                    )}
                   </div>
 
                   <div className="md:col-span-2">
