@@ -241,6 +241,8 @@ export default function EditarProyectoPage() {
       const cleanData = {
         ...data,
         superficieTotal: data.superficieTotal || undefined,
+        latitud: data.latitud || undefined,
+        longitud: data.longitud || undefined,
         fechaInicio: data.fechaInicio || undefined,
         fechaFinEstimada: data.fechaFinEstimada || undefined,
         margenGanancia: data.margenGanancia || undefined,
