@@ -127,7 +127,7 @@ export default function EditarProyectoPage() {
         fechaInicio: formatDateForInput(proyecto.fechaInicio),
         fechaFinEstimada: formatDateForInput(proyecto.fechaFinEstimada),
         estado: proyecto.estado,
-        margenGanancia: proyecto.margenGanancia ? Number(proyecto.margenGanancia) : undefined,
+        margenGanancia: proyecto.margenGanancia !== null && proyecto.margenGanancia !== undefined ? Number(proyecto.margenGanancia) : undefined,
         clienteNombre: proyecto.clienteNombre || '',
         clienteTelefono: proyecto.clienteTelefono || '',
         clienteEmail: proyecto.clienteEmail || '',
@@ -289,7 +289,7 @@ export default function EditarProyectoPage() {
         longitud: parseCoordinate(data.longitud),
         fechaInicio: data.fechaInicio || undefined,
         fechaFinEstimada: data.fechaFinEstimada || undefined,
-        margenGanancia: data.margenGanancia || undefined,
+        margenGanancia: data.margenGanancia !== undefined ? data.margenGanancia : undefined,
         clienteEmail: data.clienteEmail || undefined,
         imagenUrl: imagenes.length > 0 ? JSON.stringify(imagenes) : undefined
       }
