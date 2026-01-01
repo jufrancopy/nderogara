@@ -36,7 +36,10 @@ const proyectoSchema = z.object({
   fechaInicio: z.string().optional(),
   fechaFinEstimada: z.string().optional(),
   estado: z.enum(['PLANIFICACION', 'EN_PROGRESO', 'PAUSADO', 'COMPLETADO', 'CANCELADO']),
-  margenGanancia: z.number().min(0).max(100).optional(),
+  margenGanancia: z.preprocess(
+    (val) => val === '' || val === null || val === undefined ? undefined : Number(val),
+    z.number().min(0).max(100).optional()
+  ),
   clienteNombre: z.string().optional(),
   clienteTelefono: z.string().optional(),
   clienteEmail: z.string().email('Email inválido').optional().or(z.literal('')),
