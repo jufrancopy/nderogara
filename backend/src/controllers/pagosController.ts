@@ -21,6 +21,54 @@ const updatePagoSchema = z.object({
 })
 
 export const pagosController = {
+  // DELETE /proyectos/:proyectoId/presupuesto/:presupuestoItemId/pagos/:pagoId - Eliminar pago de presupuesto
+  async deletePresupuestoPago(request: FastifyRequest<{
+    Params: { proyectoId: string; presupuestoItemId: string; pagoId: string }
+  }>, reply: FastifyReply) {
+    try {
+      const { pagoId } = request.params
+      const user = (request as any).user
+      const userRol = user?.rol
+
+      const pagoExistente = await prisma.pagoPresupuestoItem.findUnique({
+        where: { id: pagoId },
+        include: {
+          presupuestoItem: {
+            include: { proyecto: true }
+          }
+        }
+      })
+
+      if (!pagoExistente) {
+        return reply.status(404).send({
+          success: false,
+          error: 'Pago no encontrado'
+        })
+      }
+
+      if (userRol !== 'ADMIN' && pagoExistente.presupuestoItem.proyecto.usuarioId !== user.id) {
+        return reply.status(403).send({
+          success: false,
+          error: 'No tiene permisos para eliminar este pago'
+        })
+      }
+
+      await prisma.pagoPresupuestoItem.delete({
+        where: { id: pagoId }
+      })
+
+      return reply.send({
+        success: true,
+        message: 'Pago eliminado exitosamente'
+      })
+    } catch (error) {
+      console.error('Error deleting presupuesto pago:', error)
+      return reply.status(500).send({
+        success: false,
+        error: 'Error interno del servidor'
+      })
+    }
+  },
   // GET /proyectos/:proyectoId/etapas/:etapaId/pagos - Obtener pagos de una etapa
   async getPagosEtapa(request: FastifyRequest<{
     Params: { proyectoId: string, etapaId: string }

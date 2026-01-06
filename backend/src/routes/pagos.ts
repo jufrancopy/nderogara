@@ -33,4 +33,11 @@ export async function pagosRoutes(fastify: FastifyInstance) {
   }>('/proyectos/:proyectoId/etapas/:etapaId/pagos/:pagoId', {
     preHandler: hasRole(['ADMIN', 'CLIENTE'])
   }, pagosController.deletePago)
+
+  // DELETE /proyectos/:proyectoId/presupuesto/:presupuestoItemId/pagos/:pagoId - Eliminar pago de item presupuesto
+  fastify.delete<{
+    Params: { proyectoId: string; presupuestoItemId: string; pagoId: string }
+  }>('/proyectos/:proyectoId/presupuesto/:presupuestoItemId/pagos/:pagoId', {
+    preHandler: hasRole(['ADMIN', 'CLIENTE'])
+  }, pagosController.deletePresupuestoPago)
 }
