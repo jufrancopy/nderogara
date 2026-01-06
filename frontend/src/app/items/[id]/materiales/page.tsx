@@ -2341,6 +2341,31 @@ export default function MaterialesItemPage() {
                                 <p className="text-sm text-gray-600">{pago.notas}</p>
                               )}
                             </div>
+                            <button
+                              onClick={async () => {
+                                if (confirm('¿Estás seguro de eliminar este pago?')) {
+                                  try {
+                                    console.log('🗑️ Eliminando pago con ID:', pago.id)
+                                    const deleteUrl = `/materiales/pagos/${pago.id}`
+                                    console.log('🔗 URL de eliminación:', deleteUrl)
+                                    await api.delete(deleteUrl)
+                                    toast.success('Pago eliminado exitosamente')
+                                    // Recargar pagos
+                                    const response = await api.get(`/materiales/${selectedMaterialForDetalle.id}/pagos`)
+                                    setPagosMaterial(response.data.data || [])
+                                    // Actualizar estados de pago
+                                    await fetchEstadoPagos()
+                                  } catch (error) {
+                                    console.error('❌ Error eliminando pago:', error)
+                                    toast.error('Error al eliminar pago')
+                                  }
+                                }
+                              }}
+                              className="text-red-600 hover:text-red-800 text-sm px-2 py-1 border border-red-300 rounded"
+                              title="Eliminar pago"
+                            >
+                              🗑️
+                            </button>
                           </div>
 
                           {/* Imagen del comprobante */}
@@ -2491,6 +2516,17 @@ export default function MaterialesItemPage() {
                     </p>
                   </div>
                 )}
+
+                {(() => {
+                  const materialPorItem = item?.materialesPorItem.find(m => m.material.id === selectedMaterialForDetail.id);
+                  return materialPorItem?.observaciones && (
+                    <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+                      <p className="text-sm text-gray-800">
+                        <strong>Observaciones:</strong> {materialPorItem.observaciones}
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="flex justify-end mt-6">
