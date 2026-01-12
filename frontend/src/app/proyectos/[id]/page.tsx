@@ -1394,7 +1394,7 @@ export default function ProyectoDetallePage() {
 
   const handleDeleteFinanciacion = async (financiacionId: string) => {
     try {
-      await api.delete(`/financiaciones/${financiacionId}`)
+      await api.delete(`/proyectos/financiaciones/${financiacionId}`)
       toast.success('Financiación eliminada exitosamente')
       fetchFinanciaciones()
     } catch (error: any) {
@@ -1420,7 +1420,7 @@ export default function ProyectoDetallePage() {
     try {
       const montoLimpio = editFinanciacionForm.monto.replace(/\./g, '').replace(',', '.')
 
-      await api.put(`/financiaciones/${financiacionToEdit.id}`, {
+      await api.put(`/proyectos/financiaciones/${financiacionToEdit.id}`, {
         ...editFinanciacionForm,
         monto: montoLimpio
       })

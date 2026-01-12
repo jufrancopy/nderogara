@@ -49,25 +49,27 @@ export const getFinanciaciones = async (request: FastifyRequest, reply: FastifyR
 export const createFinanciacion = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const { proyectoId } = request.params as { proyectoId: string };
-    const { monto, fuente, descripcion, proyectoId: bodyProyectoId } = request.body as any;
+    const { monto, fuente, descripcion } = request.body as any;
+    const user = request.user as any;
 
-    // Si proyectoId viene en el body (por compatibilidad), usarlo
-    const finalProyectoId = proyectoId || bodyProyectoId;
+    console.log('Creating financiacion for proyecto:', proyectoId, 'by user:', user.id);
 
-    if (!finalProyectoId) {
+    if (!proyectoId) {
       return reply.status(400).send({ success: false, error: 'ProyectoId es requerido' });
     }
 
-    // Verificar que el proyecto existe y pertenece al usuario
-    const proyecto = await prisma.proyecto.findFirst({
-      where: {
-        OR: [{ id: finalProyectoId }, { nombre: finalProyectoId }],
-        usuarioId: (request.user as any).id
-      }
+    // Verificar que el proyecto existe
+    const proyecto = await prisma.proyecto.findUnique({
+      where: { id: proyectoId }
     });
 
     if (!proyecto) {
       return reply.status(404).send({ success: false, error: 'Proyecto no encontrado' });
+    }
+
+    // Verificar permisos: admin puede crear en cualquier proyecto, otros solo en los suyos
+    if (user.rol !== 'ADMIN' && proyecto.usuarioId !== user.id) {
+      return reply.status(403).send({ success: false, error: 'No tienes permiso para agregar financiaciones a este proyecto' });
     }
 
     const financiacion = await prisma.financiacion.create({
@@ -91,15 +93,21 @@ export const updateFinanciacion = async (request: FastifyRequest, reply: Fastify
   try {
     const { id } = request.params as any;
     const { monto, fuente, descripcion } = request.body as any;
+    const user = request.user as any;
 
-    // Verificar que la financiación pertenece a un proyecto del usuario
-    const financiacion = await prisma.financiacion.findFirst({
+    // Verificar que la financiación existe
+    const financiacion = await prisma.financiacion.findUnique({
       where: { id },
       include: { proyecto: true }
     });
 
-    if (!financiacion || financiacion.proyecto.usuarioId !== (request.user as any).id) {
+    if (!financiacion) {
       return reply.status(404).send({ success: false, error: 'Financiación no encontrada' });
+    }
+
+    // Verificar permisos: admin puede editar cualquier financiación, otros solo las de sus proyectos
+    if (user.rol !== 'ADMIN' && financiacion.proyecto.usuarioId !== user.id) {
+      return reply.status(403).send({ success: false, error: 'No tienes permiso para editar esta financiación' });
     }
 
     const updatedFinanciacion = await prisma.financiacion.update({
@@ -122,15 +130,21 @@ export const updateFinanciacion = async (request: FastifyRequest, reply: Fastify
 export const deleteFinanciacion = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const { id } = request.params as any;
+    const user = request.user as any;
 
-    // Verificar que la financiación pertenece a un proyecto del usuario
-    const financiacion = await prisma.financiacion.findFirst({
+    // Verificar que la financiación existe
+    const financiacion = await prisma.financiacion.findUnique({
       where: { id },
       include: { proyecto: true }
     });
 
-    if (!financiacion || financiacion.proyecto.usuarioId !== (request.user as any).id) {
+    if (!financiacion) {
       return reply.status(404).send({ success: false, error: 'Financiación no encontrada' });
+    }
+
+    // Verificar permisos: admin puede eliminar cualquier financiación, otros solo las de sus proyectos
+    if (user.rol !== 'ADMIN' && financiacion.proyecto.usuarioId !== user.id) {
+      return reply.status(403).send({ success: false, error: 'No tienes permiso para eliminar esta financiación' });
     }
 
     await prisma.financiacion.delete({
