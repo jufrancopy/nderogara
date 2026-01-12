@@ -915,6 +915,12 @@ export default function ProyectoDetallePage() {
     descripcion: ''
   })
   const [financiacionToDelete, setFinanciacionToDelete] = useState<any>(null)
+  const [financiacionToEdit, setFinanciacionToEdit] = useState<any>(null)
+  const [editFinanciacionForm, setEditFinanciacionForm] = useState({
+    monto: '',
+    fuente: '',
+    descripcion: ''
+  })
 
 
 
@@ -1394,6 +1400,37 @@ export default function ProyectoDetallePage() {
     } catch (error: any) {
       console.error('Error deleting financiacion:', error)
       const errorMessage = error.response?.data?.error || 'Error al eliminar financiación'
+      toast.error(errorMessage)
+    }
+  }
+
+  const openEditFinanciacion = (financiacion: any) => {
+    setFinanciacionToEdit(financiacion)
+    setEditFinanciacionForm({
+      monto: financiacion.monto.toLocaleString('es-PY'),
+      fuente: financiacion.fuente,
+      descripcion: financiacion.descripcion || ''
+    })
+  }
+
+  const handleEditFinanciacion = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editFinanciacionForm.monto || !editFinanciacionForm.fuente || !financiacionToEdit) return
+
+    try {
+      const montoLimpio = editFinanciacionForm.monto.replace(/\./g, '').replace(',', '.')
+
+      await api.put(`/financiaciones/${financiacionToEdit.id}`, {
+        ...editFinanciacionForm,
+        monto: montoLimpio
+      })
+      toast.success('Financiación actualizada exitosamente')
+      setFinanciacionToEdit(null)
+      setEditFinanciacionForm({ monto: '', fuente: '', descripcion: '' })
+      fetchFinanciaciones()
+    } catch (error: any) {
+      console.error('Error updating financiacion:', error)
+      const errorMessage = error.response?.data?.error || 'Error al actualizar financiación'
       toast.error(errorMessage)
     }
   }
@@ -2139,6 +2176,15 @@ export default function ProyectoDetallePage() {
                                       <p className="text-lg font-bold text-green-600">{formatPrice(financiacion.monto)}</p>
                                     </div>
                                     <button
+                                      onClick={() => openEditFinanciacion(financiacion)}
+                                      className="text-blue-600 hover:text-blue-900 transition-colors p-1"
+                                      title="Editar financiación"
+                                    >
+                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                      </svg>
+                                    </button>
+                                    <button
                                       onClick={() => setFinanciacionToDelete(financiacion)}
                                       className="text-red-600 hover:text-red-900 transition-colors p-1"
                                       title="Eliminar financiación"
@@ -2267,6 +2313,95 @@ export default function ProyectoDetallePage() {
               className="absolute inset-0 -z-10 cursor-pointer"
               onClick={() => setModalImage(null)}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Modal de editar financiación */}
+      {financiacionToEdit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Editar Financiación</h2>
+                <button
+                  onClick={() => setFinanciacionToEdit(null)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <form onSubmit={handleEditFinanciacion} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Fuente de Financiamiento *
+                  </label>
+                  <select
+                    value={editFinanciacionForm.fuente}
+                    onChange={(e) => setEditFinanciacionForm({...editFinanciacionForm, fuente: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  >
+                    <option value="">Seleccionar fuente</option>
+                    <option value="Capital propio">Capital propio</option>
+                    <option value="Préstamo bancario">Préstamo bancario</option>
+                    <option value="Venta de activos">Venta de activos</option>
+                    <option value="Inversión externa">Inversión externa</option>
+                    <option value="Otros">Otros</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Monto *
+                  </label>
+                  <input
+                    type="text"
+                    value={editFinanciacionForm.monto}
+                    onChange={(e) => {
+                      const formattedValue = formatMontoInput(e.target.value)
+                      setEditFinanciacionForm({...editFinanciacionForm, monto: formattedValue})
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="50.000.000"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Ingresa el monto con separadores de miles (ej: 50.000.000)
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Descripción (opcional)
+                  </label>
+                  <textarea
+                    value={editFinanciacionForm.descripcion}
+                    onChange={(e) => setEditFinanciacionForm({...editFinanciacionForm, descripcion: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Detalles adicionales sobre esta financiación..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setFinanciacionToEdit(null)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Actualizar Financiación
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
