@@ -762,7 +762,7 @@ export default function MaterialesItemPage() {
         telefonoProveedor: selectedProveedor?.telefono || '',
         stockMinimo: 0, // Campo predefinido
         imagenUrl: finalImageUrl,
-        observaciones: `LISTA DE MATERIALES - ${createListaForm.observaciones || 'Compra en bulk sin detalle individual'}`
+        observaciones: createListaForm.observaciones || undefined
       }
 
       const response = await api.post('/admin/materiales', materialData)
