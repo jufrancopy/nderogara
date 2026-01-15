@@ -147,8 +147,8 @@ const calcularCostoTotalItem = (item: PresupuestoItem, materialesPorItem: Record
     const precioUnitario = Number(materialItem.precioUnitario || materialItem.material?.precioUnitario || 0)
     const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad || 0)
 
-    // Costo = precio_unitario * cantidad_por_unidad (sin multiplicar por cantidad del item)
-    return sum + (precioUnitario * cantidadPorUnidad)
+    // Costo = precio_unitario * cantidad_por_unidad * cantidad_del_item
+    return sum + (precioUnitario * cantidadPorUnidad * Number(item.cantidadMedida))
   }, 0)
 
   return costoTotal + costoMaterialesAsociados
