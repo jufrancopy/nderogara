@@ -774,7 +774,7 @@ export default function MaterialesItemPage() {
         await api.post(`/items/${itemId}/materiales`, {
           materialId: nuevoMaterial.id,
           cantidadPorUnidad: 1, // Siempre 1 para listas
-          observaciones: `LISTA - ${createListaForm.nombre} - Monto total: ${formatPrice(parseFloat(createListaForm.precioUnitario.replace(/\./g, '').replace(',', '.')))} - ${new Date().toLocaleDateString('es-PY')}`
+          observaciones: createListaForm.observaciones || undefined
         })
 
         toast.success('Lista de materiales creada y agregada exitosamente al item')
