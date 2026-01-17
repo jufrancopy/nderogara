@@ -1947,14 +1947,78 @@ export default function ProyectoDetallePage() {
                             })}
                           </tbody>
                           <tfoot className="bg-gray-50">
-                            <tr>
-                              <td colSpan={4} className="px-6 py-4 text-right text-sm font-bold text-gray-900">
-                                Total del Proyecto:
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-lg font-bold text-gray-900">
-                                {formatPrice(calcularCostoTotal())}
-                              </td>
-                            </tr>
+                            {(() => {
+                              // Calcular totales de mano de obra y materiales
+                              const totales = proyecto.presupuestoItems.reduce((acc, item) => {
+                                // Calcular materiales asociados (común para ambos tipos)
+                                const materialesItem = materialesPorItem[item.item.id] || []
+                                const costoMaterialesAsociados = materialesItem.reduce((total: number, materialItem: any) => {
+                                  const precioUnitario = Number(materialItem.precioUnitario || materialItem.material?.precioUnitario || materialItem.material?.precioBase || 0)
+                                  if (precioUnitario > 0) {
+                                    const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad || 0)
+                                    return total + (precioUnitario * cantidadPorUnidad * Number(item.cantidadMedida))
+                                  }
+                                  return total
+                                }, 0)
+
+                                let costoManoObra, costoMateriales
+
+                                if (item.esDinamico) {
+                                  costoManoObra = Number(item.costoTotal)
+                                  costoMateriales = costoMaterialesAsociados
+                                } else {
+                                  costoManoObra = Number(item.costoManoObra || 0)
+                                  const costoMaterialesBase = Number(item.costoTotal) - costoManoObra
+                                  costoMateriales = costoMaterialesBase + costoMaterialesAsociados
+                                }
+
+                                return {
+                                  manoObra: acc.manoObra + costoManoObra,
+                                  materiales: acc.materiales + costoMateriales
+                                }
+                              }, { manoObra: 0, materiales: 0 })
+
+                              return (
+                                <>
+                                  <tr>
+                                    <td colSpan={2} className="px-6 py-3 text-right text-sm font-medium text-gray-700">
+                                      Total Mano de Obra:
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm font-semibold text-blue-600">
+                                      {formatPrice(totales.manoObra)}
+                                    </td>
+                                    <td className="px-6 py-3 text-center text-sm font-medium text-gray-500">
+                                      -
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-500">
+                                      -
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td colSpan={2} className="px-6 py-3 text-right text-sm font-medium text-gray-700">
+                                      Total Materiales:
+                                    </td>
+                                    <td className="px-6 py-3 text-center text-sm font-medium text-gray-500">
+                                      -
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm font-semibold text-green-600">
+                                      {formatPrice(totales.materiales)}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-500">
+                                      -
+                                    </td>
+                                  </tr>
+                                  <tr className="border-t-2 border-gray-300">
+                                    <td colSpan={4} className="px-6 py-4 text-right text-sm font-bold text-gray-900">
+                                      Total del Proyecto:
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-lg font-bold text-gray-900">
+                                      {formatPrice(calcularCostoTotal())}
+                                    </td>
+                                  </tr>
+                                </>
+                              )
+                            })()}
                           </tfoot>
                         </table>
                       </div>
