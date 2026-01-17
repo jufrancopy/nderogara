@@ -137,23 +137,24 @@ interface SortableItemProps {
 
 // Función para calcular el costo total de un item incluyendo materiales asociados
 const calcularCostoTotalItem = (item: PresupuestoItem, materialesPorItem: Record<string, any[]>) => {
-  // Para items dinámicos, el costo ya incluye pagos realizados (mano de obra + materiales)
+  // Para items dinámicos, el costoTotal ya incluye todo (pagos realizados)
   if (item.esDinamico) {
     return Number(item.costoTotal)
   }
 
-  // Para items fijos: costo base + materiales asociados
+  // Para items fijos: costo base + materiales asociados que tienen precio
   let costoTotal = Number(item.costoTotal)
 
-  // Agregar costos de materiales asociados
+  // Agregar costos de materiales asociados que tienen precio establecido
   const materialesItem = materialesPorItem[item.item.id] || []
   const costoMaterialesAsociados = materialesItem.reduce((sum: number, materialItem: any) => {
-    // Prioridad: precio específico de la oferta seleccionada → precio base del material
-    const precioUnitario = Number(materialItem.precioUnitario || materialItem.material?.precioUnitario || 0)
-    const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad || 0)
-
-    // Costo = precio_unitario * cantidad_por_unidad * cantidad_del_item
-    return sum + (precioUnitario * cantidadPorUnidad * Number(item.cantidadMedida))
+    // Solo sumar materiales que tienen precio (precioUnitario, precioUnitario del material, o precioBase)
+    const precioUnitario = Number(materialItem.precioUnitario || materialItem.material?.precioUnitario || materialItem.material?.precioBase || 0)
+    if (precioUnitario > 0) {
+      const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad || 0)
+      return sum + (precioUnitario * cantidadPorUnidad * Number(item.cantidadMedida))
+    }
+    return sum
   }, 0)
 
   return costoTotal + costoMaterialesAsociados
@@ -442,10 +443,10 @@ function SortableItem({
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium text-gray-900">
-                      {formatPrice(Number(materialItem.precioUnitario || materialItem.material?.precioUnitario || 0))}
+                      {formatPrice(Number(materialItem.precioUnitario || materialItem.material?.precioUnitario || materialItem.material?.precioBase || 0))}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Total: {formatPrice(Number(materialItem.precioUnitario || materialItem.material?.precioUnitario || 0) * Number(materialItem.cantidadPorUnidad) * Number(item.cantidadMedida))}
+                      Total: {formatPrice(Number(materialItem.precioUnitario || materialItem.material?.precioUnitario || materialItem.material?.precioBase || 0) * Number(materialItem.cantidadPorUnidad) * Number(item.cantidadMedida))}
                     </p>
                   </div>
                 </div>
@@ -498,6 +499,8 @@ function PagoHistorialItem({
   useEffect(() => {
     // Si ya tenemos pagos iniciales, no cargar desde API
     if (pagosIniciales) {
+      console.log('📊 Usando pagos iniciales:', pagosIniciales)
+      setPagos(pagosIniciales)
       setLoading(false)
       return
     }
@@ -505,7 +508,9 @@ function PagoHistorialItem({
     const fetchPagos = async () => {
       try {
         const response = await api.get(`/proyectos/${proyectoId}/presupuesto/${presupuestoItemId}/pagos`)
-        setPagos(response.data.data || [])
+        const pagosData = response.data.data || []
+        console.log('📊 Pagos cargados desde API:', pagosData)
+        setPagos(pagosData)
       } catch (error) {
         console.error('Error fetching pagos:', error)
         setPagos([])
@@ -1275,8 +1280,8 @@ export default function ProyectoDetallePage() {
     if (!proyecto?.presupuestoItems) return 0
 
     return proyecto.presupuestoItems.reduce((total, item) => {
-      // Para todos los items (dinámicos y fijos), usar el costoTotal que ya incluye todo
-      return total + Number(item.costoTotal)
+      // Usar la misma lógica que calcularCostoTotalItem para consistencia
+      return total + calcularCostoTotalItem(item, materialesPorItem)
     }, 0)
   }
 
@@ -1887,16 +1892,26 @@ export default function ProyectoDetallePage() {
                               let costoManoObra, costoMateriales, costoTotal
 
                               if (item.esDinamico) {
-                                // Para items dinámicos: el costoTotal es la suma de TODOS los pagos realizados
-                                // Los pagos incluyen tanto mano de obra como materiales
-                                costoManoObra = Number(item.costoTotal) // Todos los pagos realizados
+                                // Para items dinámicos: el costoTotal son los pagos realizados
+                                costoManoObra = Number(item.costoTotal) // Pagos realizados (incluye todo)
                                 costoMateriales = 0 // Los materiales están incluidos en los pagos
-                                costoTotal = costoManoObra // Total = pagos realizados
+                                costoTotal = Number(item.costoTotal) // Solo pagos realizados
                               } else {
-                                // Para items fijos: separación clara entre mano de obra y materiales
+                                // Para items fijos: separación entre mano de obra y materiales
                                 costoManoObra = Number(item.costoManoObra || 0)
-                                costoMateriales = Math.max(0, Number(item.costoTotal) - costoManoObra)
-                                costoTotal = Number(item.costoTotal)
+                                
+                                // Calcular materiales asociados que tienen precio
+                                const materialesItem = materialesPorItem[item.item.id] || []
+                                costoMateriales = materialesItem.reduce((sum: number, materialItem: any) => {
+                                  const precioUnitario = Number(materialItem.precioUnitario || materialItem.material?.precioUnitario || materialItem.material?.precioBase || 0)
+                                  if (precioUnitario > 0) {
+                                    const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad || 0)
+                                    return sum + (precioUnitario * cantidadPorUnidad * Number(item.cantidadMedida))
+                                  }
+                                  return sum
+                                }, 0)
+                                
+                                costoTotal = costoManoObra + costoMateriales
                               }
 
                               return (
@@ -2750,11 +2765,11 @@ export default function ProyectoDetallePage() {
                               // Calcular totales para este item en esta etapa
                               const totalPagadoAprobado = pagosItem
                                 .filter((p: any) => p.estado === 'APROBADO')
-                                .reduce((sum: number, p: any) => sum + Number(p.monto), 0)
+                                .reduce((sum: number, p: any) => sum + Number(p.montoPagado), 0)
 
                               const totalPagadoPendiente = pagosItem
                                 .filter((p: any) => p.estado === 'PENDIENTE')
-                                .reduce((sum: number, p: any) => sum + Number(p.monto), 0)
+                                .reduce((sum: number, p: any) => sum + Number(p.montoPagado), 0)
 
                               const totalPagado = totalPagadoAprobado + totalPagadoPendiente
 
