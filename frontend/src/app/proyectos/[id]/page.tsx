@@ -1897,12 +1897,13 @@ export default function ProyectoDetallePage() {
                                 costoMateriales = 0 // Los materiales están incluidos en los pagos
                                 costoTotal = Number(item.costoTotal) // Solo pagos realizados
                               } else {
-                                // Para items fijos: separación entre mano de obra y materiales
+                                // Para items fijos: calcular costos incluyendo materiales asociados
                                 costoManoObra = Number(item.costoManoObra || 0)
-                                
-                                // Calcular materiales asociados que tienen precio
+                                const costoMaterialesBase = Number(item.costoTotal) - costoManoObra
+
+                                // Calcular materiales asociados adicionales
                                 const materialesItem = materialesPorItem[item.item.id] || []
-                                costoMateriales = materialesItem.reduce((sum: number, materialItem: any) => {
+                                const costoMaterialesAsociados = materialesItem.reduce((sum: number, materialItem: any) => {
                                   const precioUnitario = Number(materialItem.precioUnitario || materialItem.material?.precioUnitario || materialItem.material?.precioBase || 0)
                                   if (precioUnitario > 0) {
                                     const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad || 0)
@@ -1910,7 +1911,8 @@ export default function ProyectoDetallePage() {
                                   }
                                   return sum
                                 }, 0)
-                                
+
+                                costoMateriales = costoMaterialesBase + costoMaterialesAsociados
                                 costoTotal = costoManoObra + costoMateriales
                               }
 
