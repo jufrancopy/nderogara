@@ -137,7 +137,12 @@ interface SortableItemProps {
 
 // Función para calcular el costo total de un item incluyendo materiales asociados
 const calcularCostoTotalItem = (item: PresupuestoItem, materialesPorItem: Record<string, any[]>) => {
-  // Costo base del item
+  // Para items dinámicos, el costo ya incluye pagos realizados (mano de obra + materiales)
+  if (item.esDinamico) {
+    return Number(item.costoTotal)
+  }
+
+  // Para items fijos: costo base + materiales asociados
   let costoTotal = Number(item.costoTotal)
 
   // Agregar costos de materiales asociados
@@ -1883,10 +1888,10 @@ export default function ProyectoDetallePage() {
 
                               if (item.esDinamico) {
                                 // Para items dinámicos: el costoTotal es la suma de TODOS los pagos realizados
-                                // Los pagos incluyen tanto mano de obra como materiales, pero mostramos los materiales asociados por separado
-                                costoManoObra = Number(item.costoTotal) // Todos los pagos realizados (mano de obra + materiales incluidos en pagos)
-                                costoMateriales = Math.max(0, calcularCostoTotalItem(item, materialesPorItem) - Number(item.costoTotal)) // Materiales asociados adicionales
-                                costoTotal = costoManoObra + costoMateriales // Total incluyendo materiales asociados
+                                // Los pagos incluyen tanto mano de obra como materiales
+                                costoManoObra = Number(item.costoTotal) // Todos los pagos realizados
+                                costoMateriales = 0 // Los materiales están incluidos en los pagos
+                                costoTotal = costoManoObra // Total = pagos realizados
                               } else {
                                 // Para items fijos: separación clara entre mano de obra y materiales
                                 costoManoObra = Number(item.costoManoObra || 0)
@@ -1917,7 +1922,7 @@ export default function ProyectoDetallePage() {
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {formatPrice(costoMateriales)}
-                                    {item.esDinamico && costoMateriales === 0 && (
+                                    {item.esDinamico && (
                                       <div className="text-xs text-gray-500">Incluido en pagos</div>
                                     )}
                                   </td>
