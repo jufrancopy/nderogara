@@ -137,12 +137,7 @@ interface SortableItemProps {
 
 // Función para calcular el costo total de un item incluyendo materiales asociados
 const calcularCostoTotalItem = (item: PresupuestoItem, materialesPorItem: Record<string, any[]>) => {
-  // Para items dinámicos, el costoTotal ya incluye todo (pagos realizados)
-  if (item.esDinamico) {
-    return Number(item.costoTotal)
-  }
-
-  // Para items fijos: costo base + materiales asociados que tienen precio
+  // Base cost (payments for dynamic items, stored cost for fixed items)
   let costoTotal = Number(item.costoTotal)
 
   // Agregar costos de materiales asociados que tienen precio establecido
@@ -157,6 +152,7 @@ const calcularCostoTotalItem = (item: PresupuestoItem, materialesPorItem: Record
     return sum
   }, 0)
 
+  // Para TODOS los items (dinámicos y fijos): costo base + materiales asociados
   return costoTotal + costoMaterialesAsociados
 }
 
@@ -1891,26 +1887,26 @@ export default function ProyectoDetallePage() {
                               // Calcular costos según el tipo de item
                               let costoManoObra, costoMateriales, costoTotal
 
+                              // Calcular materiales asociados (común para ambos tipos)
+                              const materialesItem = materialesPorItem[item.item.id] || []
+                              const costoMaterialesAsociados = materialesItem.reduce((total: number, materialItem: any) => {
+                                const precioUnitario = Number(materialItem.precioUnitario || materialItem.material?.precioUnitario || materialItem.material?.precioBase || 0)
+                                if (precioUnitario > 0) {
+                                  const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad || 0)
+                                  return total + (precioUnitario * cantidadPorUnidad * Number(item.cantidadMedida))
+                                }
+                                return total
+                              }, 0)
+
                               if (item.esDinamico) {
-                                // Para items dinámicos: el costoTotal son los pagos realizados
-                                costoManoObra = Number(item.costoTotal) // Pagos realizados (incluye todo)
-                                costoMateriales = 0 // Los materiales están incluidos en los pagos
-                                costoTotal = Number(item.costoTotal) // Solo pagos realizados
+                                // Para items dinámicos: pagos realizados + materiales asociados adicionales
+                                costoManoObra = Number(item.costoTotal) // Pagos realizados
+                                costoMateriales = costoMaterialesAsociados // Materiales asociados adicionales
+                                costoTotal = costoManoObra + costoMateriales // Total real
                               } else {
                                 // Para items fijos: calcular costos incluyendo materiales asociados
                                 costoManoObra = Number(item.costoManoObra || 0)
                                 const costoMaterialesBase = Number(item.costoTotal) - costoManoObra
-
-                                // Calcular materiales asociados adicionales
-                                const materialesItem = materialesPorItem[item.item.id] || []
-                                const costoMaterialesAsociados = materialesItem.reduce((sum: number, materialItem: any) => {
-                                  const precioUnitario = Number(materialItem.precioUnitario || materialItem.material?.precioUnitario || materialItem.material?.precioBase || 0)
-                                  if (precioUnitario > 0) {
-                                    const cantidadPorUnidad = Number(materialItem.cantidadPorUnidad || 0)
-                                    return sum + (precioUnitario * cantidadPorUnidad * Number(item.cantidadMedida))
-                                  }
-                                  return sum
-                                }, 0)
 
                                 costoMateriales = costoMaterialesBase + costoMaterialesAsociados
                                 costoTotal = costoManoObra + costoMateriales
