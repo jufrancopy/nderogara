@@ -2258,7 +2258,12 @@ export default function ProyectoDetallePage() {
                                     <div className="flex items-center gap-2 mb-1">
                                       <span className="font-medium text-gray-900">{financiacion.fuente}</span>
                                       <span className="text-xs text-gray-500">
-                                        {new Date(financiacion.fecha).toLocaleDateString('es-PY')}
+                                        {new Date(financiacion.fecha).toLocaleDateString('es-PY', {
+                                          timeZone: 'UTC',
+                                          year: 'numeric',
+                                          month: '2-digit',
+                                          day: '2-digit'
+                                        })}
                                       </span>
                                     </div>
                                     {financiacion.descripcion && (
