@@ -257,8 +257,15 @@ function SortableItem({
             <div className="text-lg font-bold text-gray-900">
               {formatPrice(calcularCostoTotalItem(item, materialesPorItem))}
             </div>
-            <div className="text-xs text-gray-500">
-              {item.esDinamico ? 'Pagos incrementales' : 'Costo fijo'}
+            <div className="text-xs text-gray-500 space-y-1">
+              {item.esDinamico ? (
+                <div>
+                  <div>Pagos realizados: {formatPrice(Number(item.costoTotal))}</div>
+                  <div>Materiales: {formatPrice(calcularCostoTotalItem(item, materialesPorItem) - Number(item.costoTotal))}</div>
+                </div>
+              ) : (
+                <div>Costo fijo</div>
+              )}
             </div>
           </div>
 
@@ -921,14 +928,16 @@ export default function ProyectoDetallePage() {
   const [financiacionForm, setFinanciacionForm] = useState({
     monto: '',
     fuente: '',
-    descripcion: ''
+    descripcion: '',
+    fecha: ''
   })
   const [financiacionToDelete, setFinanciacionToDelete] = useState<any>(null)
   const [financiacionToEdit, setFinanciacionToEdit] = useState<any>(null)
   const [editFinanciacionForm, setEditFinanciacionForm] = useState({
     monto: '',
     fuente: '',
-    descripcion: ''
+    descripcion: '',
+    fecha: ''
   })
 
 
@@ -1357,7 +1366,7 @@ export default function ProyectoDetallePage() {
       })
       toast.success('Financiación agregada exitosamente')
       setShowFinanciacionForm(false)
-      setFinanciacionForm({ monto: '', fuente: '', descripcion: '' })
+      setFinanciacionForm({ monto: '', fuente: '', descripcion: '', fecha: '' })
       fetchFinanciaciones()
     } catch (error: any) {
       console.error('Error adding financiacion:', error)
@@ -1402,7 +1411,8 @@ export default function ProyectoDetallePage() {
     setEditFinanciacionForm({
       monto: financiacion.monto.toLocaleString('es-PY'),
       fuente: financiacion.fuente,
-      descripcion: financiacion.descripcion || ''
+      descripcion: financiacion.descripcion || '',
+      fecha: financiacion.fecha ? new Date(financiacion.fecha).toISOString().split('T')[0] : ''
     })
   }
 
@@ -1419,7 +1429,7 @@ export default function ProyectoDetallePage() {
       })
       toast.success('Financiación actualizada exitosamente')
       setFinanciacionToEdit(null)
-      setEditFinanciacionForm({ monto: '', fuente: '', descripcion: '' })
+      setEditFinanciacionForm({ monto: '', fuente: '', descripcion: '', fecha: '' })
       fetchFinanciaciones()
     } catch (error: any) {
       console.error('Error updating financiacion:', error)
@@ -2446,6 +2456,22 @@ export default function ProyectoDetallePage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Fecha *
+                  </label>
+                  <input
+                    type="date"
+                    value={editFinanciacionForm.fecha}
+                    onChange={(e) => setEditFinanciacionForm({...editFinanciacionForm, fecha: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Fecha en que se realizó esta financiación
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Descripción (opcional)
                   </label>
                   <textarea
@@ -2527,6 +2553,22 @@ export default function ProyectoDetallePage() {
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Ingresa el monto con separadores de miles (ej: 50.000.000)
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Fecha *
+                  </label>
+                  <input
+                    type="date"
+                    value={financiacionForm.fecha}
+                    onChange={(e) => setFinanciacionForm({...financiacionForm, fecha: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Fecha en que se realizó esta financiación
                   </p>
                 </div>
 
