@@ -1408,11 +1408,23 @@ export default function ProyectoDetallePage() {
 
   const openEditFinanciacion = (financiacion: any) => {
     setFinanciacionToEdit(financiacion)
+
+    // Formatear fecha correctamente para input date (YYYY-MM-DD) sin problemas de zona horaria
+    let fechaFormateada = ''
+    if (financiacion.fecha) {
+      const date = new Date(financiacion.fecha)
+      // Usar UTC para evitar problemas de zona horaria
+      const year = date.getUTCFullYear()
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+      const day = String(date.getUTCDate()).padStart(2, '0')
+      fechaFormateada = `${year}-${month}-${day}`
+    }
+
     setEditFinanciacionForm({
       monto: financiacion.monto.toLocaleString('es-PY'),
       fuente: financiacion.fuente,
       descripcion: financiacion.descripcion || '',
-      fecha: financiacion.fecha ? new Date(financiacion.fecha).toISOString().split('T')[0] : ''
+      fecha: fechaFormateada
     })
   }
 
