@@ -49,10 +49,10 @@ export const getFinanciaciones = async (request: FastifyRequest, reply: FastifyR
 export const createFinanciacion = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const { proyectoId } = request.params as { proyectoId: string };
-    const { monto, fuente, descripcion } = request.body as any;
+    const { monto, fuente, descripcion, fecha } = request.body as any;
     const user = request.user as any;
 
-    console.log('Creating financiacion for proyecto:', proyectoId, 'by user:', user.id);
+    console.log('Creating financiacion for proyecto:', proyectoId, 'by user:', user.id, 'with data:', { monto, fuente, descripcion, fecha });
 
     if (!proyectoId) {
       return reply.status(400).send({ success: false, error: 'ProyectoId es requerido' });
@@ -77,9 +77,12 @@ export const createFinanciacion = async (request: FastifyRequest, reply: Fastify
         proyectoId: proyecto.id,
         monto: parseFloat(monto),
         fuente,
-        descripcion
+        descripcion,
+        fecha: fecha ? new Date(fecha) : undefined
       }
     });
+
+    console.log('Financiacion created successfully:', financiacion);
 
     reply.send({ success: true, data: financiacion });
   } catch (error) {
@@ -92,8 +95,10 @@ export const createFinanciacion = async (request: FastifyRequest, reply: Fastify
 export const updateFinanciacion = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const { id } = request.params as any;
-    const { monto, fuente, descripcion } = request.body as any;
+    const { monto, fuente, descripcion, fecha } = request.body as any;
     const user = request.user as any;
+
+    console.log('Updating financiacion:', id, 'with data:', { monto, fuente, descripcion, fecha });
 
     // Verificar que la financiación existe
     const financiacion = await prisma.financiacion.findUnique({
@@ -115,9 +120,12 @@ export const updateFinanciacion = async (request: FastifyRequest, reply: Fastify
       data: {
         monto: monto ? parseFloat(monto) : financiacion.monto,
         fuente: fuente || financiacion.fuente,
-        descripcion: descripcion !== undefined ? descripcion : financiacion.descripcion
+        descripcion: descripcion !== undefined ? descripcion : financiacion.descripcion,
+        fecha: fecha ? new Date(fecha) : financiacion.fecha
       }
     });
+
+    console.log('Financiacion updated successfully:', updatedFinanciacion);
 
     reply.send({ success: true, data: updatedFinanciacion });
   } catch (error) {
