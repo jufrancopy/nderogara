@@ -232,7 +232,10 @@ function SortableItem({
                 </p>
                 <div className="text-sm text-gray-500">
                   {item.esDinamico ? (
-                    'Pagos incrementales'
+                    <div className="space-y-1">
+                      <div>Mano de obra: {formatPrice(Number(item.costoTotal))} (Pagos realizados)</div>
+                      <div>Materiales: {formatPrice(calcularCostoTotalItem(item, materialesPorItem) - Number(item.costoTotal))}</div>
+                    </div>
                   ) : (
                     <div className="space-y-1">
                       <div>Mano de obra: {formatPrice(Number(item.costoTotal))}</div>
@@ -1935,8 +1938,11 @@ export default function ProyectoDetallePage() {
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {formatPrice(costoMateriales)}
-                                    {item.esDinamico && (
+                                    {item.esDinamico && costoMateriales === 0 && (
                                       <div className="text-xs text-gray-500">Incluido en pagos</div>
+                                    )}
+                                    {item.esDinamico && costoMateriales > 0 && (
+                                      <div className="text-xs text-gray-500">Materiales asociados</div>
                                     )}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
